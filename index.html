@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shooter 3D Multiplayer P2P</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        #connection-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        .connected { color: #00ff00; }
+        .disconnected { color: #ff0000; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h2>Shooter 3D Multiplayer P2P</h2>
+        <p>ID: <span id="peer-id">Generando...</span></p>
+        <p>Conectar a: <input type="text" id="peer-input" placeholder="ID del otro jugador">
+        <button onclick="connectToPeer()">Conectar</button></p>
+    </div>
+    <div id="connection-status">
+        Estado: <span id="status-text" class="disconnected">Desconectado</span>
+    </div>
+    <div id="controls">
+        WASD: Moverse | Mouse: Mirar | Click: Disparar
+    </div>
+
+    <!-- Librerías -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.3.2/dist/peerjs.min.js"></script>
+    
+    <script>
+        // Configuración inicial
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Color cielo
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.y = 2;
+        
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        // Luz ambiental
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        
+        // Luz direccional (sol)
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(10, 20, 0);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        scene.add(directionalLight);
+        
+        // Suelo
+        const groundGeometry = new THREE.PlaneGeometry(50, 50);
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x3a7e3a });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = 0;
+        ground.receiveShadow = true;
+        scene.add(ground);
+        
+        // Grid para referencia
+        const gridHelper = new THREE.GridHelper(50, 20, 0x888888, 0x444444);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+        
+        // Obstáculos para dar interés visual
+        function createObstacle(x, z, color) {
+            const boxGeo = new THREE.BoxGeometry(2, 4, 2);
+            const boxMat = new THREE.MeshStandardMaterial({ color });
+            const box = new THREE.Mesh(boxGeo, boxMat);
+            box.position.set(x, 2, z);
+            box.castShadow = true;
+            box.receiveShadow = true;
+            scene.add(box);
+        }
+        
+        createObstacle(-5, -5, 0x8B4513);
+        createObstacle(5, 5, 0x8B4513);
+        createObstacle(-5, 5, 0x8B4513);
+        createObstacle(5, -5, 0x8B4513);
+        
+        // Variables del juego
+        const players = {}; // Jugadores remotos
+        let localPlayer = null;
+        let localPlayerId = null;
+        
+        // Controles
+        const keys = {};
+        const mouse = { x: 0, y: 0 };
+        const speed = 0.1;
+        const rotationSpeed = 0.002;
+        
+        // Configurar PeerJS
+        const peer = new Peer();
+        
+        peer.on('open', (id) => {
+            document.getElementById('peer-id').textContent = id;
+            localPlayerId = id;
+            
+            // Crear jugador local
+            localPlayer = createPlayer(id, 0, 2, 0, 0x00ff00);
+            scene.add(localPlayer);
+            
+            // Posicionar cámara
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 2, 0);
+        });
+        
+        peer.on('connection', (conn) => {
+            setupConnection(conn);
+        });
+        
+        function connectToPeer() {
+            const peerId = document.getElementById('peer-input').value;
+            if (!peerId) return;
+            
+            const conn = peer.connect(peerId);
+            setupConnection(conn);
+        }
+        
+        function setupConnection(conn) {
+            document.getElementById('status-text').textContent = 'Conectado';
+            document.getElementById('status-text').className = 'connected';
+            
+            conn.on('data', (data) => {
+                handleNetworkData(conn.peer, data);
+            });
+            
+            conn.on('close', () => {
+                document.getElementById('status-text').textContent = 'Desconectado';
+                document.getElementById('status-text').className = 'disconnected';
+                
+                // Eliminar jugador remoto
+                if (players[conn.peer]) {
+                    scene.remove(players[conn.peer]);
+                    delete players[conn.peer];
+                }
+            });
+            
+            // Guardar conexión
+            if (!window.connections) window.connections = [];
+            window.connections.push(conn);
+            
+            // Si es una conexión entrante, crear inmediatamente el jugador remoto
+            if (!players[conn.peer]) {
+                const remotePlayer = createPlayer(conn.peer, 0, 2, 0, 0xff0000);
+                scene.add(remotePlayer);
+                players[conn.peer] = remotePlayer;
+            }
+        }
+        
+        function handleNetworkData(peerId, data) {
+            if (data.type === 'position') {
+                if (!players[peerId]) {
+                    // Crear jugador si no existe
+                    const remotePlayer = createPlayer(peerId, data.x, data.y, data.z, 0xff0000);
+                    scene.add(remotePlayer);
+                    players[peerId] = remotePlayer;
+                } else {
+                    // Actualizar posición
+                    players[peerId].position.set(data.x, data.y, data.z);
+                    
+                    // Actualizar rotación del cuerpo
+                    if (players[peerId].children[0]) {
+                        players[peerId].children[0].rotation.y = data.rotationY;
+                    }
+                    
+                    // Actualizar rotación del arma/brazos
+                    if (players[peerId].children[1]) {
+                        players[peerId].children[1].rotation.x = data.armRotationX;
+                    }
+                }
+            } else if (data.type === 'shoot') {
+                // Crear efecto de disparo en el jugador remoto
+                createMuzzleFlash(players[peerId]);
+                
+                // Detectar colisiones (simplificado)
+                if (localPlayer) {
+                    const distance = localPlayer.position.distanceTo(new THREE.Vector3(data.x, data.y, data.z));
+                    if (distance < 3) {
+                        // Daño recibido
+                        localPlayer.material.color.setHex(0xff0000);
+                        setTimeout(() => {
+                            if (localPlayer) localPlayer.material.color.setHex(0x00ff00);
+                        }, 200);
+                    }
+                }
+            }
+        }
+        
+        function createPlayer(id, x, y, z, color) {
+            const group = new THREE.Group();
+            group.position.set(x, y, z);
+            
+            // Cuerpo
+            const bodyGeo = new THREE.CylinderGeometry(0.5, 0.5, 2, 8);
+            const bodyMat = new THREE.MeshStandardMaterial({ color });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1;
+            body.castShadow = true;
+            body.receiveShadow = true;
+            group.add(body);
+            
+            // Cabeza
+            const headGeo = new THREE.SphereGeometry(0.4);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffccaa });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.2;
+            head.castShadow = true;
+            head.receiveShadow = true;
+            group.add(head);
+            
+            // Brazos/Arma
+            const armGeo = new THREE.BoxGeometry(0.2, 0.2, 1.5);
+            const armMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+            const arm = new THREE.Mesh(armGeo, armMat);
+            arm.position.set(0.5, 1.4, 0.5);
+            arm.rotation.x = Math.PI / 4;
+            arm.castShadow = true;
+            arm.receiveShadow = true;
+            group.add(arm);
+            
+            // Segunda parte del arma
+            const arm2Geo = new THREE.BoxGeometry(0.2, 0.2, 0.5);
+            const arm2Mat = new THREE.MeshStandardMaterial({ color: 0x666666 });
+            const arm2 = new THREE.Mesh(arm2Geo, arm2Mat);
+            arm2.position.set(0.5, 1.4, 1.2);
+            arm2.castShadow = true;
+            arm2.receiveShadow = true;
+            group.add(arm2);
+            
+            return group;
+        }
+        
+        function createMuzzleFlash(player) {
+            if (!player) return;
+            
+            const flashGeo = new THREE.SphereGeometry(0.2);
+            const flashMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+            const flash = new THREE.Mesh(flashGeo, flashMat);
+            
+            // Posicionar en la punta del arma
+            flash.position.copy(player.position);
+            flash.position.y += 1.4;
+            flash.position.x += Math.sin(player.children[0].rotation.y) * 1.2;
+            flash.position.z += Math.cos(player.children[0].rotation.y) * 1.2;
+            
+            scene.add(flash);
+            
+            setTimeout(() => scene.remove(flash), 100);
+        }
+        
+        // Eventos de teclado
+        window.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+        
+        // Eventos de mouse
+        document.addEventListener('mousemove', (e) => {
+            if (document.pointerLockElement === renderer.domElement) {
+                mouse.x += e.movementX * rotationSpeed;
+                mouse.y += e.movementY * rotationSpeed;
+                mouse.y = Math.max(-Math.PI/3, Math.min(Math.PI/3, mouse.y));
+            }
+        });
+        
+        document.addEventListener('click', () => {
+            renderer.domElement.requestPointerLock();
+        });
+        
+        document.addEventListener('mousedown', (e) => {
+            if (e.button === 0 && document.pointerLockElement === renderer.domElement) {
+                // Disparar
+                if (!localPlayer) return;
+                
+                createMuzzleFlash(localPlayer);
+                
+                // Enviar disparo a todos los peers
+                if (window.connections) {
+                    window.connections.forEach(conn => {
+                        conn.send({
+                            type: 'shoot',
+                            x: localPlayer.position.x,
+                            y: localPlayer.position.y,
+                            z: localPlayer.position.z
+                        });
+                    });
+                }
+                
+                // Detectar colisiones locales
+                for (let id in players) {
+                    const player = players[id];
+                    const distance = player.position.distanceTo(localPlayer.position);
+                    
+                    // Verificar si el enemigo está en la línea de visión
+                    const direction = new THREE.Vector3()
+                        .subVectors(player.position, localPlayer.position)
+                        .normalize();
+                    
+                    const dot = direction.dot(getForwardVector());
+                    
+                    if (distance < 10 && dot > 0.7) {
+                        // Impacto
+                        player.material.color.setHex(0xffaa00);
+                        setTimeout(() => {
+                            if (player) player.material.color.setHex(0xff0000);
+                        }, 200);
+                    }
+                }
+            }
+        });
+        
+        function getForwardVector() {
+            return new THREE.Vector3(
+                Math.sin(localPlayer.children[0].rotation.y),
+                0,
+                Math.cos(localPlayer.children[0].rotation.y)
+            );
+        }
+        
+        // Bucle de actualización
+        function update() {
+            if (localPlayer) {
+                // Movimiento
+                let moveX = 0, moveZ = 0;
+                
+                if (keys['w']) moveZ += 1;
+                if (keys['s']) moveZ -= 1;
+                if (keys['a']) moveX -= 1;
+                if (keys['d']) moveX += 1;
+                
+                if (moveX !== 0 || moveZ !== 0) {
+                    // Normalizar para movimiento diagonal consistente
+                    const length = Math.sqrt(moveX*moveX + moveZ*moveZ);
+                    moveX /= length;
+                    moveZ /= length;
+                    
+                    // Rotar según la dirección de la cámara
+                    const forward = new THREE.Vector3(
+                        Math.sin(camera.rotation.y),
+                        0,
+                        Math.cos(camera.rotation.y)
+                    );
+                    
+                    const right = new THREE.Vector3(
+                        Math.sin(camera.rotation.y + Math.PI/2),
+                        0,
+                        Math.cos(camera.rotation.y + Math.PI/2)
+                    );
+                    
+                    localPlayer.position.x += (forward.x * moveZ + right.x * moveX) * speed;
+                    localPlayer.position.z += (forward.z * moveZ + right.z * moveX) * speed;
+                    
+                    // Rotar cuerpo hacia la dirección de movimiento
+                    if (moveX !== 0 || moveZ !== 0) {
+                        const targetRotation = Math.atan2(moveX, moveZ) + camera.rotation.y;
+                        localPlayer.children[0].rotation.y = targetRotation;
+                    }
+                }
+                
+                // Rotar cámara con mouse
+                camera.rotation.y = mouse.x;
+                camera.rotation.x = mouse.y;
+                
+                // Posicionar cámara detrás del jugador
+                const cameraOffset = new THREE.Vector3(0, 2, -5);
+                cameraOffset.applyEuler(new THREE.Euler(0, camera.rotation.y, 0));
+                camera.position.copy(localPlayer.position.clone().add(cameraOffset));
+                camera.lookAt(localPlayer.position.clone().add(new THREE.Vector3(0, 2, 0)));
+                
+                // Rotar arma con la mira del mouse
+                if (localPlayer.children[1]) {
+                    localPlayer.children[1].rotation.x = mouse.y + Math.PI/4;
+                }
+                
+                // Enviar posición a peers
+                if (window.connections) {
+                    window.connections.forEach(conn => {
+                        conn.send({
+                            type: 'position',
+                            x: localPlayer.position.x,
+                            y: localPlayer.position.y,
+                            z: localPlayer.position.z,
+                            rotationY: localPlayer.children[0].rotation.y,
+                            armRotationX: localPlayer.children[1] ? localPlayer.children[1].rotation.x : 0
+                        });
+                    });
+                }
+            }
+            
+            renderer.render(scene, camera);
+            requestAnimationFrame(update);
+        }
+        
+        update();
+        
+        // Ajustar tamaño de ventana
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
