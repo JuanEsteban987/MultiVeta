@@ -247,7 +247,7 @@
     <div id="join-screen" class="join-screen">
         <h1>Twitch de Dibujo P2P</h1>
         <div class="form">
-            <input type="text" id="room-input" placeholder="ID de sala" value="sala1">
+            <input type="text" id="room-input" placeholder="Código de la sala" value="sala1">
             <div>
                 <button id="create-room-btn">Crear sala (serás host)</button>
                 <button id="join-room-btn">Unirse como espectador</button>
@@ -325,13 +325,13 @@
             const sendBtn = document.getElementById('sendMessage');
 
             // --- Estado P2P ---
-            let peer = null;            // Instancia de Peer (solo host o espectador)
-            let connections = new Map(); // Mapa de conexiones (peerId -> DataConnection) (solo host)
+            let peer = null;            // Instancia de Peer
+            let connections = new Map(); // Mapa de conexiones (solo host)
             let isHost = false;
             let roomId = null;
             let myPeerId = null;
-            let hostConnection = null;   // Para el espectador, la conexión al host
-            let history = [];            // Historial de acciones de dibujo (lo mantiene el host y se envía a nuevos)
+            let hostConnection = null;   // Para el espectador
+            let history = [];            // Historial de acciones de dibujo
 
             // --- Estado de dibujo ---
             let drawing = false;
@@ -425,7 +425,7 @@
                 viewerList.innerHTML = html || '<li>No hay espectadores</li>';
             }
 
-            // --- Para el espectador, mostrar la lista (solo ve al host y a sí mismo? mejor mostrar mensaje) ---
+            // --- Para el espectador, mostrar la lista ---
             function setViewerListForGuest() {
                 viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú (espectador)</li>';
             }
@@ -554,7 +554,7 @@
 
                 peer.on('error', (err) => {
                     if (err.type === 'peer-unavailable') {
-                        alert('No se encontró la sala. Verifica el ID.');
+                        alert('No se encontró la sala. Verifica el código.');
                         leaveRoom();
                     } else {
                         console.error('Error de Peer:', err);
@@ -706,21 +706,21 @@
 
             // --- Eventos de UI ---
             createBtn.addEventListener('click', () => {
-                const roomId = roomInput.value.trim();
-                if (!roomId) {
-                    alert('Ingresa un ID para la sala');
+                const roomCode = roomInput.value.trim();
+                if (!roomCode) {
+                    alert('Ingresa un código para la sala');
                     return;
                 }
-                createRoom(roomId);
+                createRoom(roomCode);
             });
 
             joinBtn.addEventListener('click', () => {
-                const roomId = roomInput.value.trim();
-                if (!roomId) {
-                    alert('Ingresa el ID de la sala a la que quieres unirte');
+                const roomCode = roomInput.value.trim();
+                if (!roomCode) {
+                    alert('Ingresa el código de la sala a la que quieres unirte');
                     return;
                 }
-                joinRoom(roomId);
+                joinRoom(roomCode);
             });
 
             leaveBtn.addEventListener('click', leaveRoom);
@@ -743,7 +743,7 @@
                     // Espectador: enviar al host
                     if (hostConnection && hostConnection.open) {
                         hostConnection.send({ type: 'chat', user, message });
-                        // Lo mostramos localmente también (el host lo reenviará, pero para no esperar, lo mostramos ya)
+                        // Lo mostramos localmente también
                         addChatMessage(user, message);
                     }
                 }
