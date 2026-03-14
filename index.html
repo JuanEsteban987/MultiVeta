@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch de Dibujo - Salas</title>
+    <title>Twitch de Dibujo (sin servidor)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,6 +17,50 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+        }
+        .join-screen {
+            background: #1f1f23;
+            padding: 40px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 500px;
+        }
+        .join-screen h1 {
+            margin-bottom: 30px;
+            color: #bf94ff;
+        }
+        .join-screen .form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .join-screen input {
+            background: #18181b;
+            border: 1px solid #3a3a44;
+            color: white;
+            padding: 12px;
+            border-radius: 20px;
+            font-size: 16px;
+            outline: none;
+        }
+        .join-screen button {
+            background: #9147ff;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .join-screen button:hover {
+            background: #772ce8;
+        }
+        .join-screen .info {
+            color: #adadb8;
+            font-size: 14px;
+            margin-top: 20px;
         }
         .container {
             display: flex;
@@ -43,30 +87,11 @@
             padding: 10px 16px;
             border-radius: 8px;
             align-items: center;
+            justify-content: space-between;
         }
-        .room-bar label {
-            color: #adadb8;
-        }
-        .room-bar input {
-            background: #18181b;
-            border: 1px solid #3a3a44;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
-            outline: none;
-            flex: 1;
-        }
-        .room-bar button {
-            background: #9147ff;
-            border: none;
-            color: white;
+        .role {
+            color: #bf94ff;
             font-weight: bold;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-        .room-bar button:hover {
-            background: #772ce8;
         }
         .canvas-wrapper {
             background: #0e0e10;
@@ -217,21 +242,32 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="join-screen" class="join-screen">
+        <h1>Twitch de Dibujo</h1>
+        <div class="form">
+            <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
+            <div>
+                <button id="create-room-btn">Crear sala (serás streamer)</button>
+                <button id="join-room-btn">Unirse como espectador</button>
+            </div>
+            <p class="info">Si creas una sala, serás el único que puede dibujar. Los espectadores solo ven y chatean.</p>
+        </div>
+    </div>
+
+    <div id="drawing-app" class="container" style="display: none;">
         <div class="stream-area">
             <div class="room-bar">
-                <label>Sala:</label>
-                <input type="text" id="roomInput" placeholder="Nombre de la sala (ej. arte1)" value="general">
-                <button id="joinRoomBtn">Unirse / Cambiar</button>
-                <span id="currentRoomDisplay" style="color:#bf94ff;">general</span>
+                <span>Sala: <strong id="room-display"></strong></span>
+                <span id="role-display" class="role"></span>
+                <button id="leave-room-btn" style="background: #ff4444; padding: 4px 12px;">Salir</button>
             </div>
             <div class="canvas-wrapper">
                 <canvas id="drawCanvas" width="1000" height="600"></canvas>
             </div>
-            <div class="tools">
-                <label>Herramienta:</label>
+            <div class="tools" id="tools-container">
+                <!-- Solo visible para streamer -->
                 <select id="toolSelect">
-                    <option value="pencil" selected>Lápiz</option>
+                    <option value="pencil">Lápiz</option>
                     <option value="rectangle">Rectángulo</option>
                     <option value="circle">Círculo</option>
                     <option value="line">Línea</option>
@@ -241,7 +277,6 @@
                 <input type="color" id="colorPicker" value="#000000">
                 <label>Grosor:</label>
                 <input type="range" id="brushSize" min="1" max="30" value="5">
-                <button id="undoBtn">Deshacer</button>
                 <button id="clearCanvas">Limpiar todo</button>
             </div>
         </div>
@@ -253,7 +288,7 @@
                 </ul>
             </div>
             <div class="messages" id="chatMessages">
-                <div class="message"><span class="user">Sistema:</span> <span class="text">Bienvenido. Elige una sala y dibuja.</span></div>
+                <div class="message"><span class="user">Sistema:</span> <span class="text">Bienvenido. Conéctate a una sala.</span></div>
             </div>
             <div class="chat-input-area">
                 <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
@@ -264,427 +299,490 @@
     </div>
 
     <script>
-        class TwitchDrawingRoom {
-            constructor(canvasId) {
-                this.canvas = document.getElementById(canvasId);
-                this.ctx = this.canvas.getContext('2d');
-                
-                // Estado de dibujo
-                this.drawing = false;
-                this.startX = 0;
-                this.startY = 0;
-                this.lastX = 0;
-                this.lastY = 0;
-                this.currentTool = 'pencil'; // pencil, rectangle, circle, line, text
-                this.color = '#000000';
-                this.brushSize = 5;
+        (function() {
+            // --- Elementos UI ---
+            const joinScreen = document.getElementById('join-screen');
+            const drawingApp = document.getElementById('drawing-app');
+            const roomInput = document.getElementById('room-input');
+            const createBtn = document.getElementById('create-room-btn');
+            const joinBtn = document.getElementById('join-room-btn');
+            const leaveBtn = document.getElementById('leave-room-btn');
+            const roomDisplay = document.getElementById('room-display');
+            const roleDisplay = document.getElementById('role-display');
+            const toolsContainer = document.getElementById('tools-container');
+            const canvas = document.getElementById('drawCanvas');
+            const ctx = canvas.getContext('2d');
+            const colorPicker = document.getElementById('colorPicker');
+            const brushSizeInput = document.getElementById('brushSize');
+            const toolSelect = document.getElementById('toolSelect');
+            const clearBtn = document.getElementById('clearCanvas');
+            const viewerList = document.getElementById('viewerList');
+            const chatMessages = document.getElementById('chatMessages');
+            const usernameInput = document.getElementById('usernameInput');
+            const messageInput = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendMessage');
 
-                // Historial de acciones para deshacer y sincronización
-                this.actions = []; // cada acción: {type, ...}
-                this.undoStack = []; // pila para deshacer (se maneja con índices, pero simplificaremos)
+            // --- Estado local ---
+            let currentRoom = null;
+            let isStreamer = false;
+            let myId = 'user_' + Math.random().toString(36).substr(2, 8); // ID único de esta pestaña
+            let channel = null;
+            let viewers = new Set(); // IDs de viewers (incluido streamer? no, solo viewers)
+            let streamerId = null; // ID del streamer actual
+            let drawing = false;
+            let startX, startY, lastX, lastY;
+            let history = []; // historial de acciones (solo para streamer, pero todos lo mantienen por si acaso)
 
-                // Elementos UI
-                this.roomInput = document.getElementById('roomInput');
-                this.joinBtn = document.getElementById('joinRoomBtn');
-                this.currentRoomSpan = document.getElementById('currentRoomDisplay');
-                this.toolSelect = document.getElementById('toolSelect');
-                this.colorPicker = document.getElementById('colorPicker');
-                this.brushSizeInput = document.getElementById('brushSize');
-                this.undoBtn = document.getElementById('undoBtn');
-                this.clearBtn = document.getElementById('clearCanvas');
-                this.chatMessages = document.getElementById('chatMessages');
-                this.viewerList = document.getElementById('viewerList');
-                this.usernameInput = document.getElementById('usernameInput');
-                this.messageInput = document.getElementById('messageInput');
-                this.sendBtn = document.getElementById('sendMessage');
+            // Configuración del canvas
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = colorPicker.value;
+            ctx.fillStyle = colorPicker.value;
+            ctx.lineWidth = brushSizeInput.value;
+            ctx.font = '16px Arial';
 
-                // Variables de sala
-                this.roomId = 'general';
-                this.viewerId = 'viewer_' + Math.random().toString(36).substr(2, 8);
-                this.viewers = new Set(); // IDs en la sala actual
-                this.channel = null; // BroadcastChannel actual
-
-                // Inicializar configuración del canvas
-                this.ctx.lineCap = 'round';
-                this.ctx.lineJoin = 'round';
-                this.ctx.strokeStyle = this.color;
-                this.ctx.fillStyle = this.color;
-                this.ctx.lineWidth = this.brushSize;
-                this.ctx.font = '16px Arial';
-
-                // Eventos de dibujo
-                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
-                this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
-                this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
-                this.canvas.addEventListener('mouseout', this.onMouseOut.bind(this));
-
-                // Eventos UI
-                this.toolSelect.addEventListener('change', (e) => { this.currentTool = e.target.value; });
-                this.colorPicker.addEventListener('input', (e) => { this.color = e.target.value; });
-                this.brushSizeInput.addEventListener('input', (e) => { this.brushSize = parseInt(e.target.value); });
-                this.undoBtn.addEventListener('click', () => this.undo());
-                this.clearBtn.addEventListener('click', () => this.clearAll());
-                this.joinBtn.addEventListener('click', () => this.joinRoom(this.roomInput.value.trim() || 'general'));
-                this.sendBtn.addEventListener('click', () => this.sendMessage());
-                this.messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.sendMessage(); });
-
-                // Unirse a la sala inicial
-                this.joinRoom(this.roomId);
-            }
-
-            // Unirse a una nueva sala
-            joinRoom(newRoom) {
-                if (newRoom === this.roomId && this.channel) return; // ya en esa sala
-
-                // Salir de la sala anterior
-                if (this.channel) {
-                    this.broadcastAction({ type: 'viewer_leave', id: this.viewerId });
-                    this.channel.close();
+            // --- Funciones de dibujo ---
+            function drawShape(action) {
+                ctx.save();
+                ctx.strokeStyle = action.color;
+                ctx.fillStyle = action.color;
+                ctx.lineWidth = action.size;
+                ctx.beginPath();
+                if (action.shape === 'rectangle') {
+                    ctx.rect(action.x, action.y, action.x2 - action.x, action.y2 - action.y);
+                    ctx.stroke();
+                } else if (action.shape === 'circle') {
+                    const radius = Math.sqrt((action.x2 - action.x) ** 2 + (action.y2 - action.y) ** 2);
+                    ctx.arc(action.x, action.y, radius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                } else if (action.shape === 'line') {
+                    ctx.moveTo(action.x, action.y);
+                    ctx.lineTo(action.x2, action.y2);
+                    ctx.stroke();
                 }
-
-                this.roomId = newRoom;
-                this.currentRoomSpan.textContent = this.roomId;
-                this.actions = []; // limpiar historial
-                this.viewers.clear();
-                this.updateViewerList();
-
-                // Limpiar canvas local
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-                // Crear nuevo canal Broadcast para esta sala
-                this.channel = new BroadcastChannel('twitch_draw_' + this.roomId);
-                this.channel.onmessage = (e) => this.handleBroadcast(e.data);
-
-                // Anunciar llegada
-                this.broadcastAction({ type: 'viewer_join', id: this.viewerId });
-
-                // Solicitar historial a otros en la sala
-                this.broadcastAction({ type: 'request_sync', requester: this.viewerId });
+                ctx.restore();
             }
 
-            // Manejar mensajes del canal
-            handleBroadcast(data) {
-                switch (data.type) {
-                    // Dibujo
-                    case 'draw_start':
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(data.x, data.y);
-                        this.ctx.strokeStyle = data.color;
-                        this.ctx.lineWidth = data.size;
-                        break;
-                    case 'draw':
-                        this.ctx.strokeStyle = data.color;
-                        this.ctx.lineWidth = data.size;
-                        this.ctx.lineTo(data.x, data.y);
-                        this.ctx.stroke();
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(data.x, data.y);
-                        break;
-                    case 'draw_end':
-                        this.ctx.beginPath();
-                        break;
+            function drawText(action) {
+                ctx.save();
+                ctx.fillStyle = action.color;
+                ctx.font = `${action.size * 3}px Arial`;
+                ctx.fillText(action.text, action.x, action.y);
+                ctx.restore();
+            }
 
-                    // Formas
-                    case 'shape':
-                        this.drawShape(data.shape, data.x, data.y, data.x2, data.y2, data.color, data.size);
-                        break;
-                    case 'text':
-                        this.drawText(data.text, data.x, data.y, data.color, data.size);
-                        break;
-                    case 'clear':
-                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                        break;
-                    case 'undo':
-                        // Deshacer: necesitamos reconstruir el canvas desde el historial
-                        // Pero aquí simplemente replicamos la acción de deshacer localmente
-                        // Para mantener consistencia, cada cliente debe gestionar su propio historial
-                        // y al recibir 'undo', cada uno elimina su última acción y redibuja.
-                        // Esto es complejo de sincronizar; para simplificar, deshacer solo afecta localmente.
-                        // En su lugar, mejor implementaremos deshacer como una acción de "eliminar última acción"
-                        // y la broadcastiamos para que todos la apliquen.
-                        // Pero para no complicar, aquí deshacer será local (cada uno su propio deshacer).
-                        // Si quieres deshacer colaborativo, necesitarías un historial compartido.
-                        // Lo dejaremos como acción local, y no se broadcasta.
-                        break;
+            function drawStart(action) {
+                ctx.beginPath();
+                ctx.moveTo(action.x, action.y);
+                ctx.strokeStyle = action.color;
+                ctx.lineWidth = action.size;
+            }
 
-                    // Sincronización
-                    case 'request_sync':
-                        if (data.requester !== this.viewerId && this.actions.length > 0) {
-                            // Enviar historial al solicitante
-                            this.broadcastAction({ type: 'sync_actions', actions: this.actions, target: data.requester });
-                        }
-                        break;
-                    case 'sync_actions':
-                        if (data.target === this.viewerId) {
-                            // Recibir historial y aplicarlo
-                            this.actions = data.actions;
-                            this.redrawFromActions();
-                        }
-                        break;
+            function drawMove(action) {
+                ctx.strokeStyle = action.color;
+                ctx.lineWidth = action.size;
+                ctx.lineTo(action.x, action.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(action.x, action.y);
+            }
 
-                    // Chat
-                    case 'chat':
-                        this.addMessage(data.user, data.text);
-                        break;
+            function drawEnd() {
+                ctx.beginPath();
+            }
 
-                    // Espectadores
-                    case 'viewer_join':
-                        this.viewers.add(data.id);
-                        this.updateViewerList();
-                        break;
-                    case 'viewer_leave':
-                        this.viewers.delete(data.id);
-                        this.updateViewerList();
-                        break;
+            function applyAction(action) {
+                switch (action.type) {
+                    case 'draw_start': drawStart(action); break;
+                    case 'draw': drawMove(action); break;
+                    case 'draw_end': drawEnd(); break;
+                    case 'shape': drawShape(action); break;
+                    case 'text': drawText(action); break;
+                    case 'clear': ctx.clearRect(0, 0, canvas.width, canvas.height); break;
                 }
             }
 
-            // Enviar acción por broadcast
-            broadcastAction(action) {
-                if (this.channel) {
-                    this.channel.postMessage(action);
+            // --- Cargar historial desde localStorage ---
+            function loadHistoryFromStorage(room) {
+                const stored = localStorage.getItem(`history_${room}`);
+                if (stored) {
+                    try {
+                        history = JSON.parse(stored);
+                        // Redibujar
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        history.forEach(action => applyAction(action));
+                    } catch (e) {
+                        history = [];
+                    }
+                } else {
+                    history = [];
                 }
             }
 
-            // Añadir acción al historial local
-            addAction(action) {
-                this.actions.push(action);
-                // Limitar tamaño del historial (opcional)
-                if (this.actions.length > 500) this.actions.shift();
+            // --- Guardar historial en localStorage (solo streamer) ---
+            function saveHistoryToStorage() {
+                if (!currentRoom) return;
+                localStorage.setItem(`history_${currentRoom}`, JSON.stringify(history));
             }
 
-            // Redibujar todo el canvas desde el historial
-            redrawFromActions() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                for (let action of this.actions) {
-                    switch (action.type) {
-                        case 'draw_start':
-                            this.ctx.beginPath();
-                            this.ctx.moveTo(action.x, action.y);
-                            this.ctx.strokeStyle = action.color;
-                            this.ctx.lineWidth = action.size;
+            // --- Añadir acción al historial y guardar ---
+            function addAction(action) {
+                history.push(action);
+                saveHistoryToStorage();
+            }
+
+            // --- Enviar mensaje por BroadcastChannel ---
+            function broadcast(message) {
+                if (channel) {
+                    channel.postMessage(message);
+                }
+            }
+
+            // --- Unirse a una sala ---
+            function joinRoom(roomId, asStreamer) {
+                if (channel) {
+                    // Salir de la sala anterior
+                    broadcast({ type: 'leave', userId: myId, role: isStreamer ? 'streamer' : 'viewer' });
+                    channel.close();
+                }
+
+                currentRoom = roomId;
+                roomDisplay.textContent = roomId;
+                joinScreen.style.display = 'none';
+                drawingApp.style.display = 'flex';
+                toolsContainer.style.display = asStreamer ? 'flex' : 'none'; // Ocultar herramientas si no es streamer
+
+                // Crear nuevo canal
+                channel = new BroadcastChannel('twitch_draw_' + roomId);
+
+                // Cargar historial (todos lo cargan, pero solo el streamer puede modificarlo)
+                loadHistoryFromStorage(roomId);
+
+                // Escuchar mensajes
+                channel.onmessage = (e) => {
+                    const data = e.data;
+                    // console.log('Recibido:', data);
+                    switch (data.type) {
+                        case 'claim':
+                            // Alguien quiere ser streamer
+                            if (isStreamer) {
+                                // Si yo soy streamer, respondo que ya existe
+                                broadcast({ type: 'streamer-exists', streamerId: myId, target: data.userId });
+                            } else if (streamerId === null) {
+                                // Si no hay streamer, podríamos aceptar, pero mejor esperar claim-response
+                            }
                             break;
-                        case 'draw':
-                            this.ctx.strokeStyle = action.color;
-                            this.ctx.lineWidth = action.size;
-                            this.ctx.lineTo(action.x, action.y);
-                            this.ctx.stroke();
-                            this.ctx.beginPath();
-                            this.ctx.moveTo(action.x, action.y);
+                        case 'streamer-exists':
+                            if (data.target === myId && asStreamer) {
+                                // Intenté ser streamer pero ya hay uno, me convierto en espectador
+                                alert('Ya hay un streamer en esta sala. Serás espectador.');
+                                isStreamer = false;
+                                streamerId = data.streamerId;
+                                roleDisplay.textContent = ' (Espectador)';
+                                toolsContainer.style.display = 'none';
+                                // Enviar join como viewer
+                                broadcast({ type: 'viewer-join', userId: myId });
+                            }
                             break;
-                        case 'draw_end':
-                            this.ctx.beginPath();
+                        case 'viewer-join':
+                            viewers.add(data.userId);
+                            updateViewerList();
                             break;
-                        case 'shape':
-                            this.drawShape(action.shape, action.x, action.y, action.x2, action.y2, action.color, action.size);
+                        case 'viewer-leave':
+                            viewers.delete(data.userId);
+                            updateViewerList();
                             break;
-                        case 'text':
-                            this.drawText(action.text, action.x, action.y, action.color, action.size);
+                        case 'streamer-left':
+                            if (data.streamerId === streamerId) {
+                                streamerId = null;
+                                roleDisplay.textContent = ' (Sin streamer)';
+                                if (isStreamer) {
+                                    // Esto no debería pasar, pero por si acaso
+                                } else {
+                                    alert('El streamer ha abandonado la sala. Espera a que alguien tome el rol.');
+                                }
+                                updateViewerList();
+                            }
+                            break;
+                        case 'chat':
+                            addChatMessage(data.user, data.message);
+                            break;
+                        case 'draw-action':
+                            // Solo los no-streamer aplican las acciones (el streamer ya las aplicó localmente)
+                            if (!isStreamer) {
+                                applyAction(data.action);
+                            }
                             break;
                         case 'clear':
-                            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                            if (!isStreamer) {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            }
+                            break;
+                        case 'sync-request':
+                            // Alguien pide el historial (nuevo espectador)
+                            if (isStreamer) {
+                                broadcast({ type: 'sync-history', history: history, target: data.userId });
+                            }
+                            break;
+                        case 'sync-history':
+                            if (data.target === myId) {
+                                // Recibir historial y redibujar
+                                history = data.history;
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                history.forEach(action => applyAction(action));
+                            }
                             break;
                     }
+                };
+
+                if (asStreamer) {
+                    // Intentar ser streamer: enviar claim
+                    isStreamer = true;
+                    roleDisplay.textContent = ' (Streamer)';
+                    // Preguntar si hay streamer
+                    broadcast({ type: 'claim', userId: myId });
+                    // Esperar 1 segundo para ver si alguien responde
+                    setTimeout(() => {
+                        if (isStreamer) {
+                            // Si después de 1s sigo siendo streamer, me establezco
+                            streamerId = myId;
+                            // Anunciar que soy streamer (opcional)
+                            broadcast({ type: 'streamer-assigned', streamerId: myId });
+                            // Enviar mi propia presencia como viewer? No, soy streamer.
+                            // Pero para la lista, incluiré al streamer aparte.
+                        }
+                    }, 1000);
+                } else {
+                    // Espectador: pedir historial
+                    isStreamer = false;
+                    roleDisplay.textContent = ' (Espectador)';
+                    broadcast({ type: 'viewer-join', userId: myId });
+                    // Solicitar historial al streamer
+                    broadcast({ type: 'sync-request', userId: myId });
                 }
-            }
 
-            // Dibujar una forma (rectángulo, círculo, línea)
-            drawShape(shape, x1, y1, x2, y2, color, size) {
-                this.ctx.save();
-                this.ctx.strokeStyle = color;
-                this.ctx.fillStyle = color;
-                this.ctx.lineWidth = size;
-                this.ctx.beginPath();
-                if (shape === 'rectangle') {
-                    this.ctx.rect(x1, y1, x2 - x1, y2 - y1);
-                    this.ctx.stroke();
-                } else if (shape === 'circle') {
-                    const radius = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-                    this.ctx.arc(x1, y1, radius, 0, 2 * Math.PI);
-                    this.ctx.stroke();
-                } else if (shape === 'line') {
-                    this.ctx.moveTo(x1, y1);
-                    this.ctx.lineTo(x2, y2);
-                    this.ctx.stroke();
+                // Actualizar lista de viewers (al principio solo nosotros si somos viewer)
+                if (!asStreamer) {
+                    viewers.clear();
+                    viewers.add(myId); // a nosotros mismos nos consideramos viewer? Sí, para la lista.
                 }
-                this.ctx.restore();
+                updateViewerList();
             }
 
-            // Dibujar texto
-            drawText(text, x, y, color, size) {
-                this.ctx.save();
-                this.ctx.fillStyle = color;
-                this.ctx.font = `${size * 3}px Arial`; // tamaño proporcional
-                this.ctx.fillText(text, x, y);
-                this.ctx.restore();
+            // --- Salir de la sala ---
+            function leaveRoom() {
+                if (channel) {
+                    broadcast({ type: 'leave', userId: myId, role: isStreamer ? 'streamer' : 'viewer' });
+                    if (isStreamer) {
+                        // Anunciar que el streamer se va
+                        broadcast({ type: 'streamer-left', streamerId: myId });
+                        // Limpiar localStorage? No, conservamos historial.
+                    }
+                    channel.close();
+                    channel = null;
+                }
+                currentRoom = null;
+                isStreamer = false;
+                joinScreen.style.display = 'block';
+                drawingApp.style.display = 'none';
+                viewers.clear();
+                streamerId = null;
             }
 
-            // Eventos del ratón para dibujo
-            onMouseDown(e) {
-                const pos = this.getMousePos(e);
-                this.startX = pos.x;
-                this.startY = pos.y;
-                this.lastX = pos.x;
-                this.lastY = pos.y;
+            // --- Actualizar lista de espectadores en UI ---
+            function updateViewerList() {
+                let html = '';
+                if (streamerId) {
+                    html += `<li>🟣 Streamer (${streamerId.substr(0,4)}...)</li>`;
+                }
+                viewers.forEach(id => {
+                    if (id !== streamerId) {
+                        html += `<li>👤 Espectador (${id.substr(0,4)}...)</li>`;
+                    }
+                });
+                viewerList.innerHTML = html || '<li>No hay espectadores</li>';
+            }
 
-                if (this.currentTool === 'pencil') {
-                    this.drawing = true;
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(this.lastX, this.lastY);
-                    this.broadcastAction({
+            // --- Chat ---
+            function addChatMessage(user, message) {
+                const div = document.createElement('div');
+                div.className = 'message';
+                div.innerHTML = `<span class="user">${escapeHtml(user)}:</span> <span class="text">${escapeHtml(message)}</span>`;
+                chatMessages.appendChild(div);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            function sendChatMessage() {
+                const user = usernameInput.value.trim() || 'Anon';
+                const message = messageInput.value.trim();
+                if (!message || !currentRoom) return;
+                broadcast({ type: 'chat', user, message });
+                addChatMessage(user, message); // lo mostramos localmente
+                messageInput.value = '';
+            }
+
+            // --- Eventos de dibujo (solo streamer) ---
+            canvas.addEventListener('mousedown', (e) => {
+                if (!isStreamer) return;
+                const pos = getMousePos(e);
+                startX = pos.x;
+                startY = pos.y;
+                lastX = pos.x;
+                lastY = pos.y;
+
+                if (toolSelect.value === 'pencil') {
+                    drawing = true;
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    const action = {
                         type: 'draw_start',
-                        x: this.lastX,
-                        y: this.lastY,
-                        color: this.color,
-                        size: this.brushSize
-                    });
-                } else if (this.currentTool === 'text') {
-                    // Solicitar texto al usuario
+                        x: lastX,
+                        y: lastY,
+                        color: colorPicker.value,
+                        size: brushSizeInput.value
+                    };
+                    addAction(action);
+                    broadcast({ type: 'draw-action', action });
+                } else if (toolSelect.value === 'text') {
                     const text = prompt('Escribe el texto:');
                     if (text) {
                         const action = {
                             type: 'text',
                             text: text,
-                            x: this.startX,
-                            y: this.startY,
-                            color: this.color,
-                            size: this.brushSize
+                            x: startX,
+                            y: startY,
+                            color: colorPicker.value,
+                            size: brushSizeInput.value
                         };
-                        this.drawText(text, this.startX, this.startY, this.color, this.brushSize);
-                        this.addAction(action);
-                        this.broadcastAction(action);
+                        drawText(action);
+                        addAction(action);
+                        broadcast({ type: 'draw-action', action });
                     }
                 }
-            }
+            });
 
-            onMouseMove(e) {
-                if (!this.drawing && this.currentTool !== 'pencil') return;
-                const pos = this.getMousePos(e);
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isStreamer || !drawing) return;
+                const pos = getMousePos(e);
                 const x = pos.x;
                 const y = pos.y;
 
-                if (this.currentTool === 'pencil' && this.drawing) {
-                    // Dibujar línea
-                    this.ctx.strokeStyle = this.color;
-                    this.ctx.lineWidth = this.brushSize;
-                    this.ctx.lineTo(x, y);
-                    this.ctx.stroke();
-                    this.ctx.beginPath();
-                    this.ctx.moveTo(x, y);
+                if (toolSelect.value === 'pencil') {
+                    ctx.strokeStyle = colorPicker.value;
+                    ctx.lineWidth = brushSizeInput.value;
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
 
-                    // Broadcast
-                    this.broadcastAction({
+                    const action = {
                         type: 'draw',
                         x: x,
                         y: y,
-                        color: this.color,
-                        size: this.brushSize
-                    });
+                        color: colorPicker.value,
+                        size: brushSizeInput.value
+                    };
+                    addAction(action);
+                    broadcast({ type: 'draw-action', action });
 
-                    this.lastX = x;
-                    this.lastY = y;
+                    lastX = x;
+                    lastY = y;
                 }
-            }
+            });
 
-            onMouseUp(e) {
-                if (this.currentTool === 'pencil' && this.drawing) {
-                    this.drawing = false;
-                    this.ctx.beginPath();
-                    this.broadcastAction({ type: 'draw_end' });
-                } else if (this.currentTool !== 'pencil' && this.currentTool !== 'text') {
-                    // Forma: rectángulo, círculo, línea
-                    const pos = this.getMousePos(e);
-                    const x2 = pos.x;
-                    const y2 = pos.y;
+            canvas.addEventListener('mouseup', (e) => {
+                if (!isStreamer) return;
+                if (toolSelect.value === 'pencil' && drawing) {
+                    drawing = false;
+                    ctx.beginPath();
+                    const action = { type: 'draw_end' };
+                    addAction(action);
+                    broadcast({ type: 'draw-action', action });
+                } else if (toolSelect.value !== 'pencil' && toolSelect.value !== 'text') {
+                    // Forma
+                    const pos = getMousePos(e);
                     const action = {
                         type: 'shape',
-                        shape: this.currentTool,
-                        x: this.startX,
-                        y: this.startY,
-                        x2: x2,
-                        y2: y2,
-                        color: this.color,
-                        size: this.brushSize
+                        shape: toolSelect.value,
+                        x: startX,
+                        y: startY,
+                        x2: pos.x,
+                        y2: pos.y,
+                        color: colorPicker.value,
+                        size: brushSizeInput.value
                     };
-                    this.drawShape(this.currentTool, this.startX, this.startY, x2, y2, this.color, this.brushSize);
-                    this.addAction(action);
-                    this.broadcastAction(action);
+                    drawShape(action);
+                    addAction(action);
+                    broadcast({ type: 'draw-action', action });
                 }
-            }
+            });
 
-            onMouseOut() {
-                if (this.drawing) {
-                    this.drawing = false;
-                    this.ctx.beginPath();
-                    this.broadcastAction({ type: 'draw_end' });
+            canvas.addEventListener('mouseout', () => {
+                if (drawing) {
+                    drawing = false;
+                    ctx.beginPath();
+                    const action = { type: 'draw_end' };
+                    addAction(action);
+                    broadcast({ type: 'draw-action', action });
                 }
-            }
+            });
 
-            getMousePos(e) {
-                const rect = this.canvas.getBoundingClientRect();
-                const scaleX = this.canvas.width / rect.width;
-                const scaleY = this.canvas.height / rect.height;
+            function getMousePos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
                 return {
                     x: (e.clientX - rect.left) * scaleX,
                     y: (e.clientY - rect.top) * scaleY
                 };
             }
 
-            // Deshacer local (no broadcast)
-            undo() {
-                if (this.actions.length === 0) return;
-                // Eliminar la última acción y redibujar
-                this.actions.pop();
-                this.redrawFromActions();
-                // Nota: No se envía broadcast, cada usuario gestiona su propio deshacer.
-                // Para deshacer colaborativo, necesitaríamos un sistema de historial compartido.
-            }
+            // --- Limpiar canvas (solo streamer) ---
+            clearBtn.addEventListener('click', () => {
+                if (!isStreamer) return;
+                if (confirm('¿Limpiar todo el canvas?')) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    history = [];
+                    saveHistoryToStorage();
+                    broadcast({ type: 'clear' });
+                }
+            });
 
-            // Limpiar todo
-            clearAll() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.actions = [];
-                this.broadcastAction({ type: 'clear' });
-            }
+            // --- Eventos de UI ---
+            createBtn.addEventListener('click', () => {
+                const roomId = roomInput.value.trim() || 'sala' + Math.random().toString(36).substring(2, 6);
+                joinRoom(roomId, true);
+            });
 
-            // Chat
-            sendMessage() {
-                const username = this.usernameInput.value.trim() || 'Anon';
-                const text = this.messageInput.value.trim();
-                if (!text) return;
-                this.broadcastAction({ type: 'chat', user: username, text: text });
-                this.messageInput.value = '';
-            }
+            joinBtn.addEventListener('click', () => {
+                const roomId = roomInput.value.trim();
+                if (!roomId) return alert('Ingresa un código de sala');
+                joinRoom(roomId, false);
+            });
 
-            addMessage(user, text) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message';
-                messageDiv.innerHTML = `<span class="user">${this.escapeHtml(user)}:</span> <span class="text">${this.escapeHtml(text)}</span>`;
-                this.chatMessages.appendChild(messageDiv);
-                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-            }
+            leaveBtn.addEventListener('click', leaveRoom);
 
-            escapeHtml(str) {
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            }
+            sendBtn.addEventListener('click', sendChatMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
 
-            // Lista de espectadores
-            updateViewerList() {
-                const count = this.viewers.size;
-                const listHtml = Array.from(this.viewers).map(id => {
-                    const shortId = id.substr(0, 6) + '...';
-                    return `<li>👤 ${shortId}</li>`;
-                }).join('');
-                this.viewerList.innerHTML = `<li>${count} espectador(es) conectado(s)</li>` + listHtml;
-            }
-        }
-
-        // Inicializar la aplicación
-        document.addEventListener('DOMContentLoaded', () => {
-            window.app = new TwitchDrawingRoom('drawCanvas');
-        });
+            // Al cerrar la pestaña, notificar salida
+            window.addEventListener('beforeunload', () => {
+                if (channel && currentRoom) {
+                    broadcast({ type: 'leave', userId: myId, role: isStreamer ? 'streamer' : 'viewer' });
+                    if (isStreamer) {
+                        broadcast({ type: 'streamer-left', streamerId: myId });
+                    }
+                }
+            });
+        })();
     </script>
 </body>
 </html>
