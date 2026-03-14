@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch de Dibujo P2P</title>
+    <title>Twitch P2P - Juegos y Dibujo</title>
     <style>
         * {
             box-sizing: border-box;
@@ -71,6 +71,21 @@
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        /* Código de sala en esquina */
+        .room-code-corner {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: #bf94ff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+            border: 1px solid #9147ff;
         }
         .stream-area {
             flex: 3;
@@ -78,20 +93,6 @@
             flex-direction: column;
             background: #18181b;
             padding: 16px;
-            position: relative; /* Para posicionar el código de sala */
-        }
-        .room-code-badge {
-            position: absolute;
-            top: 10px;
-            right: 20px;
-            background: #9147ff;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            z-index: 10;
         }
         .room-bar {
             display: flex;
@@ -107,6 +108,31 @@
             color: #bf94ff;
             font-weight: bold;
         }
+        .game-selector {
+            display: flex;
+            gap: 8px;
+            background: #1f1f23;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .game-btn {
+            background: #3a3a44;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .game-btn:hover {
+            background: #9147ff;
+        }
+        .game-btn.active {
+            background: #9147ff;
+            font-weight: bold;
+        }
         .canvas-wrapper {
             background: #0e0e10;
             border-radius: 8px;
@@ -116,7 +142,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-top: 40px; /* Espacio para el badge */
+            position: relative;
         }
         canvas {
             background: white;
@@ -125,6 +151,22 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
             max-width: 100%;
             max-height: 100%;
+        }
+        /* Overlay de juego (simulación) */
+        .game-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            z-index: 5;
         }
         .tools {
             margin-top: 16px;
@@ -222,15 +264,21 @@
         }
         .message .text {
             color: #dedee3;
+            word-break: break-word;
         }
         .chat-input-area {
             padding: 16px;
             border-top: 1px solid #303035;
             display: flex;
+            flex-direction: column;
             gap: 8px;
             background: #26262c;
         }
-        .chat-input-area input {
+        .chat-row {
+            display: flex;
+            gap: 8px;
+        }
+        .chat-row input {
             flex: 1;
             background: #18181b;
             border: 1px solid #3a3a44;
@@ -239,10 +287,10 @@
             border-radius: 20px;
             outline: none;
         }
-        .chat-input-area input::placeholder {
+        .chat-row input::placeholder {
             color: #5a5a66;
         }
-        .chat-input-area button {
+        .chat-row button {
             background: #9147ff;
             border: none;
             color: white;
@@ -251,37 +299,81 @@
             border-radius: 20px;
             cursor: pointer;
         }
-        .chat-input-area button:hover {
+        .chat-row button:hover {
             background: #772ce8;
         }
+        .emoji-panel {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .emoji-btn {
+            background: #3a3a44;
+            border: none;
+            color: white;
+            font-size: 20px;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .emoji-btn:hover {
+            background: #9147ff;
+        }
+        .donation-btn {
+            background: #ff4444;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-left: auto;
+        }
+        .donation-btn:hover {
+            background: #cc0000;
+        }
     </style>
-    <!-- Incluir PeerJS desde CDN -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <div id="join-screen" class="join-screen">
-        <h1>Twitch de Dibujo P2P</h1>
+        <h1>Twitch P2P - Juegos y Dibujo</h1>
         <div class="form">
             <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
             <div>
                 <button id="create-room-btn">Crear sala (serás host)</button>
                 <button id="join-room-btn">Unirse como espectador</button>
             </div>
-            <p class="info">El host dibuja, los espectadores ven y chatean. Conexión directa P2P.</p>
+            <p class="info">El host dibuja y elige el juego. Los espectadores ven y chatean. Conexión directa P2P.</p>
         </div>
     </div>
 
     <div id="drawing-app" class="container" style="display: none;">
+        <!-- Código de sala en esquina -->
+        <div id="room-code-corner" class="room-code-corner">Sala: </div>
+
         <div class="stream-area">
-            <div class="room-code-badge" id="roomCodeBadge">Código: sala1</div>
             <div class="room-bar">
-                <span>Sala: <strong id="room-display"></strong></span>
+                <span>Bienvenido</span>
                 <span id="role-display" class="role"></span>
                 <button id="leave-room-btn" style="background: #ff4444; padding: 4px 12px;">Salir</button>
             </div>
+
+            <!-- Selector de juegos (solo visible para host, pero lo mostramos a todos, aunque solo host puede cambiar) -->
+            <div class="game-selector" id="game-selector">
+                <button class="game-btn" data-game="football">⚽ Fútbol</button>
+                <button class="game-btn" data-game="pokemon">🐱 Pokémon</button>
+                <button class="game-btn" data-game="paint">🎨 Pintar</button>
+                <button class="game-btn" data-game="parkour">🏃 Parkour</button>
+            </div>
+
             <div class="canvas-wrapper">
                 <canvas id="drawCanvas" width="1000" height="600"></canvas>
+                <div id="game-overlay" class="game-overlay">⚽ Modo Fútbol</div>
             </div>
+
             <div class="tools" id="tools-container">
                 <!-- Solo visible para host -->
                 <select id="toolSelect">
@@ -298,6 +390,7 @@
                 <button id="clearCanvas">Limpiar todo</button>
             </div>
         </div>
+
         <div class="chat-panel">
             <div class="viewers">
                 <h3>Espectadores 👁️</h3>
@@ -309,9 +402,22 @@
                 <div class="message"><span class="user">Sistema:</span> <span class="text">Bienvenido. Conéctate a una sala.</span></div>
             </div>
             <div class="chat-input-area">
-                <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
-                <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
-                <button id="sendMessage">Enviar</button>
+                <div class="chat-row">
+                    <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
+                    <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
+                    <button id="sendMessage">Enviar</button>
+                    <button id="donationBtn" class="donation-btn">💜 Donar</button>
+                </div>
+                <div class="emoji-panel">
+                    <button class="emoji-btn" data-emoji="😀">😀</button>
+                    <button class="emoji-btn" data-emoji="😂">😂</button>
+                    <button class="emoji-btn" data-emoji="❤️">❤️</button>
+                    <button class="emoji-btn" data-emoji="👍">👍</button>
+                    <button class="emoji-btn" data-emoji="🎨">🎨</button>
+                    <button class="emoji-btn" data-emoji="⚽">⚽</button>
+                    <button class="emoji-btn" data-emoji="🐱">🐱</button>
+                    <button class="emoji-btn" data-emoji="🏃">🏃</button>
+                </div>
             </div>
         </div>
     </div>
@@ -325,8 +431,6 @@
             const createBtn = document.getElementById('create-room-btn');
             const joinBtn = document.getElementById('join-room-btn');
             const leaveBtn = document.getElementById('leave-room-btn');
-            const roomDisplay = document.getElementById('room-display');
-            const roomCodeBadge = document.getElementById('roomCodeBadge');
             const roleDisplay = document.getElementById('role-display');
             const toolsContainer = document.getElementById('tools-container');
             const canvas = document.getElementById('drawCanvas');
@@ -340,15 +444,21 @@
             const usernameInput = document.getElementById('usernameInput');
             const messageInput = document.getElementById('messageInput');
             const sendBtn = document.getElementById('sendMessage');
+            const donationBtn = document.getElementById('donationBtn');
+            const roomCodeCorner = document.getElementById('room-code-corner');
+            const gameOverlay = document.getElementById('game-overlay');
+            const gameSelector = document.getElementById('game-selector');
+            const gameBtns = document.querySelectorAll('.game-btn');
 
             // --- Estado P2P ---
-            let peer = null;            // Instancia de Peer (solo host o espectador)
-            let connections = new Map(); // Mapa de conexiones (peerId -> DataConnection) (solo host)
+            let peer = null;
+            let connections = new Map(); // solo host
             let isHost = false;
             let roomId = null;
             let myPeerId = null;
-            let hostConnection = null;   // Para el espectador, la conexión al host
-            let history = [];            // Historial de acciones de dibujo (lo mantiene el host y se envía a nuevos)
+            let hostConnection = null; // para espectador
+            let history = []; // historial de acciones de dibujo
+            let currentGame = 'paint'; // juego por defecto
 
             // --- Estado de dibujo ---
             let drawing = false;
@@ -423,6 +533,19 @@
                 }
             }
 
+            // --- Cambiar juego ---
+            function setGame(game) {
+                currentGame = game;
+                let emoji = '🎨';
+                let text = 'Pintar';
+                if (game === 'football') { emoji = '⚽'; text = 'Fútbol'; }
+                else if (game === 'pokemon') { emoji = '🐱'; text = 'Pokémon'; }
+                else if (game === 'parkour') { emoji = '🏃'; text = 'Parkour'; }
+                gameOverlay.innerHTML = `${emoji} Modo ${text}`;
+                // Aquí podrías cambiar el fondo del canvas o dibujar algo, pero lo dejamos como overlay
+                // Por simplicidad, solo cambiamos el overlay.
+            }
+
             // --- Funciones de red ---
             function broadcastToViewers(message) {
                 connections.forEach(conn => {
@@ -442,16 +565,20 @@
                 viewerList.innerHTML = html || '<li>No hay espectadores</li>';
             }
 
-            // --- Para el espectador, mostrar la lista (solo ve al host y a sí mismo? mejor mostrar mensaje) ---
+            // --- Para el espectador ---
             function setViewerListForGuest() {
                 viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú (espectador)</li>';
             }
 
             // --- Chat ---
-            function addChatMessage(user, message) {
+            function addChatMessage(user, message, isDonation = false) {
                 const div = document.createElement('div');
                 div.className = 'message';
-                div.innerHTML = `<span class="user">${escapeHtml(user)}:</span> <span class="text">${escapeHtml(message)}</span>`;
+                if (isDonation) {
+                    div.innerHTML = `<span class="user" style="color: #ff79c6;">${escapeHtml(user)} 💜 donó:</span> <span class="text">${escapeHtml(message)}</span>`;
+                } else {
+                    div.innerHTML = `<span class="user">${escapeHtml(user)}:</span> <span class="text">${escapeHtml(message)}</span>`;
+                }
                 chatMessages.appendChild(div);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
@@ -464,16 +591,27 @@
 
             // --- Crear sala como host ---
             function createRoom(roomId) {
-                // Inicializar Peer con ID = roomId
                 peer = new Peer(roomId);
                 myPeerId = roomId;
                 isHost = true;
-                roomDisplay.textContent = roomId;
-                roomCodeBadge.textContent = `Código: ${roomId}`;
+                roomDisplay = roomId;
                 roleDisplay.textContent = ' (Host)';
                 toolsContainer.style.display = 'flex';
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
+                roomCodeCorner.textContent = `Sala: ${roomId}`;
+
+                // Activar selector de juegos (solo host puede cambiar, pero lo mostramos)
+                gameBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const game = btn.dataset.game;
+                        setGame(game);
+                        broadcastToViewers({ type: 'game-change', game: game });
+                        // Marcar activo
+                        gameBtns.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                    });
+                });
 
                 peer.on('open', (id) => {
                     console.log('Host peer abierto con ID:', id);
@@ -485,11 +623,13 @@
                     connections.set(conn.peer, conn);
 
                     conn.on('data', (data) => {
-                        // Recibir datos del espectador (solo chat)
                         if (data.type === 'chat') {
-                            // Reenviar a todos (incluido el host para mostrarlo)
                             addChatMessage(data.user, data.message);
                             broadcastToViewers({ type: 'chat', user: data.user, message: data.message });
+                        } else if (data.type === 'donation') {
+                            // Simular donación
+                            addChatMessage(data.user, `💜 Donó ${data.amount} bits! 💜`, true);
+                            broadcastToViewers({ type: 'donation', user: data.user, amount: data.amount });
                         }
                     });
 
@@ -500,10 +640,10 @@
                         broadcastToViewers({ type: 'system', message: 'Un espectador se ha desconectado.' });
                     });
 
-                    // Enviar historial al nuevo espectador
+                    // Enviar historial y juego actual
                     conn.send({ type: 'history', history: history });
+                    conn.send({ type: 'game-change', game: currentGame });
 
-                    // Notificar a todos
                     updateViewerList();
                     broadcastToViewers({ type: 'system', message: 'Nuevo espectador conectado.' });
                 });
@@ -516,24 +656,32 @@
                         console.error('Error de Peer:', err);
                     }
                 });
+
+                // Juego inicial
+                setGame('paint');
+                document.querySelector('.game-btn[data-game="paint"]').classList.add('active');
             }
 
             // --- Unirse como espectador ---
             function joinRoom(roomId) {
-                // Crear un peer sin ID fijo (aleatorio)
                 peer = new Peer();
                 isHost = false;
-                roomDisplay.textContent = roomId;
-                roomCodeBadge.textContent = `Código: ${roomId}`;
+                roomDisplay = roomId;
                 roleDisplay.textContent = ' (Espectador)';
                 toolsContainer.style.display = 'none';
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
+                roomCodeCorner.textContent = `Sala: ${roomId}`;
+
+                // Deshabilitar selector de juegos para espectador (no puede cambiar)
+                gameBtns.forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = 0.5;
+                });
 
                 peer.on('open', (id) => {
                     myPeerId = id;
                     console.log('Mi ID de espectador:', id);
-                    // Conectar al host
                     const conn = peer.connect(roomId);
                     hostConnection = conn;
 
@@ -545,19 +693,27 @@
 
                     conn.on('data', (data) => {
                         if (data.type === 'history') {
-                            // Recibir historial y dibujar
                             history = data.history;
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
                             history.forEach(action => applyAction(action));
-                            addChatMessage('Sistema', 'Historial cargado. Puedes ver el dibujo.');
+                            addChatMessage('Sistema', 'Historial cargado.');
                         } else if (data.type === 'draw-action') {
                             applyAction(data.action);
                         } else if (data.type === 'clear') {
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
                         } else if (data.type === 'chat') {
                             addChatMessage(data.user, data.message);
+                        } else if (data.type === 'donation') {
+                            addChatMessage(data.user, `💜 Donó ${data.amount} bits! 💜`, true);
                         } else if (data.type === 'system') {
                             addChatMessage('Sistema', data.message);
+                        } else if (data.type === 'game-change') {
+                            setGame(data.game);
+                            // Marcar botón activo (solo visual)
+                            gameBtns.forEach(btn => {
+                                btn.classList.remove('active');
+                                if (btn.dataset.game === data.game) btn.classList.add('active');
+                            });
                         }
                     });
 
@@ -595,6 +751,12 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 joinScreen.style.display = 'block';
                 drawingApp.style.display = 'none';
+                // Rehabilitar botones de juego por si acaso
+                gameBtns.forEach(btn => {
+                    btn.disabled = false;
+                    btn.style.opacity = 1;
+                    btn.classList.remove('active');
+                });
             }
 
             // --- Eventos de dibujo (solo host) ---
@@ -675,7 +837,6 @@
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
                 } else if (toolSelect.value !== 'pencil' && toolSelect.value !== 'text') {
-                    // Forma
                     const pos = getMousePos(e);
                     const action = {
                         type: 'shape',
@@ -744,6 +905,7 @@
 
             leaveBtn.addEventListener('click', leaveRoom);
 
+            // Chat
             sendBtn.addEventListener('click', sendChatMessage);
             messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendChatMessage();
@@ -755,21 +917,44 @@
                 if (!message) return;
 
                 if (isHost) {
-                    // El host envía el mensaje a todos
                     addChatMessage(user, message);
                     broadcastToViewers({ type: 'chat', user, message });
                 } else {
-                    // Espectador: enviar al host
                     if (hostConnection && hostConnection.open) {
                         hostConnection.send({ type: 'chat', user, message });
-                        // Lo mostramos localmente también (el host lo reenviará, pero para no esperar, lo mostramos ya)
                         addChatMessage(user, message);
                     }
                 }
                 messageInput.value = '';
             }
 
-            // Al cerrar la pestaña, limpiar
+            // Emojis
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const emoji = btn.dataset.emoji;
+                    messageInput.value += emoji;
+                    messageInput.focus();
+                });
+            });
+
+            // Donación
+            donationBtn.addEventListener('click', () => {
+                const user = usernameInput.value.trim() || 'Anon';
+                const amount = Math.floor(Math.random() * 1000) + 100; // cantidad aleatoria
+                if (isHost) {
+                    addChatMessage(user, `💜 Donó ${amount} bits! 💜`, true);
+                    broadcastToViewers({ type: 'donation', user, amount });
+                } else {
+                    if (hostConnection && hostConnection.open) {
+                        hostConnection.send({ type: 'donation', user, amount });
+                        addChatMessage(user, `💜 Donó ${amount} bits! 💜`, true);
+                    }
+                }
+            });
+
+            // Selector de juegos (solo host, pero los eventos se asignan al crear sala)
+            // Los eventos ya están dentro de createRoom
+
             window.addEventListener('beforeunload', () => {
                 if (peer) {
                     peer.destroy();
