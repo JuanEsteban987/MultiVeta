@@ -78,6 +78,20 @@
             flex-direction: column;
             background: #18181b;
             padding: 16px;
+            position: relative; /* Para posicionar el código de sala */
+        }
+        .room-code-badge {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background: #9147ff;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 10;
         }
         .room-bar {
             display: flex;
@@ -102,6 +116,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            margin-top: 40px; /* Espacio para el badge */
         }
         canvas {
             background: white;
@@ -247,7 +262,7 @@
     <div id="join-screen" class="join-screen">
         <h1>Twitch de Dibujo P2P</h1>
         <div class="form">
-            <input type="text" id="room-input" placeholder="Código de la sala" value="sala1">
+            <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
             <div>
                 <button id="create-room-btn">Crear sala (serás host)</button>
                 <button id="join-room-btn">Unirse como espectador</button>
@@ -258,6 +273,7 @@
 
     <div id="drawing-app" class="container" style="display: none;">
         <div class="stream-area">
+            <div class="room-code-badge" id="roomCodeBadge">Código: sala1</div>
             <div class="room-bar">
                 <span>Sala: <strong id="room-display"></strong></span>
                 <span id="role-display" class="role"></span>
@@ -310,6 +326,7 @@
             const joinBtn = document.getElementById('join-room-btn');
             const leaveBtn = document.getElementById('leave-room-btn');
             const roomDisplay = document.getElementById('room-display');
+            const roomCodeBadge = document.getElementById('roomCodeBadge');
             const roleDisplay = document.getElementById('role-display');
             const toolsContainer = document.getElementById('tools-container');
             const canvas = document.getElementById('drawCanvas');
@@ -325,13 +342,13 @@
             const sendBtn = document.getElementById('sendMessage');
 
             // --- Estado P2P ---
-            let peer = null;            // Instancia de Peer
-            let connections = new Map(); // Mapa de conexiones (solo host)
+            let peer = null;            // Instancia de Peer (solo host o espectador)
+            let connections = new Map(); // Mapa de conexiones (peerId -> DataConnection) (solo host)
             let isHost = false;
             let roomId = null;
             let myPeerId = null;
-            let hostConnection = null;   // Para el espectador
-            let history = [];            // Historial de acciones de dibujo
+            let hostConnection = null;   // Para el espectador, la conexión al host
+            let history = [];            // Historial de acciones de dibujo (lo mantiene el host y se envía a nuevos)
 
             // --- Estado de dibujo ---
             let drawing = false;
@@ -425,7 +442,7 @@
                 viewerList.innerHTML = html || '<li>No hay espectadores</li>';
             }
 
-            // --- Para el espectador, mostrar la lista ---
+            // --- Para el espectador, mostrar la lista (solo ve al host y a sí mismo? mejor mostrar mensaje) ---
             function setViewerListForGuest() {
                 viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú (espectador)</li>';
             }
@@ -452,6 +469,7 @@
                 myPeerId = roomId;
                 isHost = true;
                 roomDisplay.textContent = roomId;
+                roomCodeBadge.textContent = `Código: ${roomId}`;
                 roleDisplay.textContent = ' (Host)';
                 toolsContainer.style.display = 'flex';
                 joinScreen.style.display = 'none';
@@ -506,6 +524,7 @@
                 peer = new Peer();
                 isHost = false;
                 roomDisplay.textContent = roomId;
+                roomCodeBadge.textContent = `Código: ${roomId}`;
                 roleDisplay.textContent = ' (Espectador)';
                 toolsContainer.style.display = 'none';
                 joinScreen.style.display = 'none';
@@ -554,7 +573,7 @@
 
                 peer.on('error', (err) => {
                     if (err.type === 'peer-unavailable') {
-                        alert('No se encontró la sala. Verifica el código.');
+                        alert('No se encontró la sala. Verifica el ID.');
                         leaveRoom();
                     } else {
                         console.error('Error de Peer:', err);
@@ -706,21 +725,21 @@
 
             // --- Eventos de UI ---
             createBtn.addEventListener('click', () => {
-                const roomCode = roomInput.value.trim();
-                if (!roomCode) {
-                    alert('Ingresa un código para la sala');
+                const roomId = roomInput.value.trim();
+                if (!roomId) {
+                    alert('Ingresa un ID para la sala');
                     return;
                 }
-                createRoom(roomCode);
+                createRoom(roomId);
             });
 
             joinBtn.addEventListener('click', () => {
-                const roomCode = roomInput.value.trim();
-                if (!roomCode) {
-                    alert('Ingresa el código de la sala a la que quieres unirte');
+                const roomId = roomInput.value.trim();
+                if (!roomId) {
+                    alert('Ingresa el ID de la sala a la que quieres unirte');
                     return;
                 }
-                joinRoom(roomCode);
+                joinRoom(roomId);
             });
 
             leaveBtn.addEventListener('click', leaveRoom);
@@ -743,7 +762,7 @@
                     // Espectador: enviar al host
                     if (hostConnection && hostConnection.open) {
                         hostConnection.send({ type: 'chat', user, message });
-                        // Lo mostramos localmente también
+                        // Lo mostramos localmente también (el host lo reenviará, pero para no esperar, lo mostramos ya)
                         addChatMessage(user, message);
                     }
                 }
