@@ -2,175 +2,435 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Mini Roblox P2P</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch de Dibujo</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
-        #gui { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: white; padding: 15px; border-radius: 8px; pointer-events: none; }
-        #conn-ui { position: absolute; bottom: 10px; left: 10px; background: white; padding: 10px; display: flex; gap: 5px; pointer-events: all; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            margin: 0;
+            background: #0e0e10;
+            color: #efeff1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            display: flex;
+            width: 1400px;
+            max-width: 95%;
+            height: 800px;
+            background: #1f1f23;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+        .stream-area {
+            flex: 3;
+            display: flex;
+            flex-direction: column;
+            background: #18181b;
+            padding: 16px;
+        }
+        .canvas-wrapper {
+            background: #0e0e10;
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: inset 0 0 8px #000;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            background: white;
+            border-radius: 4px;
+            cursor: crosshair;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .tools {
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #26262c;
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+        .tools label {
+            color: #adadb8;
+            font-size: 14px;
+        }
+        .tools input[type="color"] {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+        }
+        .tools input[type="range"] {
+            width: 100px;
+        }
+        .tools button {
+            background: #9147ff;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .tools button:hover {
+            background: #772ce8;
+        }
+        .chat-panel {
+            flex: 1;
+            background: #1f1f23;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #303035;
+        }
+        .viewers {
+            padding: 16px;
+            border-bottom: 1px solid #303035;
+            background: #26262c;
+        }
+        .viewers h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            color: #bf94ff;
+        }
+        .viewers ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .viewers li {
+            padding: 4px 0;
+            font-size: 14px;
+            color: #efeff1;
+        }
+        .messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .message {
+            background: #26262c;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 90%;
+        }
+        .message .user {
+            font-weight: bold;
+            color: #bf94ff;
+            margin-right: 8px;
+        }
+        .message .text {
+            color: #dedee3;
+        }
+        .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid #303035;
+            display: flex;
+            gap: 8px;
+            background: #26262c;
+        }
+        .chat-input-area input {
+            flex: 1;
+            background: #18181b;
+            border: 1px solid #3a3a44;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            outline: none;
+        }
+        .chat-input-area input::placeholder {
+            color: #5a5a66;
+        }
+        .chat-input-area button {
+            background: #9147ff;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .chat-input-area button:hover {
+            background: #772ce8;
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div class="stream-area">
+            <div class="canvas-wrapper">
+                <canvas id="drawCanvas" width="900" height="500"></canvas>
+            </div>
+            <div class="tools">
+                <label>Color:</label>
+                <input type="color" id="colorPicker" value="#000000">
+                <label>Tamaño:</label>
+                <input type="range" id="brushSize" min="1" max="30" value="5">
+                <button id="clearCanvas">Limpiar</button>
+            </div>
+        </div>
+        <div class="chat-panel">
+            <div class="viewers">
+                <h3>Espectadores 👁️</h3>
+                <ul id="viewerList">
+                    <li>Cargando...</li>
+                </ul>
+            </div>
+            <div class="messages" id="chatMessages">
+                <div class="message"><span class="user">Sistema:</span> <span class="text">Bienvenido al stream de dibujo</span></div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
+                <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
+                <button id="sendMessage">Enviar</button>
+            </div>
+        </div>
+    </div>
 
-<div id="gui">
-    <b>Controles:</b> WASD para mover | Espacio para saltar<br>
-    <b>Editor:</b> Click Izquierdo para colocar Bloque (Stud)<br>
-    <small id="my-id">Cargando ID...</small>
-</div>
+    <script>
+        class TwitchDrawing {
+            constructor(canvasId, options = {}) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.drawing = false;
+                this.lastX = 0;
+                this.lastY = 0;
+                this.color = options.color || '#000000';
+                this.brushSize = options.brushSize || 5;
 
-<div id="conn-ui">
-    <input type="text" id="remote-id" placeholder="ID del amigo">
-    <button onclick="connectToPeer()">Conectar</button>
-</div>
+                // Elementos de UI
+                this.colorPicker = document.getElementById('colorPicker');
+                this.brushSizeInput = document.getElementById('brushSize');
+                this.clearBtn = document.getElementById('clearCanvas');
+                this.chatMessages = document.getElementById('chatMessages');
+                this.viewerList = document.getElementById('viewerList');
+                this.usernameInput = document.getElementById('usernameInput');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendBtn = document.getElementById('sendMessage');
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+                // Estado del chat
+                this.messages = [];
+                this.viewers = new Set(); // conjunto de IDs de pestañas
 
-<script>
-// --- CONFIGURACIÓN INICIAL ---
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+                // Configurar canvas
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
+                this.ctx.strokeStyle = this.color;
+                this.ctx.lineWidth = this.brushSize;
 
-// Luz
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(5, 10, 5);
-scene.add(light);
-scene.add(new THREE.AmbientLight(0x404040));
+                // Configurar eventos de dibujo
+                this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
+                this.canvas.addEventListener('mousemove', this.draw.bind(this));
+                this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+                this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
 
-// Suelo (Baseplate)
-const gridHelper = new THREE.GridHelper(100, 100, 0x000000, 0x888888);
-scene.add(gridHelper);
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshPhongMaterial({color: 0x3a3a3a}));
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
+                // Eventos de herramientas
+                this.colorPicker.addEventListener('input', (e) => {
+                    this.color = e.target.value;
+                    this.ctx.strokeStyle = this.color;
+                });
+                this.brushSizeInput.addEventListener('input', (e) => {
+                    this.brushSize = e.target.value;
+                    this.ctx.lineWidth = this.brushSize;
+                });
+                this.clearBtn.addEventListener('click', () => {
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.broadcastAction({ type: 'clear' });
+                });
 
-// --- CREAR PERSONAJE ESTILO ROBLOX ---
-function createAvatar(color = 0x00AAFF) {
-    const group = new THREE.Group();
-    // Torso
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.5), new THREE.MeshPhongMaterial({color}));
-    torso.position.y = 1.6;
-    group.add(torso);
-    // Cabeza
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), new THREE.MeshPhongMaterial({color: 0xffdbac}));
-    head.position.y = 2.6;
-    group.add(head);
-    // Piernas
-    const legL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 1, 0.45), new THREE.MeshPhongMaterial({color: 0x111111}));
-    legL.position.set(-0.25, 0.5, 0);
-    group.add(legL);
-    const legR = legL.clone();
-    legR.position.x = 0.25;
-    group.add(legR);
-    return group;
-}
+                // Eventos de chat
+                this.sendBtn.addEventListener('click', this.sendMessage.bind(this));
+                this.messageInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                });
 
-const player = createAvatar(0xeeee00);
-scene.add(player);
-camera.position.set(0, 5, 10);
+                // Comunicación entre pestañas (BroadcastChannel)
+                this.channel = new BroadcastChannel('twitch_drawing');
+                this.channel.onmessage = (e) => {
+                    this.handleBroadcast(e.data);
+                };
 
-// --- MOVIMIENTO Y FÍSICA ---
-let velocityY = 0;
-let isGrounded = true;
-const keys = {};
-window.onkeydown = (e) => keys[e.code] = true;
-window.onkeyup = (e) => keys[e.code] = false;
+                // Registrar esta pestaña como un espectador
+                this.viewerId = 'viewer_' + Math.random().toString(36).substr(2, 8);
+                this.viewers.add(this.viewerId);
+                this.broadcastAction({ type: 'viewer_join', id: this.viewerId });
 
-// --- EDITOR DE MAPAS (STUDS) ---
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
+                // Al cerrar la pestaña, notificar salida
+                window.addEventListener('beforeunload', () => {
+                    this.broadcastAction({ type: 'viewer_leave', id: this.viewerId });
+                });
 
-window.addEventListener('mousedown', (e) => {
-    if(e.target.tagName !== 'CANVAS') return;
-    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects([floor, ...scene.children.filter(obj => obj.isBlock)]);
-    
-    if (intersects.length > 0) {
-        const p = intersects[0].point;
-        const block = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({color: 0x888888}));
-        // Snap to grid (Studs)
-        block.position.set(Math.round(p.x), Math.round(p.y + 0.5), Math.round(p.z));
-        block.isBlock = true;
-        scene.add(block);
-        // Aquí enviarías el bloque al otro jugador vía P2P
-    }
-});
-
-// --- LÓGICA MULTIJUGADOR P2P ---
-const peer = new Peer();
-let conn;
-const remotePlayers = {};
-
-peer.on('open', id => {
-    document.getElementById('my-id').innerText = "Tu ID: " + id;
-});
-
-peer.on('connection', c => {
-    conn = c;
-    setupChat();
-});
-
-function connectToPeer() {
-    const id = document.getElementById('remote-id').value;
-    conn = peer.connect(id);
-    setupChat();
-}
-
-function setupChat() {
-    conn.on('data', data => {
-        if(data.type === 'move') {
-            if(!remotePlayers[conn.peer]) {
-                remotePlayers[conn.peer] = createAvatar(0xff0000);
-                scene.add(remotePlayers[conn.peer]);
+                // Actualizar la lista de espectadores cada segundo (opcional)
+                setInterval(() => this.updateViewerList(), 1000);
             }
-            remotePlayers[conn.peer].position.set(data.x, data.y, data.z);
+
+            // Métodos de dibujo
+            startDrawing(e) {
+                this.drawing = true;
+                const pos = this.getMousePos(e);
+                this.lastX = pos.x;
+                this.lastY = pos.y;
+                this.ctx.beginPath();
+                this.ctx.moveTo(this.lastX, this.lastY);
+                // Emitir evento de inicio de trazo (opcional, para sincronizar)
+                this.broadcastAction({
+                    type: 'draw_start',
+                    x: this.lastX,
+                    y: this.lastY,
+                    color: this.color,
+                    size: this.brushSize
+                });
+            }
+
+            draw(e) {
+                if (!this.drawing) return;
+                e.preventDefault();
+                const pos = this.getMousePos(e);
+                const x = pos.x;
+                const y = pos.y;
+
+                // Dibujar localmente
+                this.ctx.strokeStyle = this.color;
+                this.ctx.lineWidth = this.brushSize;
+                this.ctx.lineTo(x, y);
+                this.ctx.stroke();
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, y);
+
+                // Emitir punto a otras pestañas
+                this.broadcastAction({
+                    type: 'draw',
+                    x: x,
+                    y: y,
+                    color: this.color,
+                    size: this.brushSize
+                });
+
+                this.lastX = x;
+                this.lastY = y;
+            }
+
+            stopDrawing() {
+                if (this.drawing) {
+                    this.drawing = false;
+                    this.ctx.beginPath(); // prevenir que se conecte con el próximo trazo
+                    this.broadcastAction({ type: 'draw_end' });
+                }
+            }
+
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            }
+
+            // Comunicación Broadcast
+            broadcastAction(action) {
+                this.channel.postMessage(action);
+            }
+
+            handleBroadcast(data) {
+                switch (data.type) {
+                    case 'draw_start':
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(data.x, data.y);
+                        this.ctx.strokeStyle = data.color;
+                        this.ctx.lineWidth = data.size;
+                        break;
+                    case 'draw':
+                        this.ctx.strokeStyle = data.color;
+                        this.ctx.lineWidth = data.size;
+                        this.ctx.lineTo(data.x, data.y);
+                        this.ctx.stroke();
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(data.x, data.y);
+                        break;
+                    case 'draw_end':
+                        this.ctx.beginPath();
+                        break;
+                    case 'clear':
+                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                        break;
+                    case 'chat':
+                        this.addMessage(data.user, data.text);
+                        break;
+                    case 'viewer_join':
+                        this.viewers.add(data.id);
+                        this.updateViewerList();
+                        break;
+                    case 'viewer_leave':
+                        this.viewers.delete(data.id);
+                        this.updateViewerList();
+                        break;
+                }
+            }
+
+            // Chat
+            sendMessage() {
+                const username = this.usernameInput.value.trim() || 'Anon';
+                const text = this.messageInput.value.trim();
+                if (!text) return;
+                this.broadcastAction({ type: 'chat', user: username, text: text });
+                this.messageInput.value = '';
+            }
+
+            addMessage(user, text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                messageDiv.innerHTML = `<span class="user">${this.escapeHtml(user)}:</span> <span class="text">${this.escapeHtml(text)}</span>`;
+                this.chatMessages.appendChild(messageDiv);
+                this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+            }
+
+            escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // Lista de espectadores
+            updateViewerList() {
+                const count = this.viewers.size;
+                const listHtml = Array.from(this.viewers).map(id => {
+                    // Podríamos tener nombres más amigables, pero usamos IDs cortos
+                    const shortId = id.substr(0, 6) + '...';
+                    return `<li>👤 ${shortId}</li>`;
+                }).join('');
+                this.viewerList.innerHTML = `<li>${count} espectador(es) conectado(s)</li>` + listHtml;
+            }
         }
-    });
-}
 
-// --- BUCLE DE JUEGO ---
-function animate() {
-    requestAnimationFrame(animate);
-
-    // Movimiento
-    const speed = 0.15;
-    if (keys['KeyW']) player.position.z -= speed;
-    if (keys['KeyS']) player.position.z += speed;
-    if (keys['KeyA']) player.position.x -= speed;
-    if (keys['KeyD']) player.position.x += speed;
-
-    // Salto
-    if (keys['Space'] && isGrounded) {
-        velocityY = 0.2;
-        isGrounded = false;
-    }
-    
-    player.position.y += velocityY;
-    if (player.position.y > 0) {
-        velocityY -= 0.01; // Gravedad
-    } else {
-        player.position.y = 0;
-        velocityY = 0;
-        isGrounded = true;
-    }
-
-    // Cámara sigue al jugador
-    camera.position.lerp(new THREE.Vector3(player.position.x, player.position.y + 5, player.position.z + 10), 0.1);
-    camera.lookAt(player.position);
-
-    // Enviar posición por P2P
-    if(conn && conn.open) {
-        conn.send({type: 'move', x: player.position.x, y: player.position.y, z: player.position.z});
-    }
-
-    renderer.render(scene, camera);
-}
-animate();
-</script>
+        // Inicializar la aplicación cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new TwitchDrawing('drawCanvas', {
+                color: '#000000',
+                brushSize: 5
+            });
+        });
+    </script>
 </body>
 </html>
