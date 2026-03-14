@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch P2P - Juegos y Dibujo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Twitch P2P - Juegos y Dibujo (Móvil)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,17 +17,20 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            padding: 8px;
         }
         .join-screen {
             background: #1f1f23;
-            padding: 40px;
+            padding: 40px 20px;
             border-radius: 8px;
             text-align: center;
             max-width: 500px;
+            width: 100%;
         }
         .join-screen h1 {
             margin-bottom: 30px;
             color: #bf94ff;
+            font-size: 24px;
         }
         .join-screen .form {
             display: flex;
@@ -38,8 +41,8 @@
             background: #18181b;
             border: 1px solid #3a3a44;
             color: white;
-            padding: 12px;
-            border-radius: 20px;
+            padding: 15px;
+            border-radius: 30px;
             font-size: 16px;
             outline: none;
         }
@@ -48,11 +51,12 @@
             border: none;
             color: white;
             font-weight: bold;
-            padding: 12px 24px;
-            border-radius: 20px;
+            padding: 15px 20px;
+            border-radius: 30px;
             cursor: pointer;
             font-size: 16px;
             margin: 5px;
+            width: calc(100% - 10px);
         }
         .join-screen button:hover {
             background: #772ce8;
@@ -64,16 +68,26 @@
         }
         .container {
             display: flex;
-            width: 1600px;
-            max-width: 95%;
-            height: 900px;
+            width: 100%;
+            max-width: 1600px;
+            height: 90vh;
             background: #1f1f23;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0,0,0,0.6);
             position: relative;
+            flex-direction: row;
         }
-        /* Código de sala en esquina */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+                min-height: 90vh;
+            }
+            body {
+                padding: 4px;
+            }
+        }
         .room-code-corner {
             position: absolute;
             top: 10px;
@@ -93,6 +107,7 @@
             flex-direction: column;
             background: #18181b;
             padding: 16px;
+            min-width: 0;
         }
         .room-bar {
             display: flex;
@@ -103,28 +118,50 @@
             border-radius: 8px;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
         }
         .role {
             color: #bf94ff;
             font-weight: bold;
         }
-        .game-selector {
+        /* Botón para mostrar selector de juegos */
+        .game-toggle-btn {
+            background: #9147ff;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 14px;
             display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .game-selector {
+            display: none; /* Oculto por defecto */
             gap: 8px;
             background: #1f1f23;
             padding: 8px;
             border-radius: 8px;
             margin-bottom: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .game-selector.visible {
+            display: flex;
         }
         .game-btn {
             background: #3a3a44;
             border: none;
             color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
+            padding: 10px 16px;
+            border-radius: 30px;
             cursor: pointer;
             font-size: 14px;
             transition: background 0.2s;
+            flex: 1 0 auto;
+            min-width: 80px;
         }
         .game-btn:hover {
             background: #9147ff;
@@ -143,16 +180,19 @@
             justify-content: center;
             align-items: center;
             position: relative;
+            min-height: 250px;
         }
         canvas {
             background: white;
             border-radius: 4px;
             cursor: crosshair;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            max-width: 100%;
+            width: 100%;
+            height: auto;
             max-height: 100%;
+            object-fit: contain;
+            touch-action: none;
         }
-        /* Overlay de juego (simulación) */
         .game-overlay {
             position: absolute;
             top: 10px;
@@ -161,12 +201,36 @@
             color: white;
             padding: 8px 16px;
             border-radius: 20px;
-            font-size: 20px;
+            font-size: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
             pointer-events: none;
             z-index: 5;
+        }
+        /* Notificaciones de donación */
+        .donation-notification {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #9147ff, #ff79c6);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 20;
+            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
+            pointer-events: none;
+            max-width: 300px;
+            word-break: break-word;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(100%); }
         }
         .tools {
             margin-top: 16px;
@@ -183,33 +247,35 @@
             font-size: 14px;
         }
         .tools input[type="color"] {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             background: transparent;
             cursor: pointer;
         }
         .tools input[type="range"] {
-            width: 100px;
+            width: 120px;
         }
         .tools select {
             background: #18181b;
             color: white;
             border: 1px solid #3a3a44;
-            border-radius: 4px;
-            padding: 6px;
+            border-radius: 8px;
+            padding: 10px;
             outline: none;
+            font-size: 16px;
         }
         .tools button {
             background: #9147ff;
             border: none;
             color: white;
             font-weight: bold;
-            padding: 8px 16px;
-            border-radius: 4px;
+            padding: 10px 20px;
+            border-radius: 30px;
             cursor: pointer;
             transition: background 0.2s;
+            font-size: 16px;
         }
         .tools button:hover {
             background: #772ce8;
@@ -220,6 +286,13 @@
             display: flex;
             flex-direction: column;
             border-left: 1px solid #303035;
+            min-width: 250px;
+        }
+        @media (max-width: 768px) {
+            .chat-panel {
+                border-left: none;
+                border-top: 1px solid #303035;
+            }
         }
         .viewers {
             padding: 16px;
@@ -250,6 +323,12 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            max-height: 300px;
+        }
+        @media (max-width: 768px) {
+            .messages {
+                max-height: 200px;
+            }
         }
         .message {
             background: #26262c;
@@ -277,15 +356,18 @@
         .chat-row {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .chat-row input {
             flex: 1;
             background: #18181b;
             border: 1px solid #3a3a44;
             color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
+            padding: 12px 16px;
+            border-radius: 30px;
             outline: none;
+            font-size: 16px;
+            min-width: 150px;
         }
         .chat-row input::placeholder {
             color: #5a5a66;
@@ -295,9 +377,11 @@
             border: none;
             color: white;
             font-weight: bold;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 12px 20px;
+            border-radius: 30px;
             cursor: pointer;
+            font-size: 16px;
+            white-space: nowrap;
         }
         .chat-row button:hover {
             background: #772ce8;
@@ -306,16 +390,18 @@
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
+            justify-content: center;
         }
         .emoji-btn {
             background: #3a3a44;
             border: none;
             color: white;
-            font-size: 20px;
-            padding: 5px 10px;
-            border-radius: 8px;
+            font-size: 24px;
+            padding: 10px 15px;
+            border-radius: 12px;
             cursor: pointer;
             transition: background 0.2s;
+            min-width: 60px;
         }
         .emoji-btn:hover {
             background: #9147ff;
@@ -325,14 +411,23 @@
             border: none;
             color: white;
             font-weight: bold;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 12px 20px;
+            border-radius: 30px;
             cursor: pointer;
             transition: background 0.2s;
-            margin-left: auto;
+            white-space: nowrap;
         }
         .donation-btn:hover {
             background: #cc0000;
+        }
+        @media (max-width: 768px) {
+            .game-btn, .tools button, .chat-row button, .donation-btn, .emoji-btn {
+                padding: 14px 18px;
+                font-size: 18px;
+            }
+            .tools input[type="range"] {
+                width: 150px;
+            }
         }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -343,7 +438,7 @@
         <div class="form">
             <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
             <div>
-                <button id="create-room-btn">Crear sala (serás host)</button>
+                <button id="create-room-btn">Crear sala (host)</button>
                 <button id="join-room-btn">Unirse como espectador</button>
             </div>
             <p class="info">El host dibuja y elige el juego. Los espectadores ven y chatean. Conexión directa P2P.</p>
@@ -351,17 +446,21 @@
     </div>
 
     <div id="drawing-app" class="container" style="display: none;">
-        <!-- Código de sala en esquina -->
         <div id="room-code-corner" class="room-code-corner">Sala: </div>
 
         <div class="stream-area">
             <div class="room-bar">
                 <span>Bienvenido</span>
                 <span id="role-display" class="role"></span>
-                <button id="leave-room-btn" style="background: #ff4444; padding: 4px 12px;">Salir</button>
+                <button id="leave-room-btn" style="background: #ff4444; padding: 8px 16px;">Salir</button>
             </div>
 
-            <!-- Selector de juegos (solo visible para host, pero lo mostramos a todos, aunque solo host puede cambiar) -->
+            <!-- Botón para mostrar/ocultar selector de juegos (solo host) -->
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 8px;">
+                <button id="toggle-games-btn" class="game-toggle-btn">🎮 Juegos</button>
+            </div>
+
+            <!-- Selector de juegos (oculto inicialmente) -->
             <div class="game-selector" id="game-selector">
                 <button class="game-btn" data-game="football">⚽ Fútbol</button>
                 <button class="game-btn" data-game="pokemon">🐱 Pokémon</button>
@@ -369,9 +468,10 @@
                 <button class="game-btn" data-game="parkour">🏃 Parkour</button>
             </div>
 
-            <div class="canvas-wrapper">
+            <div class="canvas-wrapper" id="canvas-wrapper">
                 <canvas id="drawCanvas" width="1000" height="600"></canvas>
-                <div id="game-overlay" class="game-overlay">⚽ Modo Fútbol</div>
+                <div id="game-overlay" class="game-overlay">🎨 Modo Pintar</div>
+                <!-- Las notificaciones de donación aparecerán aquí -->
             </div>
 
             <div class="tools" id="tools-container">
@@ -404,7 +504,7 @@
             <div class="chat-input-area">
                 <div class="chat-row">
                     <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
-                    <input type="text" id="messageInput" placeholder="Escribe un mensaje...">
+                    <input type="text" id="messageInput" placeholder="Mensaje...">
                     <button id="sendMessage">Enviar</button>
                     <button id="donationBtn" class="donation-btn">💜 Donar</button>
                 </div>
@@ -449,16 +549,18 @@
             const gameOverlay = document.getElementById('game-overlay');
             const gameSelector = document.getElementById('game-selector');
             const gameBtns = document.querySelectorAll('.game-btn');
+            const toggleGamesBtn = document.getElementById('toggle-games-btn');
+            const canvasWrapper = document.getElementById('canvas-wrapper');
 
             // --- Estado P2P ---
             let peer = null;
-            let connections = new Map(); // solo host
+            let connections = new Map();
             let isHost = false;
             let roomId = null;
             let myPeerId = null;
-            let hostConnection = null; // para espectador
-            let history = []; // historial de acciones de dibujo
-            let currentGame = 'paint'; // juego por defecto
+            let hostConnection = null;
+            let history = [];
+            let currentGame = 'paint';
 
             // --- Estado de dibujo ---
             let drawing = false;
@@ -471,6 +573,42 @@
             ctx.fillStyle = colorPicker.value;
             ctx.lineWidth = brushSizeInput.value;
             ctx.font = '16px Arial';
+
+            // --- Funciones de almacenamiento local ---
+            function saveProgress() {
+                if (!isHost || !roomId) return;
+                try {
+                    localStorage.setItem(`historial_${roomId}`, JSON.stringify(history));
+                    localStorage.setItem(`juego_${roomId}`, currentGame);
+                } catch (e) {}
+            }
+
+            function loadProgress() {
+                if (!isHost || !roomId) return;
+                try {
+                    const savedHistory = localStorage.getItem(`historial_${roomId}`);
+                    if (savedHistory) {
+                        history = JSON.parse(savedHistory);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        history.forEach(action => applyAction(action));
+                    }
+                    const savedGame = localStorage.getItem(`juego_${roomId}`);
+                    if (savedGame) {
+                        currentGame = savedGame;
+                        applyGameTheme(currentGame);
+                        gameBtns.forEach(btn => {
+                            btn.classList.remove('active');
+                            if (btn.dataset.game === currentGame) btn.classList.add('active');
+                        });
+                    }
+                } catch (e) {}
+            }
+
+            function clearProgress() {
+                if (!isHost || !roomId) return;
+                localStorage.removeItem(`historial_${roomId}`);
+                localStorage.removeItem(`juego_${roomId}`);
+            }
 
             // --- Funciones de dibujo ---
             function drawShape(action) {
@@ -529,33 +667,98 @@
                     case 'draw_end': drawEnd(); break;
                     case 'shape': drawShape(action); break;
                     case 'text': drawText(action); break;
-                    case 'clear': ctx.clearRect(0, 0, canvas.width, canvas.height); break;
+                    case 'clear': ctx.clearRect(0, 0, canvas.width, canvas.height); applyGameTheme(currentGame); break;
                 }
+            }
+
+            // --- Aplicar tema del juego al canvas (fondo) ---
+            function applyGameTheme(game) {
+                // Guardar el estado actual del canvas (los dibujos) y poner un fondo
+                // Para no borrar los dibujos, podemos dibujar el fondo detrás.
+                // Pero como tenemos historial, podemos redibujar todo sobre el fondo.
+                // Lo haremos así: guardamos el historial, limpiamos, dibujamos fondo y luego redibujamos historial.
+                if (!ctx) return;
+                const currentHistory = [...history]; // copia
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Dibujar fondo según juego
+                if (game === 'football') {
+                    // Campo de fútbol verde
+                    ctx.fillStyle = '#2e7d32';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    // Líneas blancas
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(10, 10, canvas.width-20, canvas.height-20);
+                    ctx.beginPath();
+                    ctx.arc(canvas.width/2, canvas.height/2, 50, 0, 2*Math.PI);
+                    ctx.stroke();
+                } else if (game === 'pokemon') {
+                    // Fondo de hierba
+                    ctx.fillStyle = '#4caf50';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    // Dibujar algunas pokebolas pequeñas
+                    ctx.fillStyle = '#f44336';
+                    for (let i = 0; i < 5; i++) {
+                        ctx.beginPath();
+                        ctx.arc(50 + i*100, 50, 20, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.beginPath();
+                        ctx.arc(50 + i*100, 50, 10, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.fillStyle = '#f44336';
+                    }
+                } else if (game === 'parkour') {
+                    // Fondo urbano
+                    ctx.fillStyle = '#607d8b';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    // Dibujar obstáculos
+                    ctx.fillStyle = '#795548';
+                    ctx.fillRect(200, canvas.height-100, 100, 50);
+                    ctx.fillRect(500, canvas.height-150, 100, 100);
+                } else {
+                    // Pintar: fondo blanco
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+
+                // Redibujar historial
+                currentHistory.forEach(action => applyAction(action));
+
+                // Actualizar overlay
+                let emoji = '🎨', text = 'Pintar';
+                if (game === 'football') { emoji = '⚽'; text = 'Fútbol'; }
+                else if (game === 'pokemon') { emoji = '🐱'; text = 'Pokémon'; }
+                else if (game === 'parkour') { emoji = '🏃'; text = 'Parkour'; }
+                gameOverlay.innerHTML = `${emoji} Modo ${text}`;
             }
 
             // --- Cambiar juego ---
             function setGame(game) {
                 currentGame = game;
-                let emoji = '🎨';
-                let text = 'Pintar';
-                if (game === 'football') { emoji = '⚽'; text = 'Fútbol'; }
-                else if (game === 'pokemon') { emoji = '🐱'; text = 'Pokémon'; }
-                else if (game === 'parkour') { emoji = '🏃'; text = 'Parkour'; }
-                gameOverlay.innerHTML = `${emoji} Modo ${text}`;
-                // Aquí podrías cambiar el fondo del canvas o dibujar algo, pero lo dejamos como overlay
-                // Por simplicidad, solo cambiamos el overlay.
+                applyGameTheme(game);
+                if (isHost) saveProgress();
+            }
+
+            // --- Mostrar notificación de donación ---
+            function showDonationNotification(user, amount) {
+                const notif = document.createElement('div');
+                notif.className = 'donation-notification';
+                notif.innerHTML = `💜 ${user} donó ${amount} bits! 💜`;
+                canvasWrapper.appendChild(notif);
+                setTimeout(() => {
+                    if (notif.parentNode) notif.remove();
+                }, 5000);
             }
 
             // --- Funciones de red ---
             function broadcastToViewers(message) {
                 connections.forEach(conn => {
-                    if (conn.open) {
-                        conn.send(message);
-                    }
+                    if (conn.open) conn.send(message);
                 });
             }
 
-            // --- Actualizar lista de espectadores (solo host) ---
             function updateViewerList() {
                 if (!isHost) return;
                 let html = `<li>🟣 Host (tú)</li>`;
@@ -565,12 +768,10 @@
                 viewerList.innerHTML = html || '<li>No hay espectadores</li>';
             }
 
-            // --- Para el espectador ---
             function setViewerListForGuest() {
                 viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú (espectador)</li>';
             }
 
-            // --- Chat ---
             function addChatMessage(user, message, isDonation = false) {
                 const div = document.createElement('div');
                 div.className = 'message';
@@ -594,23 +795,32 @@
                 peer = new Peer(roomId);
                 myPeerId = roomId;
                 isHost = true;
-                roomDisplay = roomId;
                 roleDisplay.textContent = ' (Host)';
                 toolsContainer.style.display = 'flex';
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
                 roomCodeCorner.textContent = `Sala: ${roomId}`;
 
-                // Activar selector de juegos (solo host puede cambiar, pero lo mostramos)
+                // Mostrar botón de juegos y permitir toggle
+                toggleGamesBtn.style.display = 'flex';
+                toggleGamesBtn.onclick = () => {
+                    gameSelector.classList.toggle('visible');
+                };
+
+                // Cargar progreso
+                loadProgress();
+
+                // Eventos de juegos
                 gameBtns.forEach(btn => {
-                    btn.addEventListener('click', () => {
+                    btn.onclick = () => {
                         const game = btn.dataset.game;
                         setGame(game);
                         broadcastToViewers({ type: 'game-change', game: game });
-                        // Marcar activo
                         gameBtns.forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
-                    });
+                        // Ocultar selector después de elegir (opcional)
+                        gameSelector.classList.remove('visible');
+                    };
                 });
 
                 peer.on('open', (id) => {
@@ -627,7 +837,9 @@
                             addChatMessage(data.user, data.message);
                             broadcastToViewers({ type: 'chat', user: data.user, message: data.message });
                         } else if (data.type === 'donation') {
-                            // Simular donación
+                            // Mostrar notificación en el stream
+                            showDonationNotification(data.user, data.amount);
+                            // También en el chat
                             addChatMessage(data.user, `💜 Donó ${data.amount} bits! 💜`, true);
                             broadcastToViewers({ type: 'donation', user: data.user, amount: data.amount });
                         }
@@ -640,7 +852,6 @@
                         broadcastToViewers({ type: 'system', message: 'Un espectador se ha desconectado.' });
                     });
 
-                    // Enviar historial y juego actual
                     conn.send({ type: 'history', history: history });
                     conn.send({ type: 'game-change', game: currentGame });
 
@@ -657,23 +868,26 @@
                     }
                 });
 
-                // Juego inicial
-                setGame('paint');
-                document.querySelector('.game-btn[data-game="paint"]').classList.add('active');
+                // Asegurar tema inicial
+                setGame(currentGame);
+                document.querySelector(`.game-btn[data-game="${currentGame}"]`)?.classList.add('active');
             }
 
             // --- Unirse como espectador ---
             function joinRoom(roomId) {
                 peer = new Peer();
                 isHost = false;
-                roomDisplay = roomId;
                 roleDisplay.textContent = ' (Espectador)';
                 toolsContainer.style.display = 'none';
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
                 roomCodeCorner.textContent = `Sala: ${roomId}`;
 
-                // Deshabilitar selector de juegos para espectador (no puede cambiar)
+                // Ocultar botón de juegos para espectador
+                toggleGamesBtn.style.display = 'none';
+                gameSelector.classList.remove('visible');
+
+                // Deshabilitar selector
                 gameBtns.forEach(btn => {
                     btn.disabled = true;
                     btn.style.opacity = 0.5;
@@ -701,15 +915,17 @@
                             applyAction(data.action);
                         } else if (data.type === 'clear') {
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            applyGameTheme(currentGame);
                         } else if (data.type === 'chat') {
                             addChatMessage(data.user, data.message);
                         } else if (data.type === 'donation') {
+                            showDonationNotification(data.user, data.amount);
                             addChatMessage(data.user, `💜 Donó ${data.amount} bits! 💜`, true);
                         } else if (data.type === 'system') {
                             addChatMessage('Sistema', data.message);
                         } else if (data.type === 'game-change') {
-                            setGame(data.game);
-                            // Marcar botón activo (solo visual)
+                            currentGame = data.game;
+                            applyGameTheme(data.game);
                             gameBtns.forEach(btn => {
                                 btn.classList.remove('active');
                                 if (btn.dataset.game === data.game) btn.classList.add('active');
@@ -751,16 +967,18 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 joinScreen.style.display = 'block';
                 drawingApp.style.display = 'none';
-                // Rehabilitar botones de juego por si acaso
                 gameBtns.forEach(btn => {
                     btn.disabled = false;
                     btn.style.opacity = 1;
                     btn.classList.remove('active');
                 });
+                toggleGamesBtn.style.display = 'none';
+                gameSelector.classList.remove('visible');
             }
 
             // --- Eventos de dibujo (solo host) ---
             canvas.addEventListener('mousedown', (e) => {
+                e.preventDefault();
                 if (!isHost) return;
                 const pos = getMousePos(e);
                 startX = pos.x;
@@ -777,10 +995,11 @@
                         x: lastX,
                         y: lastY,
                         color: colorPicker.value,
-                        size: brushSizeInput.value
+                        size: parseInt(brushSizeInput.value)
                     };
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
+                    saveProgress();
                 } else if (toolSelect.value === 'text') {
                     const text = prompt('Escribe el texto:');
                     if (text) {
@@ -790,16 +1009,18 @@
                             x: startX,
                             y: startY,
                             color: colorPicker.value,
-                            size: brushSizeInput.value
+                            size: parseInt(brushSizeInput.value)
                         };
                         drawText(action);
                         history.push(action);
                         broadcastToViewers({ type: 'draw-action', action });
+                        saveProgress();
                     }
                 }
             });
 
             canvas.addEventListener('mousemove', (e) => {
+                e.preventDefault();
                 if (!isHost || !drawing) return;
                 const pos = getMousePos(e);
                 const x = pos.x;
@@ -807,7 +1028,7 @@
 
                 if (toolSelect.value === 'pencil') {
                     ctx.strokeStyle = colorPicker.value;
-                    ctx.lineWidth = brushSizeInput.value;
+                    ctx.lineWidth = parseInt(brushSizeInput.value);
                     ctx.lineTo(x, y);
                     ctx.stroke();
                     ctx.beginPath();
@@ -818,10 +1039,11 @@
                         x: x,
                         y: y,
                         color: colorPicker.value,
-                        size: brushSizeInput.value
+                        size: parseInt(brushSizeInput.value)
                     };
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
+                    saveProgress();
 
                     lastX = x;
                     lastY = y;
@@ -829,6 +1051,7 @@
             });
 
             canvas.addEventListener('mouseup', (e) => {
+                e.preventDefault();
                 if (!isHost) return;
                 if (toolSelect.value === 'pencil' && drawing) {
                     drawing = false;
@@ -836,6 +1059,7 @@
                     const action = { type: 'draw_end' };
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
+                    saveProgress();
                 } else if (toolSelect.value !== 'pencil' && toolSelect.value !== 'text') {
                     const pos = getMousePos(e);
                     const action = {
@@ -846,11 +1070,12 @@
                         x2: pos.x,
                         y2: pos.y,
                         color: colorPicker.value,
-                        size: brushSizeInput.value
+                        size: parseInt(brushSizeInput.value)
                     };
                     drawShape(action);
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
+                    saveProgress();
                 }
             });
 
@@ -861,26 +1086,70 @@
                     const action = { type: 'draw_end' };
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
+                    saveProgress();
                 }
+            });
+
+            // Soporte táctil
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            });
+
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                const mouseEvent = new MouseEvent('mouseup', {});
+                canvas.dispatchEvent(mouseEvent);
+            });
+
+            canvas.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                const mouseEvent = new MouseEvent('mouseout', {});
+                canvas.dispatchEvent(mouseEvent);
             });
 
             function getMousePos(e) {
                 const rect = canvas.getBoundingClientRect();
                 const scaleX = canvas.width / rect.width;
                 const scaleY = canvas.height / rect.height;
+                let clientX, clientY;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
                 return {
-                    x: (e.clientX - rect.left) * scaleX,
-                    y: (e.clientY - rect.top) * scaleY
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
                 };
             }
 
-            // --- Limpiar canvas (solo host) ---
+            // --- Limpiar canvas ---
             clearBtn.addEventListener('click', () => {
                 if (!isHost) return;
                 if (confirm('¿Limpiar todo el canvas?')) {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     history = [];
                     broadcastToViewers({ type: 'clear' });
+                    clearProgress();
+                    applyGameTheme(currentGame); // restaurar fondo
                 }
             });
 
@@ -940,25 +1209,22 @@
             // Donación
             donationBtn.addEventListener('click', () => {
                 const user = usernameInput.value.trim() || 'Anon';
-                const amount = Math.floor(Math.random() * 1000) + 100; // cantidad aleatoria
+                const amount = Math.floor(Math.random() * 1000) + 100;
                 if (isHost) {
+                    showDonationNotification(user, amount);
                     addChatMessage(user, `💜 Donó ${amount} bits! 💜`, true);
                     broadcastToViewers({ type: 'donation', user, amount });
                 } else {
                     if (hostConnection && hostConnection.open) {
                         hostConnection.send({ type: 'donation', user, amount });
+                        showDonationNotification(user, amount);
                         addChatMessage(user, `💜 Donó ${amount} bits! 💜`, true);
                     }
                 }
             });
 
-            // Selector de juegos (solo host, pero los eventos se asignan al crear sala)
-            // Los eventos ya están dentro de createRoom
-
             window.addEventListener('beforeunload', () => {
-                if (peer) {
-                    peer.destroy();
-                }
+                if (peer) peer.destroy();
             });
         })();
     </script>
