@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch de Dibujo (sin servidor)</title>
+    <title>Twitch de Dibujo P2P</title>
     <style>
         * {
             box-sizing: border-box;
@@ -240,17 +240,19 @@
             background: #772ce8;
         }
     </style>
+    <!-- Incluir PeerJS desde CDN -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <div id="join-screen" class="join-screen">
-        <h1>Twitch de Dibujo</h1>
+        <h1>Twitch de Dibujo P2P</h1>
         <div class="form">
-            <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
+            <input type="text" id="room-input" placeholder="ID de sala" value="sala1">
             <div>
-                <button id="create-room-btn">Crear sala (serás streamer)</button>
+                <button id="create-room-btn">Crear sala (serás host)</button>
                 <button id="join-room-btn">Unirse como espectador</button>
             </div>
-            <p class="info">Si creas una sala, serás el único que puede dibujar. Los espectadores solo ven y chatean.</p>
+            <p class="info">El host dibuja, los espectadores ven y chatean. Conexión directa P2P.</p>
         </div>
     </div>
 
@@ -265,7 +267,7 @@
                 <canvas id="drawCanvas" width="1000" height="600"></canvas>
             </div>
             <div class="tools" id="tools-container">
-                <!-- Solo visible para streamer -->
+                <!-- Solo visible para host -->
                 <select id="toolSelect">
                     <option value="pencil">Lápiz</option>
                     <option value="rectangle">Rectángulo</option>
@@ -322,16 +324,18 @@
             const messageInput = document.getElementById('messageInput');
             const sendBtn = document.getElementById('sendMessage');
 
-            // --- Estado local ---
-            let currentRoom = null;
-            let isStreamer = false;
-            let myId = 'user_' + Math.random().toString(36).substr(2, 8); // ID único de esta pestaña
-            let channel = null;
-            let viewers = new Set(); // IDs de viewers (incluido streamer? no, solo viewers)
-            let streamerId = null; // ID del streamer actual
+            // --- Estado P2P ---
+            let peer = null;            // Instancia de Peer (solo host o espectador)
+            let connections = new Map(); // Mapa de conexiones (peerId -> DataConnection) (solo host)
+            let isHost = false;
+            let roomId = null;
+            let myPeerId = null;
+            let hostConnection = null;   // Para el espectador, la conexión al host
+            let history = [];            // Historial de acciones de dibujo (lo mantiene el host y se envía a nuevos)
+
+            // --- Estado de dibujo ---
             let drawing = false;
             let startX, startY, lastX, lastY;
-            let history = []; // historial de acciones (solo para streamer, pero todos lo mantienen por si acaso)
 
             // Configuración del canvas
             ctx.lineCap = 'round';
@@ -402,205 +406,28 @@
                 }
             }
 
-            // --- Cargar historial desde localStorage ---
-            function loadHistoryFromStorage(room) {
-                const stored = localStorage.getItem(`history_${room}`);
-                if (stored) {
-                    try {
-                        history = JSON.parse(stored);
-                        // Redibujar
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        history.forEach(action => applyAction(action));
-                    } catch (e) {
-                        history = [];
-                    }
-                } else {
-                    history = [];
-                }
-            }
-
-            // --- Guardar historial en localStorage (solo streamer) ---
-            function saveHistoryToStorage() {
-                if (!currentRoom) return;
-                localStorage.setItem(`history_${currentRoom}`, JSON.stringify(history));
-            }
-
-            // --- Añadir acción al historial y guardar ---
-            function addAction(action) {
-                history.push(action);
-                saveHistoryToStorage();
-            }
-
-            // --- Enviar mensaje por BroadcastChannel ---
-            function broadcast(message) {
-                if (channel) {
-                    channel.postMessage(message);
-                }
-            }
-
-            // --- Unirse a una sala ---
-            function joinRoom(roomId, asStreamer) {
-                if (channel) {
-                    // Salir de la sala anterior
-                    broadcast({ type: 'leave', userId: myId, role: isStreamer ? 'streamer' : 'viewer' });
-                    channel.close();
-                }
-
-                currentRoom = roomId;
-                roomDisplay.textContent = roomId;
-                joinScreen.style.display = 'none';
-                drawingApp.style.display = 'flex';
-                toolsContainer.style.display = asStreamer ? 'flex' : 'none'; // Ocultar herramientas si no es streamer
-
-                // Crear nuevo canal
-                channel = new BroadcastChannel('twitch_draw_' + roomId);
-
-                // Cargar historial (todos lo cargan, pero solo el streamer puede modificarlo)
-                loadHistoryFromStorage(roomId);
-
-                // Escuchar mensajes
-                channel.onmessage = (e) => {
-                    const data = e.data;
-                    // console.log('Recibido:', data);
-                    switch (data.type) {
-                        case 'claim':
-                            // Alguien quiere ser streamer
-                            if (isStreamer) {
-                                // Si yo soy streamer, respondo que ya existe
-                                broadcast({ type: 'streamer-exists', streamerId: myId, target: data.userId });
-                            } else if (streamerId === null) {
-                                // Si no hay streamer, podríamos aceptar, pero mejor esperar claim-response
-                            }
-                            break;
-                        case 'streamer-exists':
-                            if (data.target === myId && asStreamer) {
-                                // Intenté ser streamer pero ya hay uno, me convierto en espectador
-                                alert('Ya hay un streamer en esta sala. Serás espectador.');
-                                isStreamer = false;
-                                streamerId = data.streamerId;
-                                roleDisplay.textContent = ' (Espectador)';
-                                toolsContainer.style.display = 'none';
-                                // Enviar join como viewer
-                                broadcast({ type: 'viewer-join', userId: myId });
-                            }
-                            break;
-                        case 'viewer-join':
-                            viewers.add(data.userId);
-                            updateViewerList();
-                            break;
-                        case 'viewer-leave':
-                            viewers.delete(data.userId);
-                            updateViewerList();
-                            break;
-                        case 'streamer-left':
-                            if (data.streamerId === streamerId) {
-                                streamerId = null;
-                                roleDisplay.textContent = ' (Sin streamer)';
-                                if (isStreamer) {
-                                    // Esto no debería pasar, pero por si acaso
-                                } else {
-                                    alert('El streamer ha abandonado la sala. Espera a que alguien tome el rol.');
-                                }
-                                updateViewerList();
-                            }
-                            break;
-                        case 'chat':
-                            addChatMessage(data.user, data.message);
-                            break;
-                        case 'draw-action':
-                            // Solo los no-streamer aplican las acciones (el streamer ya las aplicó localmente)
-                            if (!isStreamer) {
-                                applyAction(data.action);
-                            }
-                            break;
-                        case 'clear':
-                            if (!isStreamer) {
-                                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            }
-                            break;
-                        case 'sync-request':
-                            // Alguien pide el historial (nuevo espectador)
-                            if (isStreamer) {
-                                broadcast({ type: 'sync-history', history: history, target: data.userId });
-                            }
-                            break;
-                        case 'sync-history':
-                            if (data.target === myId) {
-                                // Recibir historial y redibujar
-                                history = data.history;
-                                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                                history.forEach(action => applyAction(action));
-                            }
-                            break;
-                    }
-                };
-
-                if (asStreamer) {
-                    // Intentar ser streamer: enviar claim
-                    isStreamer = true;
-                    roleDisplay.textContent = ' (Streamer)';
-                    // Preguntar si hay streamer
-                    broadcast({ type: 'claim', userId: myId });
-                    // Esperar 1 segundo para ver si alguien responde
-                    setTimeout(() => {
-                        if (isStreamer) {
-                            // Si después de 1s sigo siendo streamer, me establezco
-                            streamerId = myId;
-                            // Anunciar que soy streamer (opcional)
-                            broadcast({ type: 'streamer-assigned', streamerId: myId });
-                            // Enviar mi propia presencia como viewer? No, soy streamer.
-                            // Pero para la lista, incluiré al streamer aparte.
-                        }
-                    }, 1000);
-                } else {
-                    // Espectador: pedir historial
-                    isStreamer = false;
-                    roleDisplay.textContent = ' (Espectador)';
-                    broadcast({ type: 'viewer-join', userId: myId });
-                    // Solicitar historial al streamer
-                    broadcast({ type: 'sync-request', userId: myId });
-                }
-
-                // Actualizar lista de viewers (al principio solo nosotros si somos viewer)
-                if (!asStreamer) {
-                    viewers.clear();
-                    viewers.add(myId); // a nosotros mismos nos consideramos viewer? Sí, para la lista.
-                }
-                updateViewerList();
-            }
-
-            // --- Salir de la sala ---
-            function leaveRoom() {
-                if (channel) {
-                    broadcast({ type: 'leave', userId: myId, role: isStreamer ? 'streamer' : 'viewer' });
-                    if (isStreamer) {
-                        // Anunciar que el streamer se va
-                        broadcast({ type: 'streamer-left', streamerId: myId });
-                        // Limpiar localStorage? No, conservamos historial.
-                    }
-                    channel.close();
-                    channel = null;
-                }
-                currentRoom = null;
-                isStreamer = false;
-                joinScreen.style.display = 'block';
-                drawingApp.style.display = 'none';
-                viewers.clear();
-                streamerId = null;
-            }
-
-            // --- Actualizar lista de espectadores en UI ---
-            function updateViewerList() {
-                let html = '';
-                if (streamerId) {
-                    html += `<li>🟣 Streamer (${streamerId.substr(0,4)}...)</li>`;
-                }
-                viewers.forEach(id => {
-                    if (id !== streamerId) {
-                        html += `<li>👤 Espectador (${id.substr(0,4)}...)</li>`;
+            // --- Funciones de red ---
+            function broadcastToViewers(message) {
+                connections.forEach(conn => {
+                    if (conn.open) {
+                        conn.send(message);
                     }
                 });
+            }
+
+            // --- Actualizar lista de espectadores (solo host) ---
+            function updateViewerList() {
+                if (!isHost) return;
+                let html = `<li>🟣 Host (tú)</li>`;
+                connections.forEach((conn, peerId) => {
+                    html += `<li>👤 Espectador (${peerId.substr(0,4)}...)</li>`;
+                });
                 viewerList.innerHTML = html || '<li>No hay espectadores</li>';
+            }
+
+            // --- Para el espectador, mostrar la lista (solo ve al host y a sí mismo? mejor mostrar mensaje) ---
+            function setViewerListForGuest() {
+                viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú (espectador)</li>';
             }
 
             // --- Chat ---
@@ -618,18 +445,142 @@
                 return div.innerHTML;
             }
 
-            function sendChatMessage() {
-                const user = usernameInput.value.trim() || 'Anon';
-                const message = messageInput.value.trim();
-                if (!message || !currentRoom) return;
-                broadcast({ type: 'chat', user, message });
-                addChatMessage(user, message); // lo mostramos localmente
-                messageInput.value = '';
+            // --- Crear sala como host ---
+            function createRoom(roomId) {
+                // Inicializar Peer con ID = roomId
+                peer = new Peer(roomId);
+                myPeerId = roomId;
+                isHost = true;
+                roomDisplay.textContent = roomId;
+                roleDisplay.textContent = ' (Host)';
+                toolsContainer.style.display = 'flex';
+                joinScreen.style.display = 'none';
+                drawingApp.style.display = 'flex';
+
+                peer.on('open', (id) => {
+                    console.log('Host peer abierto con ID:', id);
+                    addChatMessage('Sistema', 'Sala creada. Esperando espectadores...');
+                });
+
+                peer.on('connection', (conn) => {
+                    console.log('Nuevo espectador conectado:', conn.peer);
+                    connections.set(conn.peer, conn);
+
+                    conn.on('data', (data) => {
+                        // Recibir datos del espectador (solo chat)
+                        if (data.type === 'chat') {
+                            // Reenviar a todos (incluido el host para mostrarlo)
+                            addChatMessage(data.user, data.message);
+                            broadcastToViewers({ type: 'chat', user: data.user, message: data.message });
+                        }
+                    });
+
+                    conn.on('close', () => {
+                        console.log('Espectador desconectado:', conn.peer);
+                        connections.delete(conn.peer);
+                        updateViewerList();
+                        broadcastToViewers({ type: 'system', message: 'Un espectador se ha desconectado.' });
+                    });
+
+                    // Enviar historial al nuevo espectador
+                    conn.send({ type: 'history', history: history });
+
+                    // Notificar a todos
+                    updateViewerList();
+                    broadcastToViewers({ type: 'system', message: 'Nuevo espectador conectado.' });
+                });
+
+                peer.on('error', (err) => {
+                    if (err.type === 'unavailable-id') {
+                        alert('El ID de sala ya está en uso. Elige otro.');
+                        leaveRoom();
+                    } else {
+                        console.error('Error de Peer:', err);
+                    }
+                });
             }
 
-            // --- Eventos de dibujo (solo streamer) ---
+            // --- Unirse como espectador ---
+            function joinRoom(roomId) {
+                // Crear un peer sin ID fijo (aleatorio)
+                peer = new Peer();
+                isHost = false;
+                roomDisplay.textContent = roomId;
+                roleDisplay.textContent = ' (Espectador)';
+                toolsContainer.style.display = 'none';
+                joinScreen.style.display = 'none';
+                drawingApp.style.display = 'flex';
+
+                peer.on('open', (id) => {
+                    myPeerId = id;
+                    console.log('Mi ID de espectador:', id);
+                    // Conectar al host
+                    const conn = peer.connect(roomId);
+                    hostConnection = conn;
+
+                    conn.on('open', () => {
+                        console.log('Conectado al host');
+                        setViewerListForGuest();
+                        addChatMessage('Sistema', 'Conectado a la sala. Esperando historial...');
+                    });
+
+                    conn.on('data', (data) => {
+                        if (data.type === 'history') {
+                            // Recibir historial y dibujar
+                            history = data.history;
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            history.forEach(action => applyAction(action));
+                            addChatMessage('Sistema', 'Historial cargado. Puedes ver el dibujo.');
+                        } else if (data.type === 'draw-action') {
+                            applyAction(data.action);
+                        } else if (data.type === 'clear') {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        } else if (data.type === 'chat') {
+                            addChatMessage(data.user, data.message);
+                        } else if (data.type === 'system') {
+                            addChatMessage('Sistema', data.message);
+                        }
+                    });
+
+                    conn.on('close', () => {
+                        alert('El host se ha desconectado.');
+                        leaveRoom();
+                    });
+
+                    conn.on('error', (err) => {
+                        console.error('Error en conexión:', err);
+                    });
+                });
+
+                peer.on('error', (err) => {
+                    if (err.type === 'peer-unavailable') {
+                        alert('No se encontró la sala. Verifica el ID.');
+                        leaveRoom();
+                    } else {
+                        console.error('Error de Peer:', err);
+                    }
+                });
+            }
+
+            // --- Salir de la sala ---
+            function leaveRoom() {
+                if (peer) {
+                    peer.destroy();
+                    peer = null;
+                }
+                connections.clear();
+                hostConnection = null;
+                isHost = false;
+                roomId = null;
+                history = [];
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                joinScreen.style.display = 'block';
+                drawingApp.style.display = 'none';
+            }
+
+            // --- Eventos de dibujo (solo host) ---
             canvas.addEventListener('mousedown', (e) => {
-                if (!isStreamer) return;
+                if (!isHost) return;
                 const pos = getMousePos(e);
                 startX = pos.x;
                 startY = pos.y;
@@ -647,8 +598,8 @@
                         color: colorPicker.value,
                         size: brushSizeInput.value
                     };
-                    addAction(action);
-                    broadcast({ type: 'draw-action', action });
+                    history.push(action);
+                    broadcastToViewers({ type: 'draw-action', action });
                 } else if (toolSelect.value === 'text') {
                     const text = prompt('Escribe el texto:');
                     if (text) {
@@ -661,14 +612,14 @@
                             size: brushSizeInput.value
                         };
                         drawText(action);
-                        addAction(action);
-                        broadcast({ type: 'draw-action', action });
+                        history.push(action);
+                        broadcastToViewers({ type: 'draw-action', action });
                     }
                 }
             });
 
             canvas.addEventListener('mousemove', (e) => {
-                if (!isStreamer || !drawing) return;
+                if (!isHost || !drawing) return;
                 const pos = getMousePos(e);
                 const x = pos.x;
                 const y = pos.y;
@@ -688,8 +639,8 @@
                         color: colorPicker.value,
                         size: brushSizeInput.value
                     };
-                    addAction(action);
-                    broadcast({ type: 'draw-action', action });
+                    history.push(action);
+                    broadcastToViewers({ type: 'draw-action', action });
 
                     lastX = x;
                     lastY = y;
@@ -697,13 +648,13 @@
             });
 
             canvas.addEventListener('mouseup', (e) => {
-                if (!isStreamer) return;
+                if (!isHost) return;
                 if (toolSelect.value === 'pencil' && drawing) {
                     drawing = false;
                     ctx.beginPath();
                     const action = { type: 'draw_end' };
-                    addAction(action);
-                    broadcast({ type: 'draw-action', action });
+                    history.push(action);
+                    broadcastToViewers({ type: 'draw-action', action });
                 } else if (toolSelect.value !== 'pencil' && toolSelect.value !== 'text') {
                     // Forma
                     const pos = getMousePos(e);
@@ -718,8 +669,8 @@
                         size: brushSizeInput.value
                     };
                     drawShape(action);
-                    addAction(action);
-                    broadcast({ type: 'draw-action', action });
+                    history.push(action);
+                    broadcastToViewers({ type: 'draw-action', action });
                 }
             });
 
@@ -728,8 +679,8 @@
                     drawing = false;
                     ctx.beginPath();
                     const action = { type: 'draw_end' };
-                    addAction(action);
-                    broadcast({ type: 'draw-action', action });
+                    history.push(action);
+                    broadcastToViewers({ type: 'draw-action', action });
                 }
             });
 
@@ -743,27 +694,33 @@
                 };
             }
 
-            // --- Limpiar canvas (solo streamer) ---
+            // --- Limpiar canvas (solo host) ---
             clearBtn.addEventListener('click', () => {
-                if (!isStreamer) return;
+                if (!isHost) return;
                 if (confirm('¿Limpiar todo el canvas?')) {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     history = [];
-                    saveHistoryToStorage();
-                    broadcast({ type: 'clear' });
+                    broadcastToViewers({ type: 'clear' });
                 }
             });
 
             // --- Eventos de UI ---
             createBtn.addEventListener('click', () => {
-                const roomId = roomInput.value.trim() || 'sala' + Math.random().toString(36).substring(2, 6);
-                joinRoom(roomId, true);
+                const roomId = roomInput.value.trim();
+                if (!roomId) {
+                    alert('Ingresa un ID para la sala');
+                    return;
+                }
+                createRoom(roomId);
             });
 
             joinBtn.addEventListener('click', () => {
                 const roomId = roomInput.value.trim();
-                if (!roomId) return alert('Ingresa un código de sala');
-                joinRoom(roomId, false);
+                if (!roomId) {
+                    alert('Ingresa el ID de la sala a la que quieres unirte');
+                    return;
+                }
+                joinRoom(roomId);
             });
 
             leaveBtn.addEventListener('click', leaveRoom);
@@ -773,13 +730,30 @@
                 if (e.key === 'Enter') sendChatMessage();
             });
 
-            // Al cerrar la pestaña, notificar salida
-            window.addEventListener('beforeunload', () => {
-                if (channel && currentRoom) {
-                    broadcast({ type: 'leave', userId: myId, role: isStreamer ? 'streamer' : 'viewer' });
-                    if (isStreamer) {
-                        broadcast({ type: 'streamer-left', streamerId: myId });
+            function sendChatMessage() {
+                const user = usernameInput.value.trim() || 'Anon';
+                const message = messageInput.value.trim();
+                if (!message) return;
+
+                if (isHost) {
+                    // El host envía el mensaje a todos
+                    addChatMessage(user, message);
+                    broadcastToViewers({ type: 'chat', user, message });
+                } else {
+                    // Espectador: enviar al host
+                    if (hostConnection && hostConnection.open) {
+                        hostConnection.send({ type: 'chat', user, message });
+                        // Lo mostramos localmente también (el host lo reenviará, pero para no esperar, lo mostramos ya)
+                        addChatMessage(user, message);
                     }
+                }
+                messageInput.value = '';
+            }
+
+            // Al cerrar la pestaña, limpiar
+            window.addEventListener('beforeunload', () => {
+                if (peer) {
+                    peer.destroy();
                 }
             });
         })();
