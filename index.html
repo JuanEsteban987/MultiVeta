@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Twitch de Dibujo</title>
+    <title>Twitch de Dibujo - Salas</title>
     <style>
         * {
             box-sizing: border-box;
@@ -20,9 +20,9 @@
         }
         .container {
             display: flex;
-            width: 1400px;
+            width: 1600px;
             max-width: 95%;
-            height: 800px;
+            height: 900px;
             background: #1f1f23;
             border-radius: 8px;
             overflow: hidden;
@@ -34,6 +34,39 @@
             flex-direction: column;
             background: #18181b;
             padding: 16px;
+        }
+        .room-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            background: #26262c;
+            padding: 10px 16px;
+            border-radius: 8px;
+            align-items: center;
+        }
+        .room-bar label {
+            color: #adadb8;
+        }
+        .room-bar input {
+            background: #18181b;
+            border: 1px solid #3a3a44;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            outline: none;
+            flex: 1;
+        }
+        .room-bar button {
+            background: #9147ff;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .room-bar button:hover {
+            background: #772ce8;
         }
         .canvas-wrapper {
             background: #0e0e10;
@@ -77,6 +110,14 @@
         }
         .tools input[type="range"] {
             width: 100px;
+        }
+        .tools select {
+            background: #18181b;
+            color: white;
+            border: 1px solid #3a3a44;
+            border-radius: 4px;
+            padding: 6px;
+            outline: none;
         }
         .tools button {
             background: #9147ff;
@@ -178,15 +219,30 @@
 <body>
     <div class="container">
         <div class="stream-area">
+            <div class="room-bar">
+                <label>Sala:</label>
+                <input type="text" id="roomInput" placeholder="Nombre de la sala (ej. arte1)" value="general">
+                <button id="joinRoomBtn">Unirse / Cambiar</button>
+                <span id="currentRoomDisplay" style="color:#bf94ff;">general</span>
+            </div>
             <div class="canvas-wrapper">
-                <canvas id="drawCanvas" width="900" height="500"></canvas>
+                <canvas id="drawCanvas" width="1000" height="600"></canvas>
             </div>
             <div class="tools">
+                <label>Herramienta:</label>
+                <select id="toolSelect">
+                    <option value="pencil" selected>Lápiz</option>
+                    <option value="rectangle">Rectángulo</option>
+                    <option value="circle">Círculo</option>
+                    <option value="line">Línea</option>
+                    <option value="text">Texto</option>
+                </select>
                 <label>Color:</label>
                 <input type="color" id="colorPicker" value="#000000">
-                <label>Tamaño:</label>
+                <label>Grosor:</label>
                 <input type="range" id="brushSize" min="1" max="30" value="5">
-                <button id="clearCanvas">Limpiar</button>
+                <button id="undoBtn">Deshacer</button>
+                <button id="clearCanvas">Limpiar todo</button>
             </div>
         </div>
         <div class="chat-panel">
@@ -197,7 +253,7 @@
                 </ul>
             </div>
             <div class="messages" id="chatMessages">
-                <div class="message"><span class="user">Sistema:</span> <span class="text">Bienvenido al stream de dibujo</span></div>
+                <div class="message"><span class="user">Sistema:</span> <span class="text">Bienvenido. Elige una sala y dibuja.</span></div>
             </div>
             <div class="chat-input-area">
                 <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
@@ -208,19 +264,33 @@
     </div>
 
     <script>
-        class TwitchDrawing {
-            constructor(canvasId, options = {}) {
+        class TwitchDrawingRoom {
+            constructor(canvasId) {
                 this.canvas = document.getElementById(canvasId);
                 this.ctx = this.canvas.getContext('2d');
+                
+                // Estado de dibujo
                 this.drawing = false;
+                this.startX = 0;
+                this.startY = 0;
                 this.lastX = 0;
                 this.lastY = 0;
-                this.color = options.color || '#000000';
-                this.brushSize = options.brushSize || 5;
+                this.currentTool = 'pencil'; // pencil, rectangle, circle, line, text
+                this.color = '#000000';
+                this.brushSize = 5;
 
-                // Elementos de UI
+                // Historial de acciones para deshacer y sincronización
+                this.actions = []; // cada acción: {type, ...}
+                this.undoStack = []; // pila para deshacer (se maneja con índices, pero simplificaremos)
+
+                // Elementos UI
+                this.roomInput = document.getElementById('roomInput');
+                this.joinBtn = document.getElementById('joinRoomBtn');
+                this.currentRoomSpan = document.getElementById('currentRoomDisplay');
+                this.toolSelect = document.getElementById('toolSelect');
                 this.colorPicker = document.getElementById('colorPicker');
                 this.brushSizeInput = document.getElementById('brushSize');
+                this.undoBtn = document.getElementById('undoBtn');
                 this.clearBtn = document.getElementById('clearCanvas');
                 this.chatMessages = document.getElementById('chatMessages');
                 this.viewerList = document.getElementById('viewerList');
@@ -228,133 +298,74 @@
                 this.messageInput = document.getElementById('messageInput');
                 this.sendBtn = document.getElementById('sendMessage');
 
-                // Estado del chat
-                this.messages = [];
-                this.viewers = new Set(); // conjunto de IDs de pestañas
+                // Variables de sala
+                this.roomId = 'general';
+                this.viewerId = 'viewer_' + Math.random().toString(36).substr(2, 8);
+                this.viewers = new Set(); // IDs en la sala actual
+                this.channel = null; // BroadcastChannel actual
 
-                // Configurar canvas
+                // Inicializar configuración del canvas
                 this.ctx.lineCap = 'round';
                 this.ctx.lineJoin = 'round';
                 this.ctx.strokeStyle = this.color;
+                this.ctx.fillStyle = this.color;
                 this.ctx.lineWidth = this.brushSize;
+                this.ctx.font = '16px Arial';
 
-                // Configurar eventos de dibujo
-                this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
-                this.canvas.addEventListener('mousemove', this.draw.bind(this));
-                this.canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
-                this.canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+                // Eventos de dibujo
+                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+                this.canvas.addEventListener('mousemove', this.onMouseMove.bind(this));
+                this.canvas.addEventListener('mouseup', this.onMouseUp.bind(this));
+                this.canvas.addEventListener('mouseout', this.onMouseOut.bind(this));
 
-                // Eventos de herramientas
-                this.colorPicker.addEventListener('input', (e) => {
-                    this.color = e.target.value;
-                    this.ctx.strokeStyle = this.color;
-                });
-                this.brushSizeInput.addEventListener('input', (e) => {
-                    this.brushSize = e.target.value;
-                    this.ctx.lineWidth = this.brushSize;
-                });
-                this.clearBtn.addEventListener('click', () => {
-                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                    this.broadcastAction({ type: 'clear' });
-                });
+                // Eventos UI
+                this.toolSelect.addEventListener('change', (e) => { this.currentTool = e.target.value; });
+                this.colorPicker.addEventListener('input', (e) => { this.color = e.target.value; });
+                this.brushSizeInput.addEventListener('input', (e) => { this.brushSize = parseInt(e.target.value); });
+                this.undoBtn.addEventListener('click', () => this.undo());
+                this.clearBtn.addEventListener('click', () => this.clearAll());
+                this.joinBtn.addEventListener('click', () => this.joinRoom(this.roomInput.value.trim() || 'general'));
+                this.sendBtn.addEventListener('click', () => this.sendMessage());
+                this.messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.sendMessage(); });
 
-                // Eventos de chat
-                this.sendBtn.addEventListener('click', this.sendMessage.bind(this));
-                this.messageInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') this.sendMessage();
-                });
+                // Unirse a la sala inicial
+                this.joinRoom(this.roomId);
+            }
 
-                // Comunicación entre pestañas (BroadcastChannel)
-                this.channel = new BroadcastChannel('twitch_drawing');
-                this.channel.onmessage = (e) => {
-                    this.handleBroadcast(e.data);
-                };
+            // Unirse a una nueva sala
+            joinRoom(newRoom) {
+                if (newRoom === this.roomId && this.channel) return; // ya en esa sala
 
-                // Registrar esta pestaña como un espectador
-                this.viewerId = 'viewer_' + Math.random().toString(36).substr(2, 8);
-                this.viewers.add(this.viewerId);
+                // Salir de la sala anterior
+                if (this.channel) {
+                    this.broadcastAction({ type: 'viewer_leave', id: this.viewerId });
+                    this.channel.close();
+                }
+
+                this.roomId = newRoom;
+                this.currentRoomSpan.textContent = this.roomId;
+                this.actions = []; // limpiar historial
+                this.viewers.clear();
+                this.updateViewerList();
+
+                // Limpiar canvas local
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Crear nuevo canal Broadcast para esta sala
+                this.channel = new BroadcastChannel('twitch_draw_' + this.roomId);
+                this.channel.onmessage = (e) => this.handleBroadcast(e.data);
+
+                // Anunciar llegada
                 this.broadcastAction({ type: 'viewer_join', id: this.viewerId });
 
-                // Al cerrar la pestaña, notificar salida
-                window.addEventListener('beforeunload', () => {
-                    this.broadcastAction({ type: 'viewer_leave', id: this.viewerId });
-                });
-
-                // Actualizar la lista de espectadores cada segundo (opcional)
-                setInterval(() => this.updateViewerList(), 1000);
+                // Solicitar historial a otros en la sala
+                this.broadcastAction({ type: 'request_sync', requester: this.viewerId });
             }
 
-            // Métodos de dibujo
-            startDrawing(e) {
-                this.drawing = true;
-                const pos = this.getMousePos(e);
-                this.lastX = pos.x;
-                this.lastY = pos.y;
-                this.ctx.beginPath();
-                this.ctx.moveTo(this.lastX, this.lastY);
-                // Emitir evento de inicio de trazo (opcional, para sincronizar)
-                this.broadcastAction({
-                    type: 'draw_start',
-                    x: this.lastX,
-                    y: this.lastY,
-                    color: this.color,
-                    size: this.brushSize
-                });
-            }
-
-            draw(e) {
-                if (!this.drawing) return;
-                e.preventDefault();
-                const pos = this.getMousePos(e);
-                const x = pos.x;
-                const y = pos.y;
-
-                // Dibujar localmente
-                this.ctx.strokeStyle = this.color;
-                this.ctx.lineWidth = this.brushSize;
-                this.ctx.lineTo(x, y);
-                this.ctx.stroke();
-                this.ctx.beginPath();
-                this.ctx.moveTo(x, y);
-
-                // Emitir punto a otras pestañas
-                this.broadcastAction({
-                    type: 'draw',
-                    x: x,
-                    y: y,
-                    color: this.color,
-                    size: this.brushSize
-                });
-
-                this.lastX = x;
-                this.lastY = y;
-            }
-
-            stopDrawing() {
-                if (this.drawing) {
-                    this.drawing = false;
-                    this.ctx.beginPath(); // prevenir que se conecte con el próximo trazo
-                    this.broadcastAction({ type: 'draw_end' });
-                }
-            }
-
-            getMousePos(e) {
-                const rect = this.canvas.getBoundingClientRect();
-                const scaleX = this.canvas.width / rect.width;
-                const scaleY = this.canvas.height / rect.height;
-                return {
-                    x: (e.clientX - rect.left) * scaleX,
-                    y: (e.clientY - rect.top) * scaleY
-                };
-            }
-
-            // Comunicación Broadcast
-            broadcastAction(action) {
-                this.channel.postMessage(action);
-            }
-
+            // Manejar mensajes del canal
             handleBroadcast(data) {
                 switch (data.type) {
+                    // Dibujo
                     case 'draw_start':
                         this.ctx.beginPath();
                         this.ctx.moveTo(data.x, data.y);
@@ -372,12 +383,51 @@
                     case 'draw_end':
                         this.ctx.beginPath();
                         break;
+
+                    // Formas
+                    case 'shape':
+                        this.drawShape(data.shape, data.x, data.y, data.x2, data.y2, data.color, data.size);
+                        break;
+                    case 'text':
+                        this.drawText(data.text, data.x, data.y, data.color, data.size);
+                        break;
                     case 'clear':
                         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                         break;
+                    case 'undo':
+                        // Deshacer: necesitamos reconstruir el canvas desde el historial
+                        // Pero aquí simplemente replicamos la acción de deshacer localmente
+                        // Para mantener consistencia, cada cliente debe gestionar su propio historial
+                        // y al recibir 'undo', cada uno elimina su última acción y redibuja.
+                        // Esto es complejo de sincronizar; para simplificar, deshacer solo afecta localmente.
+                        // En su lugar, mejor implementaremos deshacer como una acción de "eliminar última acción"
+                        // y la broadcastiamos para que todos la apliquen.
+                        // Pero para no complicar, aquí deshacer será local (cada uno su propio deshacer).
+                        // Si quieres deshacer colaborativo, necesitarías un historial compartido.
+                        // Lo dejaremos como acción local, y no se broadcasta.
+                        break;
+
+                    // Sincronización
+                    case 'request_sync':
+                        if (data.requester !== this.viewerId && this.actions.length > 0) {
+                            // Enviar historial al solicitante
+                            this.broadcastAction({ type: 'sync_actions', actions: this.actions, target: data.requester });
+                        }
+                        break;
+                    case 'sync_actions':
+                        if (data.target === this.viewerId) {
+                            // Recibir historial y aplicarlo
+                            this.actions = data.actions;
+                            this.redrawFromActions();
+                        }
+                        break;
+
+                    // Chat
                     case 'chat':
                         this.addMessage(data.user, data.text);
                         break;
+
+                    // Espectadores
                     case 'viewer_join':
                         this.viewers.add(data.id);
                         this.updateViewerList();
@@ -387,6 +437,214 @@
                         this.updateViewerList();
                         break;
                 }
+            }
+
+            // Enviar acción por broadcast
+            broadcastAction(action) {
+                if (this.channel) {
+                    this.channel.postMessage(action);
+                }
+            }
+
+            // Añadir acción al historial local
+            addAction(action) {
+                this.actions.push(action);
+                // Limitar tamaño del historial (opcional)
+                if (this.actions.length > 500) this.actions.shift();
+            }
+
+            // Redibujar todo el canvas desde el historial
+            redrawFromActions() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                for (let action of this.actions) {
+                    switch (action.type) {
+                        case 'draw_start':
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(action.x, action.y);
+                            this.ctx.strokeStyle = action.color;
+                            this.ctx.lineWidth = action.size;
+                            break;
+                        case 'draw':
+                            this.ctx.strokeStyle = action.color;
+                            this.ctx.lineWidth = action.size;
+                            this.ctx.lineTo(action.x, action.y);
+                            this.ctx.stroke();
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(action.x, action.y);
+                            break;
+                        case 'draw_end':
+                            this.ctx.beginPath();
+                            break;
+                        case 'shape':
+                            this.drawShape(action.shape, action.x, action.y, action.x2, action.y2, action.color, action.size);
+                            break;
+                        case 'text':
+                            this.drawText(action.text, action.x, action.y, action.color, action.size);
+                            break;
+                        case 'clear':
+                            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                            break;
+                    }
+                }
+            }
+
+            // Dibujar una forma (rectángulo, círculo, línea)
+            drawShape(shape, x1, y1, x2, y2, color, size) {
+                this.ctx.save();
+                this.ctx.strokeStyle = color;
+                this.ctx.fillStyle = color;
+                this.ctx.lineWidth = size;
+                this.ctx.beginPath();
+                if (shape === 'rectangle') {
+                    this.ctx.rect(x1, y1, x2 - x1, y2 - y1);
+                    this.ctx.stroke();
+                } else if (shape === 'circle') {
+                    const radius = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                    this.ctx.arc(x1, y1, radius, 0, 2 * Math.PI);
+                    this.ctx.stroke();
+                } else if (shape === 'line') {
+                    this.ctx.moveTo(x1, y1);
+                    this.ctx.lineTo(x2, y2);
+                    this.ctx.stroke();
+                }
+                this.ctx.restore();
+            }
+
+            // Dibujar texto
+            drawText(text, x, y, color, size) {
+                this.ctx.save();
+                this.ctx.fillStyle = color;
+                this.ctx.font = `${size * 3}px Arial`; // tamaño proporcional
+                this.ctx.fillText(text, x, y);
+                this.ctx.restore();
+            }
+
+            // Eventos del ratón para dibujo
+            onMouseDown(e) {
+                const pos = this.getMousePos(e);
+                this.startX = pos.x;
+                this.startY = pos.y;
+                this.lastX = pos.x;
+                this.lastY = pos.y;
+
+                if (this.currentTool === 'pencil') {
+                    this.drawing = true;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.lastX, this.lastY);
+                    this.broadcastAction({
+                        type: 'draw_start',
+                        x: this.lastX,
+                        y: this.lastY,
+                        color: this.color,
+                        size: this.brushSize
+                    });
+                } else if (this.currentTool === 'text') {
+                    // Solicitar texto al usuario
+                    const text = prompt('Escribe el texto:');
+                    if (text) {
+                        const action = {
+                            type: 'text',
+                            text: text,
+                            x: this.startX,
+                            y: this.startY,
+                            color: this.color,
+                            size: this.brushSize
+                        };
+                        this.drawText(text, this.startX, this.startY, this.color, this.brushSize);
+                        this.addAction(action);
+                        this.broadcastAction(action);
+                    }
+                }
+            }
+
+            onMouseMove(e) {
+                if (!this.drawing && this.currentTool !== 'pencil') return;
+                const pos = this.getMousePos(e);
+                const x = pos.x;
+                const y = pos.y;
+
+                if (this.currentTool === 'pencil' && this.drawing) {
+                    // Dibujar línea
+                    this.ctx.strokeStyle = this.color;
+                    this.ctx.lineWidth = this.brushSize;
+                    this.ctx.lineTo(x, y);
+                    this.ctx.stroke();
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, y);
+
+                    // Broadcast
+                    this.broadcastAction({
+                        type: 'draw',
+                        x: x,
+                        y: y,
+                        color: this.color,
+                        size: this.brushSize
+                    });
+
+                    this.lastX = x;
+                    this.lastY = y;
+                }
+            }
+
+            onMouseUp(e) {
+                if (this.currentTool === 'pencil' && this.drawing) {
+                    this.drawing = false;
+                    this.ctx.beginPath();
+                    this.broadcastAction({ type: 'draw_end' });
+                } else if (this.currentTool !== 'pencil' && this.currentTool !== 'text') {
+                    // Forma: rectángulo, círculo, línea
+                    const pos = this.getMousePos(e);
+                    const x2 = pos.x;
+                    const y2 = pos.y;
+                    const action = {
+                        type: 'shape',
+                        shape: this.currentTool,
+                        x: this.startX,
+                        y: this.startY,
+                        x2: x2,
+                        y2: y2,
+                        color: this.color,
+                        size: this.brushSize
+                    };
+                    this.drawShape(this.currentTool, this.startX, this.startY, x2, y2, this.color, this.brushSize);
+                    this.addAction(action);
+                    this.broadcastAction(action);
+                }
+            }
+
+            onMouseOut() {
+                if (this.drawing) {
+                    this.drawing = false;
+                    this.ctx.beginPath();
+                    this.broadcastAction({ type: 'draw_end' });
+                }
+            }
+
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const scaleX = this.canvas.width / rect.width;
+                const scaleY = this.canvas.height / rect.height;
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            }
+
+            // Deshacer local (no broadcast)
+            undo() {
+                if (this.actions.length === 0) return;
+                // Eliminar la última acción y redibujar
+                this.actions.pop();
+                this.redrawFromActions();
+                // Nota: No se envía broadcast, cada usuario gestiona su propio deshacer.
+                // Para deshacer colaborativo, necesitaríamos un sistema de historial compartido.
+            }
+
+            // Limpiar todo
+            clearAll() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.actions = [];
+                this.broadcastAction({ type: 'clear' });
             }
 
             // Chat
@@ -416,7 +674,6 @@
             updateViewerList() {
                 const count = this.viewers.size;
                 const listHtml = Array.from(this.viewers).map(id => {
-                    // Podríamos tener nombres más amigables, pero usamos IDs cortos
                     const shortId = id.substr(0, 6) + '...';
                     return `<li>👤 ${shortId}</li>`;
                 }).join('');
@@ -424,12 +681,9 @@
             }
         }
 
-        // Inicializar la aplicación cuando el DOM esté listo
+        // Inicializar la aplicación
         document.addEventListener('DOMContentLoaded', () => {
-            const app = new TwitchDrawing('drawCanvas', {
-                color: '#000000',
-                brushSize: 5
-            });
+            window.app = new TwitchDrawingRoom('drawCanvas');
         });
     </script>
 </body>
