@@ -228,11 +228,11 @@
     <!-- connection controls (P2P) -->
     <div class="connection-bar">
         <div class="peer-group">
-            <input type="text" id="hostIdInput" placeholder="streamer id (e.g. ninja)" value="streamer1">
+            <input type="text" id="hostIdInput" placeholder="streamer id (e.g. ninja)" value="">
             <button id="hostBtn" class="primary">✨ HOST as streamer</button>
         </div>
         <div class="peer-group">
-            <input type="text" id="joinIdInput" placeholder="streamer id to join" value="streamer1">
+            <input type="text" id="joinIdInput" placeholder="streamer id to join" value="">
             <button id="joinBtn">🔌 join room</button>
         </div>
         <div class="status" id="statusDisplay">⚡ disconnected</div>
@@ -260,6 +260,26 @@
 
 <script>
 (function() {
+    // --------------------------------------------------------------
+    //  GENERATE RANDOM STREAMER ID (length 1-20, alphanumeric)
+    // --------------------------------------------------------------
+    function randomAlphanumeric(length) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+
+    // set random default values for both inputs (length between 1 and 20)
+    const hostInput = document.getElementById('hostIdInput');
+    const joinInput = document.getElementById('joinIdInput');
+    const randomLength = Math.floor(Math.random() * 20) + 1; // 1-20
+    const randomId = randomAlphanumeric(randomLength);
+    hostInput.value = randomId;
+    joinInput.value = randomId; // optional, but convenient for testing
+
     // --------------------------------------------------------------
     //  GLOBAL VARIABLES
     // --------------------------------------------------------------
