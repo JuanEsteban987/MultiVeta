@@ -1,1104 +1,757 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Twitch P2P - Juegos funcionales</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch 2D shooter · survive.io style + P2P</title>
+    <!-- PeerJS for WebRTC made simple -->
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 0;
+            user-select: none;
         }
         body {
-            background: #0e0e10;
-            color: #efeff1;
+            margin: 0;
+            min-height: 100vh;
+            background: #0d0f14;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            padding: 8px;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
-        /* Pantalla de inicio */
-        .join-screen {
-            background: #1f1f23;
-            padding: 30px 20px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .join-screen h1 {
-            margin-bottom: 25px;
-            color: #bf94ff;
-            font-size: 28px;
-        }
-        .join-screen input {
+        .twitch-panel {
             background: #18181b;
-            border: 2px solid #3a3a44;
-            color: white;
-            padding: 15px;
-            border-radius: 40px;
-            font-size: 18px;
-            width: 100%;
-            margin-bottom: 15px;
-            outline: none;
-        }
-        .join-screen button {
-            background: #9147ff;
-            border: none;
-            color: white;
-            font-weight: bold;
-            padding: 15px;
-            border-radius: 40px;
-            font-size: 18px;
-            width: 100%;
-            margin: 5px 0;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .join-screen button:hover {
-            background: #772ce8;
-        }
-        .join-screen .info {
-            color: #adadb8;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-        /* Sala */
-        .container {
-            display: flex;
-            width: 100%;
-            max-width: 1600px;
-            height: 90vh;
-            background: #1f1f23;
-            border-radius: 20px;
+            border-radius: 24px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.7), 0 0 0 1px #2f2f35 inset;
             overflow: hidden;
-            position: relative;
-            flex-direction: row;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-        }
-        @media (max-width: 800px) {
-            .container { flex-direction: column; height: auto; }
-        }
-        .room-code-corner {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            background: #000000b3;
-            color: #bf94ff;
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 20;
-            border: 1px solid #9147ff;
-            backdrop-filter: blur(4px);
-        }
-        .donation-overlay {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #000000b3;
-            color: #ff79c6;
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 20;
-            border: 1px solid #ff79c6;
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .donation-overlay span { color: gold; }
-        /* Stream area */
-        .stream-area {
-            flex: 3;
+            width: 1100px;
+            max-width: 95vw;
             display: flex;
             flex-direction: column;
-            background: #18181b;
-            padding: 20px;
-            min-width: 0;
         }
-        .room-bar {
+        /* header — twitch-like gradient */
+        .stream-header {
+            background: linear-gradient(145deg, #9147ff 0%, #5f2eb0 100%);
+            padding: 16px 24px;
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            background: #26262c;
-            padding: 12px 20px;
-            border-radius: 40px;
             align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
+            gap: 15px;
+            color: white;
         }
-        .role {
-            color: #bf94ff;
+        .stream-avatar {
+            width: 48px;
+            height: 48px;
+            background: #4b367c;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        .game-selector-toggle {
-            background: #9147ff;
+        .stream-info {
+            flex: 1;
+        }
+        .stream-info h2 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.6rem;
+            letter-spacing: -0.5px;
+        }
+        .stream-info p {
+            margin: 4px 0 0;
+            opacity: 0.8;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .live-badge {
+            background: #eb0400;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+        .connection-bar {
+            background: #1f1f23;
+            padding: 12px 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            border-bottom: 1px solid #2f2f35;
+        }
+        .peer-group {
+            display: flex;
+            gap: 8px;
+            background: #0b0b0e;
+            padding: 6px 10px;
+            border-radius: 40px;
+            border: 1px solid #2e2e35;
+            align-items: center;
+        }
+        .peer-group input {
+            background: transparent;
             border: none;
             color: white;
-            padding: 8px 20px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
+            padding: 8px 12px;
+            outline: none;
+            width: 160px;
+            font-size: 0.9rem;
         }
-        .game-selector {
-            display: none;
-            gap: 8px;
-            background: #2a2a30;
-            padding: 15px;
-            border-radius: 40px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
+        .peer-group input::placeholder {
+            color: #5a5a6e;
         }
-        .game-selector.visible { display: flex; }
-        .game-btn {
+        button {
             background: #3a3a44;
             border: none;
             color: white;
-            padding: 12px 20px;
-            border-radius: 40px;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 30px;
             cursor: pointer;
-            font-size: 16px;
-            transition: 0.2s;
-            flex: 1 0 auto;
-            min-width: 100px;
+            font-size: 0.9rem;
+            transition: 0.15s;
+            border: 1px solid #5a5a6e;
         }
-        .game-btn.active { background: #9147ff; font-weight: bold; }
-        /* Canvas */
-        .canvas-wrapper {
-            background: #0e0e10;
-            border-radius: 20px;
-            padding: 10px;
-            box-shadow: inset 0 0 10px #000;
-            flex: 1;
+        button.primary {
+            background: #9147ff;
+            border-color: #a970ff;
+        }
+        button.primary:hover {
+            background: #7a3ae0;
+        }
+        button:hover {
+            background: #4f4f5c;
+        }
+        .status {
+            margin-left: auto;
+            color: #adadb8;
+            font-size: 0.9rem;
+            background: #25252b;
+            padding: 6px 18px;
+            border-radius: 30px;
+            border: 1px solid #3b3b44;
+        }
+        .game-area {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            min-height: 300px;
+            padding: 24px;
+            gap: 20px;
+            background: #141417;
+        }
+        .canvas-wrapper {
+            flex: 3;
+            aspect-ratio: 16/9;
+            background: #1e1e24;
+            border-radius: 20px;
+            border: 3px solid #2f2f37;
+            overflow: hidden;
+            box-shadow: 0 10px 25px black;
         }
         canvas {
-            background: white;
-            border-radius: 12px;
             width: 100%;
-            height: auto;
-            max-height: 100%;
-            object-fit: contain;
-            touch-action: none;
+            height: 100%;
+            display: block;
+            background: #252a2e;
+            cursor: crosshair;
         }
-        .game-overlay {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #000000b3;
-            color: white;
-            padding: 6px 18px;
-            border-radius: 40px;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 10;
-            backdrop-filter: blur(4px);
-        }
-        /* Herramientas */
-        .tools {
-            margin-top: 15px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-            background: #26262c;
-            padding: 15px;
-            border-radius: 40px;
-        }
-        .tools label { color: #adadb8; }
-        .tools input[type="color"] {
-            width: 50px;
-            height: 50px;
-            border-radius: 25px;
-            background: transparent;
-            cursor: pointer;
-        }
-        .tools input[type="range"] { width: 150px; }
-        .tools select, .tools button {
-            background: #9147ff;
-            border: none;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 15px;
-        }
-        /* Controles de juegos */
-        .game-controls {
-            margin-top: 15px;
-            background: #26262c;
-            padding: 15px;
-            border-radius: 40px;
-            display: none;
-        }
-        .game-controls.visible { display: block; }
-        .game-controls button {
-            background: #9147ff;
-            border: none;
-            color: white;
-            padding: 10px 18px;
-            border-radius: 40px;
-            margin: 5px;
-            cursor: pointer;
-        }
-        .game-controls p { margin-top: 10px; color: #bf94ff; }
-        /* Chat */
-        .chat-panel {
+        .twitch-chat {
             flex: 1;
-            background: #1f1f23;
+            background: #1b1b1f;
+            border-radius: 18px;
+            border: 1px solid #2f2f37;
             display: flex;
             flex-direction: column;
-            border-left: 2px solid #303035;
-            min-width: 260px;
+            overflow: hidden;
+            min-width: 200px;
         }
-        .viewers {
+        .chat-header {
+            background: #212127;
             padding: 15px;
-            border-bottom: 2px solid #303035;
-            background: #26262c;
+            font-weight: 600;
+            border-bottom: 1px solid #2f2f37;
+            color: #dedee3;
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
-        .viewers h3 { color: #bf94ff; margin-bottom: 10px; }
-        .viewers ul { list-style: none; max-height: 100px; overflow-y: auto; }
-        .viewers li { padding: 4px 0; }
-        .messages {
+        .chat-header span {
+            background: #3a3a48;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 0.8rem;
+        }
+        .chat-messages {
             flex: 1;
-            padding: 15px;
+            padding: 12px;
+            color: #b9b9c7;
+            font-size: 0.85rem;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 300px;
         }
-        .message {
-            background: #26262c;
-            padding: 8px 14px;
-            border-radius: 18px;
-            max-width: 90%;
+        .chat-message {
+            border-left: 3px solid #9147ff;
+            padding-left: 8px;
         }
-        .message .user { font-weight: bold; color: #bf94ff; margin-right: 8px; }
-        .chat-input-area {
-            padding: 15px;
-            border-top: 2px solid #303035;
-            background: #26262c;
+        .chat-message .name {
+            color: #bf94ff;
+            font-weight: 600;
         }
-        .chat-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-        .chat-row input {
-            flex: 1;
-            background: #18181b;
-            border: 1px solid #3a3a44;
-            color: white;
-            padding: 12px 18px;
-            border-radius: 40px;
-            outline: none;
-        }
-        .chat-row button {
-            background: #9147ff;
-            border: none;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 40px;
-            cursor: pointer;
-        }
-        .donation-btn { background: #ff4444; }
-        .emoji-panel {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .emoji-btn {
-            background: #3a3a44;
-            border: none;
-            color: white;
-            font-size: 24px;
-            padding: 8px 15px;
-            border-radius: 30px;
-            cursor: pointer;
+        .controls-note {
+            background: #25252b;
+            margin: 12px;
+            padding: 10px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #9f9fb5;
         }
     </style>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
-    <div id="join-screen" class="join-screen">
-        <h1>🎮 Twitch P2P</h1>
-        <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
-        <button id="create-room-btn">🎨 Crear sala (host)</button>
-        <button id="join-room-btn">👀 Unirse como espectador</button>
-        <div class="info">Ganas 1 VET cada 3s. Dona 50 VETS para aparecer en pantalla.</div>
-    </div>
-
-    <div id="drawing-app" class="container" style="display: none;">
-        <div id="room-code-corner" class="room-code-corner">Sala: </div>
-        <div id="donation-overlay" class="donation-overlay">🪙 <span id="vets-count">0</span> VETS</div>
-
-        <div class="stream-area">
-            <div class="room-bar">
-                <span>Bienvenido</span>
-                <span id="role-display" class="role"></span>
-                <button id="leave-room-btn" style="background:#ff4444;">Salir</button>
-            </div>
-
-            <button id="toggle-games-btn" class="game-selector-toggle" style="display:none;">🎮 Cambiar juego</button>
-            <div id="game-selector" class="game-selector">
-                <button class="game-btn" data-game="paint">🎨 Pintar</button>
-                <button class="game-btn" data-game="pokemon">🐱 Pokémon</button>
-                <button class="game-btn" data-game="football">⚽ Fútbol</button>
-                <button class="game-btn" data-game="parkour">🏃 Parkour</button>
-            </div>
-
-            <div class="canvas-wrapper">
-                <canvas id="drawCanvas" width="1000" height="600"></canvas>
-                <div id="game-overlay" class="game-overlay">🎨 Modo Pintar</div>
-            </div>
-
-            <div class="tools" id="tools-container" style="display:none;">
-                <select id="toolSelect">
-                    <option value="pencil">✏️ Lápiz</option>
-                    <option value="rectangle">🔲 Rectángulo</option>
-                    <option value="circle">⚪ Círculo</option>
-                    <option value="line">📏 Línea</option>
-                    <option value="text">🔤 Texto</option>
-                </select>
-                <label>Color:</label>
-                <input type="color" id="colorPicker" value="#000000">
-                <label>Grosor:</label>
-                <input type="range" id="brushSize" min="1" max="30" value="5">
-                <button id="clearCanvas">🗑️ Limpiar</button>
-            </div>
-
-            <div id="pokemon-controls" class="game-controls">
-                <h4>⚔️ Pokémon</h4>
-                <button id="pokemon-attack">💥 Atacar (gratis)</button>
-                <button id="pokemon-heal">💚 Curar (10 VETS)</button>
-                <button id="pokemon-catch">🎯 Capturar (20 VETS)</button>
-                <p>🔥 Tu HP: <span id="pokemon-hp">100</span> | 🐾 Bot HP: <span id="bot-hp">100</span></p>
-            </div>
-            <div id="football-controls" class="game-controls">
-                <h4>⚽ Penaltis</h4>
-                <button id="football-shoot">⚡ Lanzar</button>
-                <p>🎯 Goles: <span id="football-score">0</span> | 🧤 Intentos: <span id="football-attempts">5</span></p>
-                <p>📈 Dificultad: <span id="football-diff">1</span></p>
-            </div>
-            <div id="parkour-controls" class="game-controls">
-                <h4>🏃 Parkour</h4>
-                <button id="parkour-jump">🦘 Saltar (espacio)</button>
-                <p>📊 Puntos: <span id="parkour-score">0</span> | 🏆 Récord: <span id="parkour-best">0</span></p>
-            </div>
-        </div>
-
-        <div class="chat-panel">
-            <div class="viewers">
-                <h3>👁️ Espectadores</h3>
-                <ul id="viewerList"><li>Cargando...</li></ul>
-            </div>
-            <div class="messages" id="chatMessages">
-                <div class="message"><span class="user">Sistema:</span> Conéctate a una sala.</div>
-            </div>
-            <div class="chat-input-area">
-                <div class="chat-row">
-                    <input type="text" id="usernameInput" placeholder="Nombre" value="Anon">
-                    <input type="text" id="messageInput" placeholder="Mensaje...">
-                    <button id="sendMessage">Enviar</button>
-                    <button id="donationBtn" class="donation-btn">💜 Donar 50</button>
-                </div>
-                <div class="emoji-panel">
-                    <button class="emoji-btn" data-emoji="😀">😀</button>
-                    <button class="emoji-btn" data-emoji="😂">😂</button>
-                    <button class="emoji-btn" data-emoji="❤️">❤️</button>
-                    <button class="emoji-btn" data-emoji="👍">👍</button>
-                    <button class="emoji-btn" data-emoji="🎨">🎨</button>
-                    <button class="emoji-btn" data-emoji="⚽">⚽</button>
-                    <button class="emoji-btn" data-emoji="🐱">🐱</button>
-                    <button class="emoji-btn" data-emoji="🏃">🏃</button>
-                </div>
-            </div>
+<div class="twitch-panel">
+    <!-- stream header (twitch vibe) -->
+    <div class="stream-header">
+        <div class="stream-avatar">🎮</div>
+        <div class="stream-info">
+            <h2>survive.io <span style="font-weight:300;">×</span> P2P arena</h2>
+            <p><span class="live-badge">LIVE</span> streamer room · direct P2P join</p>
         </div>
     </div>
 
-    <script>
-        (function() {
-            // --- Elementos UI ---
-            const ui = {
-                joinScreen: document.getElementById('join-screen'),
-                drawingApp: document.getElementById('drawing-app'),
-                roomInput: document.getElementById('room-input'),
-                createBtn: document.getElementById('create-room-btn'),
-                joinBtn: document.getElementById('join-room-btn'),
-                leaveBtn: document.getElementById('leave-room-btn'),
-                roleDisplay: document.getElementById('role-display'),
-                toolsContainer: document.getElementById('tools-container'),
-                canvas: document.getElementById('drawCanvas'),
-                ctx: document.getElementById('drawCanvas').getContext('2d'),
-                colorPicker: document.getElementById('colorPicker'),
-                brushSize: document.getElementById('brushSize'),
-                toolSelect: document.getElementById('toolSelect'),
-                clearBtn: document.getElementById('clearCanvas'),
-                viewerList: document.getElementById('viewerList'),
-                chatMessages: document.getElementById('chatMessages'),
-                username: document.getElementById('usernameInput'),
-                messageInput: document.getElementById('messageInput'),
-                sendBtn: document.getElementById('sendMessage'),
-                donationBtn: document.getElementById('donationBtn'),
-                roomCode: document.getElementById('room-code-corner'),
-                gameOverlay: document.getElementById('game-overlay'),
-                toggleGames: document.getElementById('toggle-games-btn'),
-                gameSelector: document.getElementById('game-selector'),
-                gameBtns: document.querySelectorAll('.game-btn'),
-                vetsSpan: document.getElementById('vets-count'),
-                donationOverlay: document.getElementById('donation-overlay'),
-                pokemonControls: document.getElementById('pokemon-controls'),
-                footballControls: document.getElementById('football-controls'),
-                parkourControls: document.getElementById('parkour-controls'),
-                pokemonAttack: document.getElementById('pokemon-attack'),
-                pokemonHeal: document.getElementById('pokemon-heal'),
-                pokemonCatch: document.getElementById('pokemon-catch'),
-                pokemonHp: document.getElementById('pokemon-hp'),
-                botHp: document.getElementById('bot-hp'),
-                footballShoot: document.getElementById('football-shoot'),
-                footballScore: document.getElementById('football-score'),
-                footballAttempts: document.getElementById('football-attempts'),
-                footballDiff: document.getElementById('football-diff'),
-                parkourJump: document.getElementById('parkour-jump'),
-                parkourScore: document.getElementById('parkour-score'),
-                parkourBest: document.getElementById('parkour-best')
-            };
+    <!-- connection controls (P2P) -->
+    <div class="connection-bar">
+        <div class="peer-group">
+            <input type="text" id="hostIdInput" placeholder="streamer id (e.g. ninja)" value="streamer1">
+            <button id="hostBtn" class="primary">✨ HOST as streamer</button>
+        </div>
+        <div class="peer-group">
+            <input type="text" id="joinIdInput" placeholder="streamer id to join" value="streamer1">
+            <button id="joinBtn">🔌 join room</button>
+        </div>
+        <div class="status" id="statusDisplay">⚡ disconnected</div>
+    </div>
 
-            // --- Estado global ---
-            let peer = null;
-            let connections = new Map(); // host: mapa de conexiones
-            let isHost = false;
-            let roomId = null;
-            let hostConn = null; // espectador: conexión al host
-            let myId = 'user_' + Math.random().toString(36).substr(2, 8);
+    <!-- main game area + chat mock -->
+    <div class="game-area">
+        <div class="canvas-wrapper">
+            <canvas id="gameCanvas" width="800" height="450"></canvas>
+        </div>
+        <div class="twitch-chat">
+            <div class="chat-header">
+                💬 STREAM CHAT <span>P2P</span>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message"><span class="name">host:</span> use WASD + left click to shoot</div>
+                <div class="chat-message"><span class="name">info:</span> bullets collide, 100hp</div>
+            </div>
+            <div class="controls-note">
+                ←↑↓→ move · 🖱️ aim + click to shoot
+            </div>
+        </div>
+    </div>
+</div>
 
-            // Juegos
-            let currentGame = 'paint';
-            let history = []; // acciones de dibujo
-            let vets = 0;
-            let vetsInterval = null;
+<script>
+(function() {
+    // --------------------------------------------------------------
+    //  GLOBAL VARIABLES
+    // --------------------------------------------------------------
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const statusDiv = document.getElementById('statusDisplay');
+    const chatDiv = document.getElementById('chatMessages');
 
-            // Pokémon
-            let pokemon = { playerHP: 100, botHP: 100 };
+    // P2P and networking
+    let peer = null;                  // PeerJS instance
+    let connections = {};             // active dataConnections (peerId -> DataConnection)
+    let isHost = false;
+    let myPeerId = null;
+    let hostPeerId = null;            // the streamer we are connected to (if client)
+    let localConnection = null;        // for client: single connection to host
 
-            // Fútbol
-            let football = { score: 0, attempts: 5, difficulty: 1 };
+    // Game state (authoritative on host, mirrored on clients)
+    let gameState = {
+        players: {},    // peerId -> { x, y, health, color, lastShoot }
+        bullets: []     // { x, y, vx, vy, ownerId }
+    };
 
-            // Parkour
-            let parkour = { score: 0, best: 0, y: 300, vy: 0, platforms: [], gameActive: false };
-            let parkourInterval = null;
-            let parkourFrame = null;
+    // Local input (for host and clients)
+    const inputState = {
+        left: false,
+        right: false,
+        up: false,
+        down: false,
+        aimX: 400,      // center of canvas default
+        aimY: 225,
+        shoot: false
+    };
 
-            // Dibujo
-            let drawing = false;
-            let lastX = 0, lastY = 0;
+    // Mouse / canvas tracking
+    let mouseX = 400, mouseY = 225;
+    let mouseDown = false;
 
-            // Config canvas
-            ui.ctx.lineCap = 'round';
-            ui.ctx.lineJoin = 'round';
-            ui.ctx.strokeStyle = ui.colorPicker.value;
-            ui.ctx.fillStyle = ui.colorPicker.value;
-            ui.ctx.lineWidth = ui.brushSize.value;
+    // Game loop (only host runs simulation)
+    let lastTimestamp = 0;
+    let animationFrame = null;
 
-            // --- Funciones auxiliares ---
-            function broadcast(data) {
-                if (isHost) {
-                    connections.forEach(conn => { if (conn.open) conn.send(data); });
-                } else if (hostConn && hostConn.open) {
-                    hostConn.send(data);
+    // Constants
+    const PLAYER_RADIUS = 18;
+    const PLAYER_SPEED = 180;          // pixels per second
+    const BULLET_RADIUS = 5;
+    const BULLET_SPEED = 300;
+    const SHOOT_COOLDOWN = 0.15;        // seconds between bullets
+    const MAX_HEALTH = 100;
+
+    // helper to add chat-like message
+    function addChatMessage(sender, text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-message';
+        msgDiv.innerHTML = `<span class="name">${sender}:</span> ${text}`;
+        chatDiv.appendChild(msgDiv);
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+        if (chatDiv.children.length > 12) {
+            chatDiv.removeChild(chatDiv.children[0]);
+        }
+    }
+
+    // --------------------------------------------------------------
+    //  PEERJS & CONNECTION HANDLING
+    // --------------------------------------------------------------
+    function initializePeer(id = null) {
+        if (peer) peer.destroy();
+        // using PeerJS cloud server (key: 'lwjd5qra8257b9' is default demo key, but we can use default)
+        peer = new Peer(id, {
+            host: '0.peerjs.com',
+            port: 443,
+            secure: true,
+            config: { 'iceServers': [{ urls: 'stun:stun.l.google.com:19302' }] }
+        });
+
+        peer.on('open', (id) => {
+            myPeerId = id;
+            statusDiv.innerText = `🟢 online: ${id}`;
+            addChatMessage('system', `Your peer ID: ${id}`);
+            if (isHost) {
+                hostPeerId = id;
+                // initialize empty connections
+                connections = {};
+                // start host game loop
+                if (animationFrame) cancelAnimationFrame(animationFrame);
+                lastTimestamp = performance.now();
+                animationFrame = requestAnimationFrame(hostGameLoop);
+                addChatMessage('host', 'Streamer mode ON — you are authoritative');
+            }
+        });
+
+        peer.on('connection', (conn) => {
+            // host receives connection from viewer
+            if (!isHost) return; // only host accepts
+            setupConnection(conn);
+        });
+
+        peer.on('error', (err) => {
+            console.warn('peer error', err);
+            statusDiv.innerText = '⚠️ error: ' + err.type;
+        });
+
+        peer.on('disconnected', () => {
+            statusDiv.innerText = '🔴 disconnected';
+        });
+    }
+
+    function setupConnection(conn) {
+        const remoteId = conn.peer;
+        conn.on('open', () => {
+            connections[remoteId] = conn;
+            addChatMessage('system', `viewer ${remoteId.slice(0,5)} joined`);
+            // if client is new, create a player for them (with random color)
+            if (isHost && !gameState.players[remoteId]) {
+                gameState.players[remoteId] = {
+                    x: Math.random() * 700 + 50,
+                    y: Math.random() * 350 + 50,
+                    health: MAX_HEALTH,
+                    color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0'),
+                    lastShoot: 0
+                };
+            }
+
+            conn.on('data', (data) => {
+                handleMessage(remoteId, data);
+            });
+
+            conn.on('close', () => {
+                delete connections[remoteId];
+                delete gameState.players[remoteId];
+                addChatMessage('system', `viewer ${remoteId.slice(0,5)} left`);
+            });
+        });
+    }
+
+    function handleMessage(peerId, data) {
+        if (data.type === 'input' && isHost) {
+            // update input map for this player (host side)
+            if (!gameState.players[peerId]) {
+                // maybe re-create if not exist? but should exist
+                gameState.players[peerId] = gameState.players[peerId] || {
+                    x: Math.random()*700+50,
+                    y: Math.random()*350+50,
+                    health: MAX_HEALTH,
+                    color: '#'+Math.floor(Math.random()*16777215).toString(16),
+                    lastShoot: 0
+                };
+            }
+            // store input for this peer in a separate map (we'll process per frame)
+            if (!inputMap[peerId]) inputMap[peerId] = { aimX: 400, aimY:225, shoot:false, left:false, right:false, up:false, down:false };
+            inputMap[peerId].left = data.left;
+            inputMap[peerId].right = data.right;
+            inputMap[peerId].up = data.up;
+            inputMap[peerId].down = data.down;
+            inputMap[peerId].aimX = data.aimX;
+            inputMap[peerId].aimY = data.aimY;
+            inputMap[peerId].shoot = data.shoot;
+        }
+        else if (data.type === 'shoot' && isHost) {
+            // alternative single-shoot event (we'll also use continuous, but just in case)
+            if (gameState.players[peerId]) {
+                createBullet(peerId, data.aimX, data.aimY);
+            }
+        }
+        else if (data.type === 'state' && !isHost) {
+            // client receives world state from host
+            gameState = data.state;
+        }
+    }
+
+    // Host: inputMap for all connected clients (including host itself)
+    let inputMap = {}; // peerId -> { left,right,up,down, aimX, aimY, shoot }
+
+    // --------------------------------------------------------------
+    //  HOST GAME LOOP (authoritative)
+    // --------------------------------------------------------------
+    function hostGameLoop(now) {
+        if (!isHost) return;
+        const dt = Math.min(0.05, (now - (lastTimestamp || now)) / 1000); // max 50ms step
+        lastTimestamp = now;
+
+        // 1. Process host's own input (stored in inputMap under myPeerId)
+        if (myPeerId) {
+            if (!inputMap[myPeerId]) inputMap[myPeerId] = { left:false, right:false, up:false, down:false, aimX:400, aimY:225, shoot:false };
+            // copy from global inputState
+            inputMap[myPeerId].left = inputState.left;
+            inputMap[myPeerId].right = inputState.right;
+            inputMap[myPeerId].up = inputState.up;
+            inputMap[myPeerId].down = inputState.down;
+            inputMap[myPeerId].aimX = inputState.aimX;
+            inputMap[myPeerId].aimY = inputState.aimY;
+            inputMap[myPeerId].shoot = inputState.shoot;
+        }
+
+        // 2. apply movement and shooting for all players with input
+        for (let pid in inputMap) {
+            const inp = inputMap[pid];
+            const player = gameState.players[pid];
+            if (!player) continue;
+
+            // movement
+            let dx = 0, dy = 0;
+            if (inp.left) dx -= 1;
+            if (inp.right) dx += 1;
+            if (inp.up) dy -= 1;
+            if (inp.down) dy += 1;
+            if (dx !== 0 || dy !== 0) {
+                const len = Math.hypot(dx, dy);
+                dx = dx / len * PLAYER_SPEED * dt;
+                dy = dy / len * PLAYER_SPEED * dt;
+                player.x = Math.min(800 - PLAYER_RADIUS, Math.max(PLAYER_RADIUS, player.x + dx));
+                player.y = Math.min(450 - PLAYER_RADIUS, Math.max(PLAYER_RADIUS, player.y + dy));
+            }
+
+            // shooting (continuous)
+            if (inp.shoot && player.health > 0) {
+                const nowSec = performance.now() / 1000;
+                if (nowSec - (player.lastShoot || 0) > SHOOT_COOLDOWN) {
+                    player.lastShoot = nowSec;
+                    createBullet(pid, inp.aimX, inp.aimY);
                 }
             }
+        }
 
-            function addChatMessage(user, msg, isDonation = false, isSystem = false) {
-                const div = document.createElement('div');
-                div.className = 'message';
-                const color = isDonation ? '#ff79c6' : (isSystem ? '#ffaa00' : '#bf94ff');
-                div.innerHTML = `<span class="user" style="color:${color};">${isSystem ? '🔧 ' : ''}${escapeHtml(user)}:</span> <span class="text">${escapeHtml(msg)}</span>`;
-                ui.chatMessages.appendChild(div);
-                ui.chatMessages.scrollTop = ui.chatMessages.scrollHeight;
+        // 3. update bullets and collisions
+        for (let i = gameState.bullets.length - 1; i >= 0; i--) {
+            const b = gameState.bullets[i];
+            b.x += b.vx * dt;
+            b.y += b.vy * dt;
+
+            // remove if out of bounds
+            if (b.x < -20 || b.x > 820 || b.y < -20 || b.y > 470) {
+                gameState.bullets.splice(i, 1);
+                continue;
             }
 
-            function escapeHtml(s) {
-                const div = document.createElement('div');
-                div.textContent = s;
-                return div.innerHTML;
-            }
-
-            function updateVetsUI() {
-                ui.vetsSpan.textContent = vets;
-                ui.donationOverlay.innerHTML = `🪙 <span>${vets}</span> VETS`;
-                if (isHost) broadcast({ type: 'vets', vets });
-            }
-
-            // --- Dibujo ---
-            function applyAction(action) {
-                const ctx = ui.ctx;
-                switch (action.type) {
-                    case 'draw_start':
-                        ctx.beginPath();
-                        ctx.moveTo(action.x, action.y);
-                        ctx.strokeStyle = action.color;
-                        ctx.lineWidth = action.size;
-                        break;
-                    case 'draw':
-                        ctx.strokeStyle = action.color;
-                        ctx.lineWidth = action.size;
-                        ctx.lineTo(action.x, action.y);
-                        ctx.stroke();
-                        ctx.beginPath();
-                        ctx.moveTo(action.x, action.y);
-                        break;
-                    case 'draw_end': ctx.beginPath(); break;
-                    case 'shape':
-                        ctx.save();
-                        ctx.strokeStyle = action.color;
-                        ctx.lineWidth = action.size;
-                        ctx.beginPath();
-                        if (action.shape === 'rectangle')
-                            ctx.rect(action.x, action.y, action.x2 - action.x, action.y2 - action.y);
-                        else if (action.shape === 'circle') {
-                            const r = Math.hypot(action.x2 - action.x, action.y2 - action.y);
-                            ctx.arc(action.x, action.y, r, 0, 2*Math.PI);
-                        } else if (action.shape === 'line') {
-                            ctx.moveTo(action.x, action.y);
-                            ctx.lineTo(action.x2, action.y2);
-                        }
-                        ctx.stroke();
-                        ctx.restore();
-                        break;
-                    case 'text':
-                        ctx.save();
-                        ctx.fillStyle = action.color;
-                        ctx.font = `${action.size * 3}px Arial`;
-                        ctx.fillText(action.text, action.x, action.y);
-                        ctx.restore();
-                        break;
-                    case 'clear': ctx.clearRect(0, 0, 1000, 600); break;
-                }
-            }
-
-            function saveHistory() {
-                if (isHost && roomId) {
-                    localStorage.setItem(`history_${roomId}`, JSON.stringify(history));
-                }
-            }
-
-            // --- Cambiar juego ---
-            function setGame(game) {
-                currentGame = game;
-                const emojis = { paint: '🎨', pokemon: '🐱', football: '⚽', parkour: '🏃' };
-                ui.gameOverlay.innerHTML = `${emojis[game]} Modo ${game}`;
-                ui.toolsContainer.style.display = game === 'paint' ? 'flex' : 'none';
-                ui.pokemonControls.classList.toggle('visible', game === 'pokemon');
-                ui.footballControls.classList.toggle('visible', game === 'football');
-                ui.parkourControls.classList.toggle('visible', game === 'parkour');
-
-                if (game !== 'paint') ui.ctx.clearRect(0, 0, 1000, 600);
-                if (game === 'paint') redrawHistory();
-
-                if (game === 'parkour' && isHost && !parkour.gameActive) startParkour();
-                else if (game !== 'parkour' && parkourInterval) stopParkour();
-
-                if (isHost) broadcast({ type: 'game-change', game });
-            }
-
-            function redrawHistory() {
-                ui.ctx.clearRect(0, 0, 1000, 600);
-                history.forEach(a => applyAction(a));
-            }
-
-            // --- Pokémon ---
-            function updatePokemonUI() {
-                ui.pokemonHp.textContent = pokemon.playerHP;
-                ui.botHp.textContent = pokemon.botHP;
-            }
-
-            function pokemonTurn(playerAction, cost = 0) {
-                if (!isHost) return;
-                if (cost > vets) {
-                    addChatMessage('Sistema', 'No tienes suficientes VETS', false, true);
-                    return;
-                }
-                vets -= cost;
-                updateVetsUI();
-
-                let msg = '';
-                if (playerAction === 'attack') {
-                    const dmg = 20 + Math.floor(Math.random() * 10);
-                    pokemon.botHP = Math.max(0, pokemon.botHP - dmg);
-                    msg = `¡Atacas! Bot pierde ${dmg} HP.`;
-                } else if (playerAction === 'heal') {
-                    const heal = 30;
-                    pokemon.playerHP = Math.min(100, pokemon.playerHP + heal);
-                    msg = `¡Te curas! +${heal} HP.`;
-                } else if (playerAction === 'catch') {
-                    const chance = 0.3;
-                    if (Math.random() < chance) {
-                        addChatMessage('🎉', '¡Capturaste al Pokémon! Victoria!', false, true);
-                        pokemon.botHP = 0;
-                    } else {
-                        addChatMessage('😢', 'Fallaste la captura.', false, true);
+            // check collisions with players (except owner)
+            for (let pid in gameState.players) {
+                if (pid === b.ownerId) continue;
+                const p = gameState.players[pid];
+                if (!p || p.health <= 0) continue;
+                const dist = Math.hypot(b.x - p.x, b.y - p.y);
+                if (dist < PLAYER_RADIUS + BULLET_RADIUS) {
+                    // hit!
+                    p.health -= 25;
+                    gameState.bullets.splice(i, 1);
+                    if (p.health <= 0) {
+                        // respawn after short delay? just delete for simplicity
+                        delete gameState.players[pid];
+                        // remove from inputMap as well? keep but they'll be dead
                     }
+                    break;
                 }
+            }
+        }
 
-                if (pokemon.botHP <= 0) {
-                    addChatMessage('🎉', '¡Ganaste el combate! Reiniciando...', false, true);
-                    pokemon = { playerHP: 100, botHP: 100 };
-                } else {
-                    // Turno del bot
-                    const botDmg = 15 + Math.floor(Math.random() * 10);
-                    pokemon.playerHP = Math.max(0, pokemon.playerHP - botDmg);
-                    msg += ` Bot te ataca, pierdes ${botDmg} HP.`;
-                    if (pokemon.playerHP <= 0) {
-                        addChatMessage('💔', 'Perdiste... Reiniciando.', false, true);
-                        pokemon = { playerHP: 100, botHP: 100 };
+        // 4. broadcast full state to all connected clients
+        const stateMsg = { type: 'state', state: gameState };
+        for (let pid in connections) {
+            try {
+                connections[pid].send(stateMsg);
+            } catch (e) {}
+        }
+
+        // render locally for host (use same gameState)
+        renderGame();
+
+        animationFrame = requestAnimationFrame(hostGameLoop);
+    }
+
+    function createBullet(ownerId, aimX, aimY) {
+        const player = gameState.players[ownerId];
+        if (!player) return;
+        const dx = aimX - player.x;
+        const dy = aimY - player.y;
+        const len = Math.hypot(dx, dy);
+        if (len < 0.001) return;
+        const vx = (dx / len) * BULLET_SPEED;
+        const vy = (dy / len) * BULLET_SPEED;
+        gameState.bullets.push({
+            x: player.x,
+            y: player.y,
+            vx, vy,
+            ownerId: ownerId
+        });
+    }
+
+    // --------------------------------------------------------------
+    //  RENDERING (used by host and clients)
+    // --------------------------------------------------------------
+    function renderGame() {
+        ctx.clearRect(0, 0, 800, 450);
+        // draw grid (survive.io style)
+        ctx.strokeStyle = '#3f494e';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 800; i += 40) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#354044';
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, 450);
+            ctx.stroke();
+        }
+        for (let i = 0; i < 450; i += 40) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(800, i);
+            ctx.stroke();
+        }
+
+        // bullets
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 6;
+        for (let b of gameState.bullets) {
+            ctx.beginPath();
+            ctx.fillStyle = '#ffcc00';
+            ctx.arc(b.x, b.y, BULLET_RADIUS, 0, 2*Math.PI);
+            ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+
+        // players
+        for (let pid in gameState.players) {
+            const p = gameState.players[pid];
+            if (p.health <= 0) continue;
+            // draw circle
+            ctx.beginPath();
+            ctx.fillStyle = p.color || '#44aaff';
+            ctx.arc(p.x, p.y, PLAYER_RADIUS, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // health bar
+            ctx.fillStyle = '#db2b2b';
+            ctx.fillRect(p.x-20, p.y-30, 40, 6);
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(p.x-20, p.y-30, 40 * (p.health/100), 6);
+
+            // ID label
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px monospace';
+            ctx.shadowColor = 'black';
+            ctx.shadowBlur = 4;
+            ctx.fillText(pid.slice(0,5), p.x-20, p.y-38);
+            ctx.shadowBlur = 0;
+        }
+
+        // local aim indicator (crosshair)
+        ctx.beginPath();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.moveTo(mouseX-10, mouseY);
+        ctx.lineTo(mouseX+10, mouseY);
+        ctx.moveTo(mouseX, mouseY-10);
+        ctx.lineTo(mouseX, mouseY+10);
+        ctx.stroke();
+    }
+
+    // --------------------------------------------------------------
+    //  CLIENT SIDE: send input to host, receive state and render
+    // --------------------------------------------------------------
+    function startClient(hostId) {
+        if (!peer) initializePeer();
+        isHost = false;
+        hostPeerId = hostId;
+
+        // wait for peer open then connect
+        const tryConnect = () => {
+            if (!peer || !myPeerId) return setTimeout(tryConnect, 200);
+            const conn = peer.connect(hostId);
+            conn.on('open', () => {
+                localConnection = conn;
+                statusDiv.innerText = `🟢 connected to host ${hostId.slice(0,8)}`;
+                addChatMessage('system', 'Joined streamer room. Waiting for state...');
+
+                conn.on('data', (data) => {
+                    if (data.type === 'state') {
+                        gameState = data.state;
                     }
-                }
+                });
+                conn.on('close', () => {
+                    statusDiv.innerText = '🔴 disconnected from host';
+                });
 
-                updatePokemonUI();
-                broadcast({ type: 'pokemon-state', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
-                if (msg) addChatMessage('Sistema', msg, false, true);
-                saveProgress();
-            }
-
-            // --- Fútbol ---
-            function shoot() {
-                if (!isHost) return;
-                if (football.attempts <= 0) {
-                    football.attempts = 5;
-                    football.score = 0;
-                    football.difficulty = 1;
-                }
-                football.attempts--;
-                const goal = Math.random() < (0.6 - football.difficulty * 0.1); // más difícil = menos probabilidad
-                if (goal) {
-                    football.score++;
-                    addChatMessage('⚽', '¡GOOOOL!', false, true);
-                    if (football.score % 3 === 0) football.difficulty++;
-                } else {
-                    addChatMessage('🧤', '¡Atajó el portero!', false, true);
-                }
-                updateFootballUI();
-                broadcast({ type: 'football-state', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
-                saveProgress();
-            }
-
-            function updateFootballUI() {
-                ui.footballScore.textContent = football.score;
-                ui.footballAttempts.textContent = football.attempts;
-                ui.footballDiff.textContent = football.difficulty;
-            }
-
-            // --- Parkour ---
-            function startParkour() {
-                if (parkourInterval) return;
-                parkour.gameActive = true;
-                parkour.y = 300;
-                parkour.vy = 0;
-                parkour.platforms = [{ x: 400, y: 500, w: 200 }];
-                parkour.score = 0;
-                parkourInterval = setInterval(() => {
-                    // Generar plataformas
-                    if (Math.random() < 0.3) {
-                        parkour.platforms.push({ x: 1000, y: 400 + Math.random() * 200, w: 150 });
+                // start sending input continuously
+                function sendInputLoop() {
+                    if (!conn || conn.open === false) return;
+                    if (conn.open) {
+                        conn.send({
+                            type: 'input',
+                            left: inputState.left,
+                            right: inputState.right,
+                            up: inputState.up,
+                            down: inputState.down,
+                            aimX: inputState.aimX,
+                            aimY: inputState.aimY,
+                            shoot: inputState.shoot
+                        });
                     }
-                    // Mover
-                    parkour.platforms.forEach(p => p.x -= 5);
-                    parkour.platforms = parkour.platforms.filter(p => p.x + p.w > 0);
-                    // Gravedad
-                    parkour.vy += 0.5;
-                    parkour.y += parkour.vy;
-                    // Suelo
-                    if (parkour.y > 550) { parkour.y = 550; parkour.vy = 0; }
-                    // Colisión plataformas
-                    parkour.platforms.forEach(p => {
-                        if (150 > p.x && 150 < p.x + p.w && parkour.y >= p.y - 20 && parkour.y <= p.y + 10 && parkour.vy > 0) {
-                            parkour.y = p.y - 20;
-                            parkour.vy = 0;
-                        }
-                    });
-                    parkour.score++;
-                    if (parkour.score > parkour.best) parkour.best = parkour.score;
-                    updateParkourUI();
-                    drawParkour();
-                }, 50);
-            }
-
-            function stopParkour() {
-                if (parkourInterval) {
-                    clearInterval(parkourInterval);
-                    parkourInterval = null;
+                    requestAnimationFrame(sendInputLoop);
                 }
-            }
-
-            function drawParkour() {
-                const ctx = ui.ctx;
-                ctx.clearRect(0, 0, 1000, 600);
-                // Suelo
-                ctx.fillStyle = '#555';
-                ctx.fillRect(0, 570, 1000, 30);
-                // Plataformas
-                ctx.fillStyle = '#0a0';
-                parkour.platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, 10));
-                // Jugador
-                ctx.fillStyle = '#00f';
-                ctx.fillRect(140, parkour.y - 20, 20, 20);
-            }
-
-            function updateParkourUI() {
-                ui.parkourScore.textContent = parkour.score;
-                ui.parkourBest.textContent = parkour.best;
-                if (isHost) broadcast({ type: 'parkour-state', score: parkour.score, best: parkour.best });
-            }
-
-            function parkourJump() {
-                if (parkour.y >= 550) parkour.vy = -12;
-            }
-
-            // --- Vets y donación ---
-            function donate() {
-                if (vets < 50) {
-                    addChatMessage('Sistema', 'Necesitas 50 VETS', false, true);
-                    return;
-                }
-                vets -= 50;
-                updateVetsUI();
-                const user = ui.username.value.trim() || 'Anon';
-                addChatMessage(user, `💜 Donó 50 VETS! 💜`, true);
-                ui.donationOverlay.innerHTML = `💜 ${user} donó 50 VETS! 🪙 <span>${vets}</span>`;
-                setTimeout(() => updateVetsUI(), 5000);
-                broadcast({ type: 'donation', user });
-            }
-
-            // --- Progreso local (host) ---
-            function saveProgress() {
-                if (!isHost || !roomId) return;
-                try {
-                    localStorage.setItem(`history_${roomId}`, JSON.stringify(history));
-                    localStorage.setItem(`game_${roomId}`, currentGame);
-                    localStorage.setItem(`pokemon_${roomId}`, JSON.stringify(pokemon));
-                    localStorage.setItem(`football_${roomId}`, JSON.stringify(football));
-                    localStorage.setItem(`parkour_${roomId}`, JSON.stringify({ best: parkour.best }));
-                } catch (e) {}
-            }
-
-            function loadProgress() {
-                if (!isHost || !roomId) return;
-                try {
-                    const h = localStorage.getItem(`history_${roomId}`);
-                    if (h) { history = JSON.parse(h); redrawHistory(); }
-                    const g = localStorage.getItem(`game_${roomId}`);
-                    if (g) setGame(g);
-                    const p = localStorage.getItem(`pokemon_${roomId}`);
-                    if (p) { pokemon = JSON.parse(p); updatePokemonUI(); }
-                    const f = localStorage.getItem(`football_${roomId}`);
-                    if (f) { football = JSON.parse(f); updateFootballUI(); }
-                    const pk = localStorage.getItem(`parkour_${roomId}`);
-                    if (pk) { parkour.best = JSON.parse(pk).best; updateParkourUI(); }
-                } catch (e) {}
-            }
-
-            // --- Crear sala (host) ---
-            function createRoom(id) {
-                peer = new Peer(id);
-                roomId = id;
-                isHost = true;
-                ui.roleDisplay.textContent = '(Host)';
-                ui.joinScreen.style.display = 'none';
-                ui.drawingApp.style.display = 'flex';
-                ui.roomCode.textContent = `Sala: ${id}`;
-                ui.toggleGames.style.display = 'inline-block';
-                vetsInterval = setInterval(() => { vets++; updateVetsUI(); }, 3000);
-
-                loadProgress();
-
-                peer.on('open', () => {
-                    addChatMessage('Sistema', 'Sala creada. Esperando espectadores...', false, true);
-                });
-
-                peer.on('connection', (conn) => {
-                    connections.set(conn.peer, conn);
-                    conn.on('data', (data) => {
-                        if (data.type === 'chat') {
-                            addChatMessage(data.user, data.message);
-                            broadcast({ type: 'chat', user: data.user, message: data.message });
-                        } else if (data.type === 'donation') {
-                            donateFromGuest(data.user);
-                        }
-                    });
-                    conn.on('close', () => {
-                        connections.delete(conn.peer);
-                        updateViewerList();
-                    });
-                    // Enviar estado actual
-                    conn.send({ type: 'init', game: currentGame, history, pokemon, football, parkour: { best: parkour.best }, vets });
-                    updateViewerList();
-                });
-
-                peer.on('error', (err) => {
-                    if (err.type === 'unavailable-id') alert('ID ya usado');
-                    else console.error(err);
-                });
-
-                setGame(currentGame);
-                updateViewerList();
-            }
-
-            function updateViewerList() {
-                let html = '<li>🟣 Host (tú)</li>';
-                connections.forEach((_, id) => html += `<li>👤 ${id.substr(0,6)}...</li>`);
-                ui.viewerList.innerHTML = html || '<li>No hay espectadores</li>';
-            }
-
-            // --- Unirse como espectador ---
-            function joinRoom(id) {
-                peer = new Peer();
-                roomId = id;
-                isHost = false;
-                ui.roleDisplay.textContent = '(Espectador)';
-                ui.joinScreen.style.display = 'none';
-                ui.drawingApp.style.display = 'flex';
-                ui.roomCode.textContent = `Sala: ${id}`;
-                ui.toggleGames.style.display = 'none';
-                ui.gameSelector.style.display = 'none';
-                vetsInterval = setInterval(() => { vets++; updateVetsUI(); }, 3000);
-
-                peer.on('open', () => {
-                    hostConn = peer.connect(id);
-                    hostConn.on('open', () => {
-                        ui.viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú</li>';
-                    });
-                    hostConn.on('data', (data) => {
-                        if (data.type === 'init') {
-                            currentGame = data.game;
-                            setGame(currentGame);
-                            history = data.history;
-                            redrawHistory();
-                            pokemon = data.pokemon;
-                            football = data.football;
-                            parkour.best = data.parkour.best;
-                            vets = data.vets;
-                            updatePokemonUI();
-                            updateFootballUI();
-                            updateParkourUI();
-                            updateVetsUI();
-                        } else if (data.type === 'game-change') {
-                            setGame(data.game);
-                        } else if (data.type === 'draw-action') {
-                            if (currentGame === 'paint') applyAction(data.action);
-                        } else if (data.type === 'clear') {
-                            ui.ctx.clearRect(0, 0, 1000, 600);
-                        } else if (data.type === 'chat') {
-                            addChatMessage(data.user, data.message);
-                        } else if (data.type === 'donation') {
-                            addChatMessage(data.user, '💜 Donó 50 VETS! 💜', true);
-                            ui.donationOverlay.innerHTML = `💜 ${data.user} donó 50 VETS! 🪙 <span>${vets}</span>`;
-                            setTimeout(() => updateVetsUI(), 5000);
-                        } else if (data.type === 'pokemon-state') {
-                            pokemon = { playerHP: data.playerHP, botHP: data.botHP };
-                            updatePokemonUI();
-                        } else if (data.type === 'football-state') {
-                            football = { score: data.score, attempts: data.attempts, difficulty: data.difficulty };
-                            updateFootballUI();
-                        } else if (data.type === 'parkour-state') {
-                            parkour.score = data.score;
-                            parkour.best = data.best;
-                            updateParkourUI();
-                        } else if (data.type === 'vets') {
-                            vets = data.vets;
-                            updateVetsUI();
-                        }
-                    });
-                    hostConn.on('close', () => {
-                        alert('Host desconectado');
-                        leaveRoom();
-                    });
-                });
-
-                peer.on('error', (err) => {
-                    if (err.type === 'peer-unavailable') alert('Sala no encontrada');
-                });
-            }
-
-            function leaveRoom() {
-                if (peer) peer.destroy();
-                connections.clear();
-                hostConn = null;
-                isHost = false;
-                roomId = null;
-                history = [];
-                ui.joinScreen.style.display = 'block';
-                ui.drawingApp.style.display = 'none';
-                if (vetsInterval) clearInterval(vetsInterval);
-                if (parkourInterval) clearInterval(parkourInterval);
-            }
-
-            function donateFromGuest(user) {
-                // simular donación de espectador (el host ya recibe y reenvía)
-            }
-
-            // --- Eventos UI ---
-            ui.createBtn.addEventListener('click', () => {
-                const id = ui.roomInput.value.trim();
-                if (id) createRoom(id);
+                sendInputLoop();
             });
-            ui.joinBtn.addEventListener('click', () => {
-                const id = ui.roomInput.value.trim();
-                if (id) joinRoom(id);
-            });
-            ui.leaveBtn.addEventListener('click', leaveRoom);
+            conn.on('error', (e) => console.warn);
+        };
+        tryConnect();
 
-            ui.toggleGames.addEventListener('click', () => ui.gameSelector.classList.toggle('visible'));
-            ui.gameBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    if (!isHost) return;
-                    const game = btn.dataset.game;
-                    setGame(game);
-                    ui.gameBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    ui.gameSelector.classList.remove('visible');
-                });
-            });
+        // client only renders (no simulation)
+        function clientRenderLoop() {
+            renderGame();
+            animationFrame = requestAnimationFrame(clientRenderLoop);
+        }
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        animationFrame = requestAnimationFrame(clientRenderLoop);
+    }
 
-            // Dibujo (solo host)
-            const canvasEvents = (e) => {
-                if (!isHost || currentGame !== 'paint') return;
-                const rect = ui.canvas.getBoundingClientRect();
-                const scaleX = ui.canvas.width / rect.width;
-                const scaleY = ui.canvas.height / rect.height;
-                let clientX, clientY;
-                if (e.touches) {
-                    clientX = e.touches[0].clientX;
-                    clientY = e.touches[0].clientY;
-                } else {
-                    clientX = e.clientX;
-                    clientY = e.clientY;
-                }
-                const x = (clientX - rect.left) * scaleX;
-                const y = (clientY - rect.top) * scaleY;
+    // --------------------------------------------------------------
+    //  UI EVENT LISTENERS
+    // --------------------------------------------------------------
+    document.getElementById('hostBtn').addEventListener('click', () => {
+        const hostId = document.getElementById('hostIdInput').value.trim() || 'streamer' + Math.floor(Math.random()*1000);
+        if (peer) peer.destroy();
+        isHost = true;
+        inputMap = {}; // fresh
+        gameState = { players: {}, bullets: [] };
+        // add host player
+        initializePeer(hostId);
+    });
 
-                if (e.type === 'mousedown' || e.type === 'touchstart') {
-                    drawing = true;
-                    lastX = x; lastY = y;
-                    if (ui.toolSelect.value === 'pencil') {
-                        const action = { type: 'draw_start', x, y, color: ui.colorPicker.value, size: parseInt(ui.brushSize.value) };
-                        history.push(action);
-                        broadcast({ type: 'draw-action', action });
-                        applyAction(action);
-                    } else if (ui.toolSelect.value === 'text') {
-                        const text = prompt('Texto:');
-                        if (text) {
-                            const action = { type: 'text', text, x, y, color: ui.colorPicker.value, size: parseInt(ui.brushSize.value) };
-                            history.push(action);
-                            broadcast({ type: 'draw-action', action });
-                            applyAction(action);
-                        }
-                    }
-                } else if ((e.type === 'mousemove' || e.type === 'touchmove') && drawing) {
-                    if (ui.toolSelect.value === 'pencil') {
-                        const action = { type: 'draw', x, y, color: ui.colorPicker.value, size: parseInt(ui.brushSize.value) };
-                        history.push(action);
-                        broadcast({ type: 'draw-action', action });
-                        applyAction(action);
-                        lastX = x; lastY = y;
-                    }
-                } else if (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'mouseout') {
-                    if (drawing && ui.toolSelect.value === 'pencil') {
-                        const action = { type: 'draw_end' };
-                        history.push(action);
-                        broadcast({ type: 'draw-action', action });
-                        applyAction(action);
-                    } else if (drawing && ui.toolSelect.value !== 'pencil' && ui.toolSelect.value !== 'text') {
-                        const action = { type: 'shape', shape: ui.toolSelect.value, x: lastX, y: lastY, x2: x, y2: y, color: ui.colorPicker.value, size: parseInt(ui.brushSize.value) };
-                        history.push(action);
-                        broadcast({ type: 'draw-action', action });
-                        applyAction(action);
-                    }
-                    drawing = false;
-                }
-            };
-
-            ui.canvas.addEventListener('mousedown', canvasEvents);
-            ui.canvas.addEventListener('mousemove', canvasEvents);
-            ui.canvas.addEventListener('mouseup', canvasEvents);
-            ui.canvas.addEventListener('mouseout', canvasEvents);
-            ui.canvas.addEventListener('touchstart', canvasEvents);
-            ui.canvas.addEventListener('touchmove', canvasEvents);
-            ui.canvas.addEventListener('touchend', canvasEvents);
-            ui.canvas.addEventListener('touchcancel', canvasEvents);
-
-            ui.clearBtn.addEventListener('click', () => {
-                if (!isHost || currentGame !== 'paint') return;
-                if (confirm('¿Limpiar todo?')) {
-                    history = [];
-                    ui.ctx.clearRect(0, 0, 1000, 600);
-                    broadcast({ type: 'clear' });
-                    saveHistory();
-                }
-            });
-
-            // Pokémon
-            ui.pokemonAttack.addEventListener('click', () => pokemonTurn('attack'));
-            ui.pokemonHeal.addEventListener('click', () => pokemonTurn('heal', 10));
-            ui.pokemonCatch.addEventListener('click', () => pokemonTurn('catch', 20));
-
-            // Fútbol
-            ui.footballShoot.addEventListener('click', shoot);
-
-            // Parkour
-            ui.parkourJump.addEventListener('click', parkourJump);
-            window.addEventListener('keydown', (e) => {
-                if (e.code === 'Space' && currentGame === 'parkour') {
-                    e.preventDefault();
-                    parkourJump();
-                }
-            });
-
-            // Chat
-            ui.sendBtn.addEventListener('click', sendMessage);
-            ui.messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-            function sendMessage() {
-                const user = ui.username.value.trim() || 'Anon';
-                const msg = ui.messageInput.value.trim();
-                if (!msg) return;
-                addChatMessage(user, msg);
-                broadcast({ type: 'chat', user, message: msg });
-                ui.messageInput.value = '';
+    document.getElementById('joinBtn').addEventListener('click', () => {
+        const joinId = document.getElementById('joinIdInput').value.trim();
+        if (!joinId) return;
+        if (peer) peer.destroy();
+        isHost = false;
+        gameState = { players: {}, bullets: [] };
+        initializePeer(); // random peer id for viewer
+        // after open, we connect, but we need to wait for open
+        const waitAndJoin = setInterval(() => {
+            if (myPeerId) {
+                clearInterval(waitAndJoin);
+                startClient(joinId);
             }
+        }, 200);
+    });
 
-            document.querySelectorAll('.emoji-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    ui.messageInput.value += btn.dataset.emoji;
-                    ui.messageInput.focus();
-                });
-            });
+    // mouse tracking for aim / shoot
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        mouseX = (e.clientX - rect.left) * scaleX;
+        mouseY = (e.clientY - rect.top) * scaleY;
+        mouseX = Math.min(800, Math.max(0, mouseX));
+        mouseY = Math.min(450, Math.max(0, mouseY));
+        inputState.aimX = mouseX;
+        inputState.aimY = mouseY;
+    });
 
-            ui.donationBtn.addEventListener('click', donate);
+    canvas.addEventListener('mousedown', (e) => {
+        if (e.button === 0) {
+            mouseDown = true;
+            inputState.shoot = true;
+        }
+    });
+    window.addEventListener('mouseup', (e) => {
+        if (e.button === 0) {
+            mouseDown = false;
+            inputState.shoot = false;
+        }
+    });
 
-            window.addEventListener('beforeunload', () => {
-                if (peer) peer.destroy();
-                if (vetsInterval) clearInterval(vetsInterval);
-            });
-        })();
-    </script>
+    window.addEventListener('keydown', (e) => {
+        const key = e.key;
+        if (key === 'w' || key === 'W') inputState.up = true;
+        if (key === 's' || key === 'S') inputState.down = true;
+        if (key === 'a' || key === 'A') inputState.left = true;
+        if (key === 'd' || key === 'D') inputState.right = true;
+        e.preventDefault();
+    });
+    window.addEventListener('keyup', (e) => {
+        const key = e.key;
+        if (key === 'w' || key === 'W') inputState.up = false;
+        if (key === 's' || key === 'S') inputState.down = false;
+        if (key === 'a' || key === 'A') inputState.left = false;
+        if (key === 'd' || key === 'D') inputState.right = false;
+        e.preventDefault();
+    });
+
+    // initial render (while disconnected)
+    renderGame();
+})();
+</script>
 </body>
 </html>
