@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Twitch P2P - Juegos y Dibujo (Móvil)</title>
+    <title>Twitch P2P - Juegos y Dibujo (Completo)</title>
     <style>
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
         }
         body {
             margin: 0;
@@ -101,6 +102,19 @@
             z-index: 10;
             border: 1px solid #9147ff;
         }
+        .vets-corner {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: gold;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 10;
+            border: 1px solid gold;
+        }
         .stream-area {
             flex: 3;
             display: flex;
@@ -124,19 +138,14 @@
             color: #bf94ff;
             font-weight: bold;
         }
-        /* Botón para mostrar selector de juegos */
-        .game-toggle-btn {
+        .game-menu-button {
             background: #9147ff;
             border: none;
             color: white;
-            font-weight: bold;
             padding: 8px 16px;
-            border-radius: 30px;
+            border-radius: 20px;
             cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            font-weight: bold;
         }
         .game-selector {
             display: none; /* Oculto por defecto */
@@ -148,7 +157,7 @@
             flex-wrap: wrap;
             justify-content: center;
         }
-        .game-selector.visible {
+        .game-selector.show {
             display: flex;
         }
         .game-btn {
@@ -208,29 +217,25 @@
             pointer-events: none;
             z-index: 5;
         }
-        /* Notificaciones de donación */
         .donation-notification {
             position: absolute;
-            top: 20px;
+            bottom: 20px;
             right: 20px;
-            background: linear-gradient(135deg, #9147ff, #ff79c6);
-            color: white;
-            padding: 12px 20px;
+            background: rgba(255, 215, 0, 0.9);
+            color: black;
+            padding: 10px 20px;
             border-radius: 30px;
+            font-size: 16px;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
             z-index: 20;
-            animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
+            animation: fadeInOut 3s ease-in-out;
             pointer-events: none;
-            max-width: 300px;
-            word-break: break-word;
         }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes fadeOut {
-            to { opacity: 0; transform: translateX(100%); }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-20px); }
         }
         .tools {
             margin-top: 16px;
@@ -420,6 +425,10 @@
         .donation-btn:hover {
             background: #cc0000;
         }
+        .donation-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
         @media (max-width: 768px) {
             .game-btn, .tools button, .chat-row button, .donation-btn, .emoji-btn {
                 padding: 14px 18px;
@@ -441,41 +450,40 @@
                 <button id="create-room-btn">Crear sala (host)</button>
                 <button id="join-room-btn">Unirse como espectador</button>
             </div>
-            <p class="info">El host dibuja y elige el juego. Los espectadores ven y chatean. Conexión directa P2P.</p>
+            <p class="info">El host controla los juegos. Los espectadores ven y chatean. Conexión directa P2P.</p>
         </div>
     </div>
 
     <div id="drawing-app" class="container" style="display: none;">
+        <!-- Código de sala en esquina -->
         <div id="room-code-corner" class="room-code-corner">Sala: </div>
+        <!-- Vets del host -->
+        <div id="vets-corner" class="vets-corner">🪙 Vets: 0</div>
 
         <div class="stream-area">
             <div class="room-bar">
                 <span>Bienvenido</span>
                 <span id="role-display" class="role"></span>
+                <button id="game-menu-toggle" class="game-menu-button">🎮 Juegos</button>
                 <button id="leave-room-btn" style="background: #ff4444; padding: 8px 16px;">Salir</button>
-            </div>
-
-            <!-- Botón para mostrar/ocultar selector de juegos (solo host) -->
-            <div style="display: flex; justify-content: flex-start; margin-bottom: 8px;">
-                <button id="toggle-games-btn" class="game-toggle-btn">🎮 Juegos</button>
             </div>
 
             <!-- Selector de juegos (oculto inicialmente) -->
             <div class="game-selector" id="game-selector">
+                <button class="game-btn" data-game="paint">🎨 Pintar</button>
                 <button class="game-btn" data-game="football">⚽ Fútbol</button>
                 <button class="game-btn" data-game="pokemon">🐱 Pokémon</button>
-                <button class="game-btn" data-game="paint">🎨 Pintar</button>
                 <button class="game-btn" data-game="parkour">🏃 Parkour</button>
             </div>
 
-            <div class="canvas-wrapper" id="canvas-wrapper">
+            <div class="canvas-wrapper">
                 <canvas id="drawCanvas" width="1000" height="600"></canvas>
                 <div id="game-overlay" class="game-overlay">🎨 Modo Pintar</div>
-                <!-- Las notificaciones de donación aparecerán aquí -->
+                <!-- Elementos específicos de juegos (se dibujan en canvas, pero overlay para info) -->
             </div>
 
-            <div class="tools" id="tools-container">
-                <!-- Solo visible para host -->
+            <!-- Herramientas de dibujo (solo visibles en modo pintar y para host) -->
+            <div class="tools" id="tools-container" style="display: none;">
                 <select id="toolSelect">
                     <option value="pencil">Lápiz</option>
                     <option value="rectangle">Rectángulo</option>
@@ -506,7 +514,7 @@
                     <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
                     <input type="text" id="messageInput" placeholder="Mensaje...">
                     <button id="sendMessage">Enviar</button>
-                    <button id="donationBtn" class="donation-btn">💜 Donar</button>
+                    <button id="donationBtn" class="donation-btn">💜 Donar (50 Vets)</button>
                 </div>
                 <div class="emoji-panel">
                     <button class="emoji-btn" data-emoji="😀">😀</button>
@@ -521,6 +529,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Contenedor para notificaciones de donación -->
+    <div id="donation-notification-area" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;"></div>
 
     <script>
         (function() {
@@ -546,27 +557,59 @@
             const sendBtn = document.getElementById('sendMessage');
             const donationBtn = document.getElementById('donationBtn');
             const roomCodeCorner = document.getElementById('room-code-corner');
+            const vetsCorner = document.getElementById('vets-corner');
             const gameOverlay = document.getElementById('game-overlay');
             const gameSelector = document.getElementById('game-selector');
+            const gameMenuToggle = document.getElementById('game-menu-toggle');
             const gameBtns = document.querySelectorAll('.game-btn');
-            const toggleGamesBtn = document.getElementById('toggle-games-btn');
-            const canvasWrapper = document.getElementById('canvas-wrapper');
+            const donationArea = document.getElementById('donation-notification-area');
 
             // --- Estado P2P ---
             let peer = null;
-            let connections = new Map();
+            let connections = new Map(); // solo host
             let isHost = false;
             let roomId = null;
             let myPeerId = null;
-            let hostConnection = null;
-            let history = [];
-            let currentGame = 'paint';
+            let hostConnection = null; // para espectador
 
-            // --- Estado de dibujo ---
+            // --- Estado de dibujo (modo pintar) ---
             let drawing = false;
             let startX, startY, lastX, lastY;
+            let paintHistory = []; // historial de acciones de dibujo (solo para modo pintar)
+            let currentGame = 'paint'; // juego por defecto
 
-            // Configuración del canvas
+            // --- Estado de juegos ---
+            // Fútbol
+            let footballState = {
+                ballX: 500, ballY: 300, ballVx: 0, ballVy: 0,
+                playerX: 200, playerY: 300,
+                botX: 800, botY: 300,
+                goalLeft: 50, goalRight: 950,
+                score: 0,
+                gameActive: false
+            };
+            // Pokémon
+            let pokemonState = {
+                playerPokemon: { name: 'Pikachu', hp: 100, maxHp: 100, attack: 20 },
+                enemyPokemon: { name: 'Charmander', hp: 100, maxHp: 100, attack: 18 },
+                battleLog: [],
+                turn: 'player', // 'player' o 'enemy'
+                gameActive: false
+            };
+            // Parkour
+            let parkourState = {
+                playerY: 300, playerVy: 0, onGround: true,
+                platforms: [{ x: 0, y: 500, w: 200 }, { x: 300, y: 450, w: 150 }, { x: 600, y: 400, w: 150 }],
+                score: 0,
+                gameActive: false,
+                frame: 0
+            };
+
+            // --- Vets (moneda) ---
+            let vets = 0;
+            let vetsInterval = null;
+
+            // --- Configuración del canvas ---
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = colorPicker.value;
@@ -574,43 +617,34 @@
             ctx.lineWidth = brushSizeInput.value;
             ctx.font = '16px Arial';
 
-            // --- Funciones de almacenamiento local ---
-            function saveProgress() {
+            // --- Funciones de almacenamiento local (solo host, modo pintar) ---
+            function savePaintProgress() {
                 if (!isHost || !roomId) return;
                 try {
-                    localStorage.setItem(`historial_${roomId}`, JSON.stringify(history));
-                    localStorage.setItem(`juego_${roomId}`, currentGame);
+                    localStorage.setItem(`paint_${roomId}`, JSON.stringify(paintHistory));
                 } catch (e) {}
             }
 
-            function loadProgress() {
+            function loadPaintProgress() {
                 if (!isHost || !roomId) return;
                 try {
-                    const savedHistory = localStorage.getItem(`historial_${roomId}`);
-                    if (savedHistory) {
-                        history = JSON.parse(savedHistory);
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        history.forEach(action => applyAction(action));
-                    }
-                    const savedGame = localStorage.getItem(`juego_${roomId}`);
-                    if (savedGame) {
-                        currentGame = savedGame;
-                        applyGameTheme(currentGame);
-                        gameBtns.forEach(btn => {
-                            btn.classList.remove('active');
-                            if (btn.dataset.game === currentGame) btn.classList.add('active');
-                        });
+                    const saved = localStorage.getItem(`paint_${roomId}`);
+                    if (saved) {
+                        paintHistory = JSON.parse(saved);
+                        if (currentGame === 'paint') {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            paintHistory.forEach(action => applyPaintAction(action));
+                        }
                     }
                 } catch (e) {}
             }
 
-            function clearProgress() {
+            function clearPaintProgress() {
                 if (!isHost || !roomId) return;
-                localStorage.removeItem(`historial_${roomId}`);
-                localStorage.removeItem(`juego_${roomId}`);
+                localStorage.removeItem(`paint_${roomId}`);
             }
 
-            // --- Funciones de dibujo ---
+            // --- Funciones de dibujo (modo pintar) ---
             function drawShape(action) {
                 ctx.save();
                 ctx.strokeStyle = action.color;
@@ -660,102 +694,312 @@
                 ctx.beginPath();
             }
 
-            function applyAction(action) {
+            function applyPaintAction(action) {
                 switch (action.type) {
                     case 'draw_start': drawStart(action); break;
                     case 'draw': drawMove(action); break;
                     case 'draw_end': drawEnd(); break;
                     case 'shape': drawShape(action); break;
                     case 'text': drawText(action); break;
-                    case 'clear': ctx.clearRect(0, 0, canvas.width, canvas.height); applyGameTheme(currentGame); break;
+                    case 'clear': ctx.clearRect(0, 0, canvas.width, canvas.height); break;
                 }
             }
 
-            // --- Aplicar tema del juego al canvas (fondo) ---
-            function applyGameTheme(game) {
-                // Guardar el estado actual del canvas (los dibujos) y poner un fondo
-                // Para no borrar los dibujos, podemos dibujar el fondo detrás.
-                // Pero como tenemos historial, podemos redibujar todo sobre el fondo.
-                // Lo haremos así: guardamos el historial, limpiamos, dibujamos fondo y luego redibujamos historial.
-                if (!ctx) return;
-                const currentHistory = [...history]; // copia
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                // Dibujar fondo según juego
-                if (game === 'football') {
-                    // Campo de fútbol verde
-                    ctx.fillStyle = '#2e7d32';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    // Líneas blancas
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = 3;
-                    ctx.strokeRect(10, 10, canvas.width-20, canvas.height-20);
-                    ctx.beginPath();
-                    ctx.arc(canvas.width/2, canvas.height/2, 50, 0, 2*Math.PI);
-                    ctx.stroke();
-                } else if (game === 'pokemon') {
-                    // Fondo de hierba
-                    ctx.fillStyle = '#4caf50';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    // Dibujar algunas pokebolas pequeñas
-                    ctx.fillStyle = '#f44336';
-                    for (let i = 0; i < 5; i++) {
-                        ctx.beginPath();
-                        ctx.arc(50 + i*100, 50, 20, 0, 2*Math.PI);
-                        ctx.fill();
-                        ctx.fillStyle = 'white';
-                        ctx.beginPath();
-                        ctx.arc(50 + i*100, 50, 10, 0, 2*Math.PI);
-                        ctx.fill();
-                        ctx.fillStyle = '#f44336';
-                    }
-                } else if (game === 'parkour') {
-                    // Fondo urbano
-                    ctx.fillStyle = '#607d8b';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    // Dibujar obstáculos
-                    ctx.fillStyle = '#795548';
-                    ctx.fillRect(200, canvas.height-100, 100, 50);
-                    ctx.fillRect(500, canvas.height-150, 100, 100);
-                } else {
-                    // Pintar: fondo blanco
-                    ctx.fillStyle = 'white';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                }
-
-                // Redibujar historial
-                currentHistory.forEach(action => applyAction(action));
-
-                // Actualizar overlay
-                let emoji = '🎨', text = 'Pintar';
+            // --- Lógica de juegos ---
+            function setGame(game) {
+                currentGame = game;
+                let emoji = '🎨';
+                let text = 'Pintar';
                 if (game === 'football') { emoji = '⚽'; text = 'Fútbol'; }
                 else if (game === 'pokemon') { emoji = '🐱'; text = 'Pokémon'; }
                 else if (game === 'parkour') { emoji = '🏃'; text = 'Parkour'; }
                 gameOverlay.innerHTML = `${emoji} Modo ${text}`;
+
+                // Limpiar canvas y preparar según juego
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Ocultar/mostrar herramientas de dibujo
+                if (game === 'paint' && isHost) {
+                    toolsContainer.style.display = 'flex';
+                    // Restaurar dibujo si existe
+                    paintHistory.forEach(action => applyPaintAction(action));
+                } else {
+                    toolsContainer.style.display = 'none';
+                }
+
+                // Inicializar juegos si es necesario
+                if (game === 'football') {
+                    footballState.gameActive = true;
+                    footballState.ballX = 500; footballState.ballY = 300;
+                    footballState.playerX = 200; footballState.playerY = 300;
+                    footballState.botX = 800; footballState.botY = 300;
+                    footballState.score = 0;
+                } else if (game === 'pokemon') {
+                    pokemonState.gameActive = true;
+                    pokemonState.playerPokemon.hp = 100;
+                    pokemonState.enemyPokemon.hp = 100;
+                    pokemonState.turn = 'player';
+                    pokemonState.battleLog = ['¡Comienza la batalla!'];
+                } else if (game === 'parkour') {
+                    parkourState.gameActive = true;
+                    parkourState.playerY = 300;
+                    parkourState.playerVy = 0;
+                    parkourState.onGround = true;
+                    parkourState.platforms = [
+                        { x: 0, y: 500, w: 200 },
+                        { x: 300, y: 450, w: 150 },
+                        { x: 600, y: 400, w: 150 },
+                        { x: 900, y: 350, w: 150 }
+                    ];
+                    parkourState.score = 0;
+                }
+
+                // Notificar a espectadores
+                if (isHost) {
+                    broadcastToViewers({ type: 'game-change', game: game });
+                }
             }
 
-            // --- Cambiar juego ---
-            function setGame(game) {
-                currentGame = game;
-                applyGameTheme(game);
-                if (isHost) saveProgress();
+            // Actualizar canvas según el juego (llamado en cada frame)
+            function updateGame() {
+                if (!isHost) return; // Solo el host actualiza la lógica
+
+                if (currentGame === 'football') {
+                    updateFootball();
+                } else if (currentGame === 'pokemon') {
+                    updatePokemon();
+                } else if (currentGame === 'parkour') {
+                    updateParkour();
+                }
             }
 
-            // --- Mostrar notificación de donación ---
+            function updateFootball() {
+                if (!footballState.gameActive) return;
+                // Física simple
+                let ball = footballState;
+                // Movimiento del jugador (controlado por teclas, pero aquí simularemos con IA simple o teclado)
+                // Por simplicidad, el jugador se mueve con teclas A/D (lo manejamos en eventos)
+                // Movimiento del bot (sigue la pelota)
+                if (ball.botX < ball.ballX) ball.botX += 2;
+                else ball.botX -= 2;
+                if (ball.botY < ball.ballY) ball.botY += 2;
+                else ball.botY -= 2;
+
+                // Pelota se mueve
+                ball.ballX += ball.ballVx;
+                ball.ballY += ball.ballVy;
+                // Rozamiento
+                ball.ballVx *= 0.98;
+                ball.ballVy *= 0.98;
+
+                // Colisiones con bordes
+                if (ball.ballX < 0 || ball.ballX > canvas.width) ball.ballVx *= -0.8;
+                if (ball.ballY < 0 || ball.ballY > canvas.height) ball.ballVy *= -0.8;
+
+                // Gol?
+                if (ball.ballX < ball.goalLeft && ball.ballY > 250 && ball.ballY < 350) {
+                    ball.score++;
+                    ball.ballX = 500; ball.ballY = 300;
+                    ball.ballVx = ball.ballVy = 0;
+                }
+
+                // Dibujar
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'green';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Porterías
+                ctx.fillStyle = 'white';
+                ctx.fillRect(ball.goalLeft-5, 250, 10, 100);
+                ctx.fillRect(ball.goalRight-5, 250, 10, 100);
+                // Jugador
+                ctx.fillStyle = 'blue';
+                ctx.beginPath();
+                ctx.arc(ball.playerX, ball.playerY, 15, 0, 2*Math.PI);
+                ctx.fill();
+                // Bot
+                ctx.fillStyle = 'red';
+                ctx.beginPath();
+                ctx.arc(ball.botX, ball.botY, 15, 0, 2*Math.PI);
+                ctx.fill();
+                // Pelota
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(ball.ballX, ball.ballY, 10, 0, 2*Math.PI);
+                ctx.fill();
+                // Marcador
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Goles: ${ball.score}`, 10, 30);
+            }
+
+            function updatePokemon() {
+                if (!pokemonState.gameActive) return;
+                // Lógica por turnos, pero aquí manejamos con botones
+                // Dibujar
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'lightgray';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Pokémon del jugador
+                ctx.fillStyle = 'yellow';
+                ctx.beginPath();
+                ctx.arc(300, 400, 50, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.font = '16px Arial';
+                ctx.fillText(pokemonState.playerPokemon.name, 250, 470);
+                ctx.fillText(`HP: ${pokemonState.playerPokemon.hp}/${pokemonState.playerPokemon.maxHp}`, 250, 500);
+                // Pokémon enemigo
+                ctx.fillStyle = 'red';
+                ctx.beginPath();
+                ctx.arc(700, 200, 50, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.fillText(pokemonState.enemyPokemon.name, 650, 270);
+                ctx.fillText(`HP: ${pokemonState.enemyPokemon.hp}/${pokemonState.enemyPokemon.maxHp}`, 650, 300);
+                // Log de batalla
+                ctx.fillStyle = 'black';
+                ctx.font = '14px Arial';
+                let y = 550;
+                pokemonState.battleLog.slice(-3).forEach(line => {
+                    ctx.fillText(line, 10, y);
+                    y += 20;
+                });
+            }
+
+            function updateParkour() {
+                if (!parkourState.gameActive) return;
+                let p = parkourState;
+                // Gravedad
+                p.playerVy += 0.5;
+                p.playerY += p.playerVy;
+                // Colisión con plataformas
+                p.onGround = false;
+                for (let plat of p.platforms) {
+                    if (p.playerY + 20 > plat.y && p.playerY + 20 < plat.y + 20 && 
+                        p.playerX + 10 > plat.x && p.playerX - 10 < plat.x + plat.w) {
+                        p.playerY = plat.y - 20;
+                        p.playerVy = 0;
+                        p.onGround = true;
+                    }
+                }
+                // Si cae al vacío, reaparece
+                if (p.playerY > canvas.height) {
+                    p.playerY = 300;
+                    p.playerVy = 0;
+                }
+                // Mover plataformas hacia la izquierda (efecto scroll)
+                for (let plat of p.platforms) {
+                    plat.x -= 2;
+                }
+                // Si una plataforma sale de la pantalla, generar nueva
+                if (p.platforms[0].x + p.platforms[0].w < 0) {
+                    p.platforms.shift();
+                    let last = p.platforms[p.platforms.length-1];
+                    p.platforms.push({ x: last.x + 400, y: 300 + Math.random()*200, w: 150 });
+                    p.score++;
+                }
+                // Dibujar
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'skyblue';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Plataformas
+                ctx.fillStyle = 'brown';
+                p.platforms.forEach(plat => {
+                    ctx.fillRect(plat.x, plat.y, plat.w, 20);
+                });
+                // Jugador (cuadrado)
+                ctx.fillStyle = 'red';
+                ctx.fillRect(p.playerX-10, p.playerY-20, 20, 20);
+                // Puntuación
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText(`Puntos: ${p.score}`, 10, 30);
+            }
+
+            // --- Controles de juegos (solo host) ---
+            function handleKeyDown(e) {
+                if (!isHost) return;
+                if (currentGame === 'football') {
+                    if (e.key === 'a' || e.key === 'A') footballState.playerX -= 10;
+                    if (e.key === 'd' || e.key === 'D') footballState.playerX += 10;
+                    if (e.key === 'w' || e.key === 'W') footballState.playerY -= 10;
+                    if (e.key === 's' || e.key === 'S') footballState.playerY += 10;
+                    // Golpear pelota
+                    if (e.key === ' ') {
+                        let dx = footballState.ballX - footballState.playerX;
+                        let dy = footballState.ballY - footballState.playerY;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 30) {
+                            footballState.ballVx += dx * 0.2;
+                            footballState.ballVy += dy * 0.2;
+                        }
+                    }
+                } else if (currentGame === 'pokemon') {
+                    if (e.key === ' ' && pokemonState.turn === 'player') {
+                        // Atacar
+                        let damage = Math.floor(Math.random() * 15) + 10;
+                        pokemonState.enemyPokemon.hp -= damage;
+                        pokemonState.battleLog.push(`¡Atacas! Causas ${damage} de daño.`);
+                        if (pokemonState.enemyPokemon.hp <= 0) {
+                            pokemonState.battleLog.push('¡Ganaste!');
+                            pokemonState.gameActive = false;
+                        } else {
+                            pokemonState.turn = 'enemy';
+                            // Turno enemigo
+                            setTimeout(() => {
+                                if (!pokemonState.gameActive) return;
+                                let dmg = Math.floor(Math.random() * 12) + 8;
+                                pokemonState.playerPokemon.hp -= dmg;
+                                pokemonState.battleLog.push(`Enemigo ataca: ${dmg} daño.`);
+                                if (pokemonState.playerPokemon.hp <= 0) {
+                                    pokemonState.battleLog.push('¡Perdiste!');
+                                    pokemonState.gameActive = false;
+                                } else {
+                                    pokemonState.turn = 'player';
+                                }
+                            }, 1000);
+                        }
+                    }
+                } else if (currentGame === 'parkour') {
+                    if (e.key === ' ' && parkourState.onGround) {
+                        parkourState.playerVy = -12; // salto
+                    }
+                }
+            }
+
+            // --- Vets ---
+            function startVetsEarning() {
+                if (vetsInterval) clearInterval(vetsInterval);
+                vetsInterval = setInterval(() => {
+                    if (isHost) {
+                        vets += 3; // 3 Vets cada 3 segundos
+                        updateVetsDisplay();
+                    }
+                }, 3000);
+            }
+
+            function updateVetsDisplay() {
+                vetsCorner.textContent = `🪙 Vets: ${vets}`;
+                donationBtn.disabled = vets < 50;
+            }
+
+            // --- Donaciones ---
             function showDonationNotification(user, amount) {
                 const notif = document.createElement('div');
                 notif.className = 'donation-notification';
-                notif.innerHTML = `💜 ${user} donó ${amount} bits! 💜`;
-                canvasWrapper.appendChild(notif);
+                notif.textContent = `💜 ${user} donó ${amount} Vets! 💜`;
+                donationArea.appendChild(notif);
                 setTimeout(() => {
-                    if (notif.parentNode) notif.remove();
-                }, 5000);
+                    notif.remove();
+                }, 3000);
             }
 
             // --- Funciones de red ---
             function broadcastToViewers(message) {
                 connections.forEach(conn => {
-                    if (conn.open) conn.send(message);
+                    if (conn.open) {
+                        conn.send(message);
+                    }
                 });
             }
 
@@ -796,31 +1040,30 @@
                 myPeerId = roomId;
                 isHost = true;
                 roleDisplay.textContent = ' (Host)';
-                toolsContainer.style.display = 'flex';
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
                 roomCodeCorner.textContent = `Sala: ${roomId}`;
+                vets = 0;
+                updateVetsDisplay();
+                startVetsEarning();
 
-                // Mostrar botón de juegos y permitir toggle
-                toggleGamesBtn.style.display = 'flex';
-                toggleGamesBtn.onclick = () => {
-                    gameSelector.classList.toggle('visible');
-                };
+                // Cargar progreso de pintura
+                loadPaintProgress();
 
-                // Cargar progreso
-                loadProgress();
+                // Activar selector de juegos (solo host puede cambiar)
+                gameMenuToggle.addEventListener('click', () => {
+                    gameSelector.classList.toggle('show');
+                });
 
-                // Eventos de juegos
                 gameBtns.forEach(btn => {
-                    btn.onclick = () => {
+                    btn.addEventListener('click', () => {
                         const game = btn.dataset.game;
                         setGame(game);
-                        broadcastToViewers({ type: 'game-change', game: game });
+                        // Marcar activo
                         gameBtns.forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
-                        // Ocultar selector después de elegir (opcional)
-                        gameSelector.classList.remove('visible');
-                    };
+                        gameSelector.classList.remove('show'); // ocultar después de seleccionar
+                    });
                 });
 
                 peer.on('open', (id) => {
@@ -837,10 +1080,11 @@
                             addChatMessage(data.user, data.message);
                             broadcastToViewers({ type: 'chat', user: data.user, message: data.message });
                         } else if (data.type === 'donation') {
-                            // Mostrar notificación en el stream
+                            // Solo procesar si el espectador tiene suficientes Vets? pero aquí no sabemos sus Vets.
+                            // El host maneja las donaciones (simuladas)
+                            // Como es ficticio, aceptamos
+                            addChatMessage(data.user, `💜 Donó ${data.amount} Vets! 💜`, true);
                             showDonationNotification(data.user, data.amount);
-                            // También en el chat
-                            addChatMessage(data.user, `💜 Donó ${data.amount} bits! 💜`, true);
                             broadcastToViewers({ type: 'donation', user: data.user, amount: data.amount });
                         }
                     });
@@ -852,7 +1096,8 @@
                         broadcastToViewers({ type: 'system', message: 'Un espectador se ha desconectado.' });
                     });
 
-                    conn.send({ type: 'history', history: history });
+                    // Enviar estado inicial
+                    conn.send({ type: 'history', history: paintHistory });
                     conn.send({ type: 'game-change', game: currentGame });
 
                     updateViewerList();
@@ -868,9 +1113,20 @@
                     }
                 });
 
-                // Asegurar tema inicial
-                setGame(currentGame);
-                document.querySelector(`.game-btn[data-game="${currentGame}"]`)?.classList.add('active');
+                // Juego inicial
+                setGame('paint');
+                document.querySelector('.game-btn[data-game="paint"]').classList.add('active');
+
+                // Loop de juego
+                setInterval(() => {
+                    if (isHost) {
+                        updateGame();
+                        // Enviar estado a espectadores (solo si es necesario, pero para simplificar no enviamos el estado completo, solo acciones)
+                        // En este ejemplo, los espectadores no ven la lógica del juego en tiempo real, solo el host.
+                        // Para que vean, necesitaríamos enviar el canvas por imagen, pero es complejo.
+                        // Por ahora, los espectadores solo ven el modo pintar. Mejorable.
+                    }
+                }, 30);
             }
 
             // --- Unirse como espectador ---
@@ -882,16 +1138,14 @@
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
                 roomCodeCorner.textContent = `Sala: ${roomId}`;
+                vetsCorner.style.display = 'none'; // los espectadores no ven Vets
 
-                // Ocultar botón de juegos para espectador
-                toggleGamesBtn.style.display = 'none';
-                gameSelector.classList.remove('visible');
-
-                // Deshabilitar selector
+                // Deshabilitar selector de juegos para espectador
                 gameBtns.forEach(btn => {
                     btn.disabled = true;
                     btn.style.opacity = 0.5;
                 });
+                gameMenuToggle.style.display = 'none';
 
                 peer.on('open', (id) => {
                     myPeerId = id;
@@ -907,25 +1161,25 @@
 
                     conn.on('data', (data) => {
                         if (data.type === 'history') {
-                            history = data.history;
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            history.forEach(action => applyAction(action));
+                            paintHistory = data.history;
+                            if (currentGame === 'paint') {
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                                paintHistory.forEach(action => applyPaintAction(action));
+                            }
                             addChatMessage('Sistema', 'Historial cargado.');
                         } else if (data.type === 'draw-action') {
-                            applyAction(data.action);
+                            if (currentGame === 'paint') applyPaintAction(data.action);
                         } else if (data.type === 'clear') {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            applyGameTheme(currentGame);
+                            if (currentGame === 'paint') ctx.clearRect(0, 0, canvas.width, canvas.height);
                         } else if (data.type === 'chat') {
                             addChatMessage(data.user, data.message);
                         } else if (data.type === 'donation') {
+                            addChatMessage(data.user, `💜 Donó ${data.amount} Vets! 💜`, true);
                             showDonationNotification(data.user, data.amount);
-                            addChatMessage(data.user, `💜 Donó ${data.amount} bits! 💜`, true);
                         } else if (data.type === 'system') {
                             addChatMessage('Sistema', data.message);
                         } else if (data.type === 'game-change') {
-                            currentGame = data.game;
-                            applyGameTheme(data.game);
+                            setGame(data.game);
                             gameBtns.forEach(btn => {
                                 btn.classList.remove('active');
                                 if (btn.dataset.game === data.game) btn.classList.add('active');
@@ -955,6 +1209,7 @@
 
             // --- Salir de la sala ---
             function leaveRoom() {
+                if (vetsInterval) clearInterval(vetsInterval);
                 if (peer) {
                     peer.destroy();
                     peer = null;
@@ -963,7 +1218,7 @@
                 hostConnection = null;
                 isHost = false;
                 roomId = null;
-                history = [];
+                paintHistory = [];
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 joinScreen.style.display = 'block';
                 drawingApp.style.display = 'none';
@@ -972,14 +1227,14 @@
                     btn.style.opacity = 1;
                     btn.classList.remove('active');
                 });
-                toggleGamesBtn.style.display = 'none';
-                gameSelector.classList.remove('visible');
+                gameMenuToggle.style.display = 'inline-block';
+                vetsCorner.style.display = 'block';
             }
 
-            // --- Eventos de dibujo (solo host) ---
+            // --- Eventos de dibujo (solo host y modo pintar) ---
             canvas.addEventListener('mousedown', (e) => {
                 e.preventDefault();
-                if (!isHost) return;
+                if (!isHost || currentGame !== 'paint') return;
                 const pos = getMousePos(e);
                 startX = pos.x;
                 startY = pos.y;
@@ -997,9 +1252,9 @@
                         color: colorPicker.value,
                         size: parseInt(brushSizeInput.value)
                     };
-                    history.push(action);
+                    paintHistory.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
+                    savePaintProgress();
                 } else if (toolSelect.value === 'text') {
                     const text = prompt('Escribe el texto:');
                     if (text) {
@@ -1012,16 +1267,16 @@
                             size: parseInt(brushSizeInput.value)
                         };
                         drawText(action);
-                        history.push(action);
+                        paintHistory.push(action);
                         broadcastToViewers({ type: 'draw-action', action });
-                        saveProgress();
+                        savePaintProgress();
                     }
                 }
             });
 
             canvas.addEventListener('mousemove', (e) => {
                 e.preventDefault();
-                if (!isHost || !drawing) return;
+                if (!isHost || !drawing || currentGame !== 'paint') return;
                 const pos = getMousePos(e);
                 const x = pos.x;
                 const y = pos.y;
@@ -1041,9 +1296,9 @@
                         color: colorPicker.value,
                         size: parseInt(brushSizeInput.value)
                     };
-                    history.push(action);
+                    paintHistory.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
+                    savePaintProgress();
 
                     lastX = x;
                     lastY = y;
@@ -1052,14 +1307,14 @@
 
             canvas.addEventListener('mouseup', (e) => {
                 e.preventDefault();
-                if (!isHost) return;
+                if (!isHost || currentGame !== 'paint') return;
                 if (toolSelect.value === 'pencil' && drawing) {
                     drawing = false;
                     ctx.beginPath();
                     const action = { type: 'draw_end' };
-                    history.push(action);
+                    paintHistory.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
+                    savePaintProgress();
                 } else if (toolSelect.value !== 'pencil' && toolSelect.value !== 'text') {
                     const pos = getMousePos(e);
                     const action = {
@@ -1073,20 +1328,20 @@
                         size: parseInt(brushSizeInput.value)
                     };
                     drawShape(action);
-                    history.push(action);
+                    paintHistory.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
+                    savePaintProgress();
                 }
             });
 
             canvas.addEventListener('mouseout', () => {
-                if (drawing) {
+                if (drawing && currentGame === 'paint') {
                     drawing = false;
                     ctx.beginPath();
                     const action = { type: 'draw_end' };
-                    history.push(action);
+                    paintHistory.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
+                    savePaintProgress();
                 }
             });
 
@@ -1141,17 +1396,19 @@
                 };
             }
 
-            // --- Limpiar canvas ---
+            // --- Limpiar canvas (solo host, modo pintar) ---
             clearBtn.addEventListener('click', () => {
-                if (!isHost) return;
+                if (!isHost || currentGame !== 'paint') return;
                 if (confirm('¿Limpiar todo el canvas?')) {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    history = [];
+                    paintHistory = [];
                     broadcastToViewers({ type: 'clear' });
-                    clearProgress();
-                    applyGameTheme(currentGame); // restaurar fondo
+                    clearPaintProgress();
                 }
             });
+
+            // --- Eventos de teclado para juegos ---
+            window.addEventListener('keydown', handleKeyDown);
 
             // --- Eventos de UI ---
             createBtn.addEventListener('click', () => {
@@ -1208,23 +1465,34 @@
 
             // Donación
             donationBtn.addEventListener('click', () => {
-                const user = usernameInput.value.trim() || 'Anon';
-                const amount = Math.floor(Math.random() * 1000) + 100;
-                if (isHost) {
-                    showDonationNotification(user, amount);
-                    addChatMessage(user, `💜 Donó ${amount} bits! 💜`, true);
-                    broadcastToViewers({ type: 'donation', user, amount });
-                } else {
+                if (!isHost) {
+                    // Espectador: enviar solicitud de donación
                     if (hostConnection && hostConnection.open) {
-                        hostConnection.send({ type: 'donation', user, amount });
-                        showDonationNotification(user, amount);
-                        addChatMessage(user, `💜 Donó ${amount} bits! 💜`, true);
+                        const amount = 50; // Donación fija de 50
+                        hostConnection.send({ type: 'donation', user: usernameInput.value.trim() || 'Anon', amount: amount });
+                        addChatMessage(usernameInput.value.trim() || 'Anon', `💜 Donó ${amount} Vets! 💜`, true);
+                        showDonationNotification(usernameInput.value.trim() || 'Anon', amount);
+                    }
+                } else {
+                    // Host: puede donar usando sus Vets
+                    if (vets >= 50) {
+                        vets -= 50;
+                        updateVetsDisplay();
+                        const amount = 50;
+                        addChatMessage(usernameInput.value.trim() || 'Anon', `💜 Donó ${amount} Vets! 💜`, true);
+                        showDonationNotification(usernameInput.value.trim() || 'Anon', amount);
+                        broadcastToViewers({ type: 'donation', user: usernameInput.value.trim() || 'Anon', amount: amount });
+                    } else {
+                        alert('No tienes suficientes Vets (necesitas 50)');
                     }
                 }
             });
 
             window.addEventListener('beforeunload', () => {
-                if (peer) peer.destroy();
+                if (peer) {
+                    peer.destroy();
+                }
+                if (vetsInterval) clearInterval(vetsInterval);
             });
         })();
     </script>
