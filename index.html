@@ -1,414 +1,493 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creador de Juegos Visual con Nodos</title>
-    <!-- Fuente moderna -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- LiteGraph.js desde CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/litegraph.js"></script>
+    <title>programa con nodos · juego visual</title>
     <style>
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            user-select: none;
         }
         body {
-            font-family: 'Inter', sans-serif;
-            background: #1e1f2c;
-            color: #e1e1e6;
-            height: 100vh;
-            overflow: hidden;
+            background: linear-gradient(145deg, #1a2639 0%, #0d1b2a 100%);
+            min-height: 100vh;
+            margin: 0;
             display: flex;
-            flex-direction: column;
-        }
-        header {
-            background: #2a2b3a;
-            padding: 0.8rem 2rem;
-            border-bottom: 1px solid #3f4050;
-            display: flex;
+            justify-content: center;
             align-items: center;
-            justify-content: space-between;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
         }
-        header h1 {
-            font-size: 1.4rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #a78bfa, #ec4899);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .game-wrapper {
+            background: #1e2a3a;
+            border-radius: 3rem 3rem 2rem 2rem;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.05);
+            padding: 2rem 2rem 2rem 2rem;
         }
-        .badge {
-            background: #3f4050;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: #cbd5e1;
+        .canvas-container {
+            position: relative;
+            width: 920px;
+            height: 520px;
+            background: #14212b;
+            border-radius: 2.5rem;
+            box-shadow: inset 0 5px 8px #0f1a22, 0 10px 18px #03070c;
+            border: 1px solid #3d5a73;
         }
-        .main-container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-        /* Panel del editor de nodos */
-        #editor {
-            width: 60%;
-            height: 100%;
-            background: #252634;
-            border-right: 2px solid #3f4050;
-        }
-        /* Panel de vista previa */
-        .preview-panel {
-            width: 40%;
-            display: flex;
-            flex-direction: column;
-            background: #1a1b26;
-        }
-        .preview-header {
-            padding: 0.8rem 1.5rem;
-            background: #2a2b3a;
-            border-bottom: 1px solid #3f4050;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .preview-header span {
-            color: #94a3b8;
-            font-size: 0.9rem;
-        }
-        #gameCanvas {
-            flex: 1;
+        #nodeCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            background: #0f0f17;
-            display: block;
-            image-rendering: pixelated; /* Opcional para estilo retro */
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
         }
-        .info-panel {
-            padding: 0.8rem 1.5rem;
-            background: #2a2b3a;
-            border-top: 1px solid #3f4050;
-            font-size: 0.9rem;
+        .nodes-layer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+        }
+        .node {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: #2e3b4e;
+            background: radial-gradient(circle at 25% 25%, #4f6d7d, #26394b);
+            border-radius: 30px 30px 25px 25px;
+            border: 2px solid #6c8b9f;
+            box-shadow: 0 8px 0 #0e1a24, 0 12px 18px rgba(0,0,0,0.5);
             display: flex;
-            gap: 1rem;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-shadow: 0 2px 3px black;
+            transform: translate(-50%, -50%);
+            transition: box-shadow 0.1s, border-color 0.1s;
+            cursor: pointer;
+            z-index: 30;
+        }
+        .node-label {
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 40px;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+            border: 1px solid #b9d8e9;
+            box-shadow: inset 0 1px 3px black;
+        }
+        .port {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f5e56b;
+            background: radial-gradient(circle at 30% 30%, #ffd966, #d4a017);
+            border: 3px solid #fcf3cf;
+            box-shadow: 0 0 0 1px #1f3a4b, 0 4px 6px black;
+            transition: transform 0.15s, background 0.1s, border-color 0.1s;
+            cursor: crosshair;
+            z-index: 50;
+        }
+        .port.input-port {
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .port.output-port {
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .port.active-source {
+            background: radial-gradient(circle at 30% 30%, #b5e6ff, #3b9eff);
+            border-color: white;
+            transform: translateY(-50%) scale(1.25);
+            box-shadow: 0 0 18px cyan;
+        }
+        .port:hover {
+            transform: translateY(-50%) scale(1.2);
+            border-color: #ffeeaa;
+            background: #ffe570;
+        }
+        .node[data-type="0"] .node-label { background: #3f7e4c; }  /* start */
+        .node[data-type="9"] .node-label { background: #b13e3e; }  /* end */
+        .control-panel {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 25px;
             align-items: center;
         }
-        .info-panel button {
-            background: #7c3aed;
+        button {
+            background: #3d5f7a;
             border: none;
+            border-bottom: 5px solid #1d3140;
             color: white;
-            font-weight: 600;
-            padding: 0.4rem 1rem;
-            border-radius: 6px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            padding: 12px 36px;
+            border-radius: 60px;
+            letter-spacing: 1.5px;
             cursor: pointer;
-            transition: background 0.2s;
+            box-shadow: 0 8px 0 #0e1f2b, 0 10px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.08s linear;
+            text-transform: uppercase;
         }
-        .info-panel button:hover {
-            background: #6d28d9;
+        button:active {
+            transform: translateY(5px);
+            border-bottom-width: 2px;
+            box-shadow: 0 3px 0 #0e1f2b, 0 8px 12px black;
         }
-        .info-panel .log {
-            color: #a5b4fc;
-            font-family: monospace;
-            font-size: 0.8rem;
-            flex: 1;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-        /* Pequeños ajustes para los nodos (LiteGraph ya tiene sus estilos, solo retoques) */
-        .litegraph .graph-node {
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
-            border-radius: 8px;
-            border: 1px solid #4f5260;
-        }
-        .litegraph .graph-node-title {
-            background: #3b3e4f;
-            border-radius: 8px 8px 0 0;
+        .message {
+            background: #26323f;
+            border-radius: 40px;
+            padding: 14px 30px;
+            min-width: 240px;
+            text-align: center;
+            color: #d9edff;
+            font-size: 1.2rem;
             font-weight: 600;
+            border: 1px solid #608a9f;
+            box-shadow: inset 0 2px 5px #0d181f;
+        }
+        .instruction {
+            color: #bbd8f0;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1rem;
+            font-weight: 400;
+            text-shadow: 0 2px 3px black;
+        }
+        .instruction span {
+            display: inline-block;
+            background: #2e4d3e;
+            padding: 3px 12px;
+            border-radius: 30px;
+            margin: 0 5px;
+            border: 1px solid #9fc9b0;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>🎮 Visual Game Node Editor</h1>
-        <div class="badge">v0.1 · LiteGraph + Canvas</div>
-    </header>
-    <div class="main-container">
-        <!-- Editor de nodos (LiteGraph se inyecta aquí) -->
-        <div id="editor"></div>
-        <!-- Panel de vista previa -->
-        <div class="preview-panel">
-            <div class="preview-header">
-                Vista previa del juego
-                <span>Presiona ESPACIO, FLECHA DERECHA o FLECHA ARRIBA</span>
-            </div>
-            <canvas id="gameCanvas" width="600" height="400"></canvas>
-            <div class="info-panel">
-                <button id="resetBtn">🔄 Reiniciar posición</button>
-                <div class="log" id="logMessage">👾 Listo. Interactúa con los nodos o teclas.</div>
-            </div>
-        </div>
+<div class="game-wrapper">
+    <div class="canvas-container" id="canvasContainer">
+        <canvas id="nodeCanvas" width="920" height="520"></canvas>
+        <div class="nodes-layer" id="nodesLayer"></div>
     </div>
 
-    <script>
-        // --------------------------------------------------------------
-        // CONFIGURACIÓN DEL ESTADO DEL JUEGO (compartido con los nodos)
-        // --------------------------------------------------------------
-        const gameState = {
-            x: 300,        // posición inicial del cuadrado
-            y: 200,
-            width: 40,
-            height: 40,
-            speedX: 5,
-            jumpPower: 30,
-            isJumping: false,
-            jumpVelocity: 0
-        };
+    <div class="control-panel">
+        <button id="resetBtn">⟲ reset</button>
+        <div class="message" id="gameMessage">⚡ conecta nodos</div>
+        <button id="checkBtn">✓ comprobar</button>
+    </div>
+    <div class="instruction">
+        <span>⚪ salida (dcha)</span> → <span>⚪ entrada (izq)</span>  ·  recorre todos los nodos del 0 al 9
+    </div>
+</div>
 
-        // Referencias al canvas y al mensaje de log
-        const canvas = document.getElementById('gameCanvas');
+<script>
+    (function() {
+        // --- configuración: 10 nodos con nombres simpáticos
+        const nodeNames = [
+            "🏁 START",      // 0
+            "⬆️ MOVE",       // 1
+            "🔄 TURN",       // 2
+            "🔁 LOOP",       // 3
+            "❓ IF",         // 4
+            "📦 VAR",        // 5
+            "➕ ADD",        // 6
+            "➖ SUB",        // 7
+            "🖨️ PRINT",      // 8
+            "🎯 END"         // 9
+        ];
+
+        const container = document.getElementById('nodesLayer');
+        const canvas = document.getElementById('nodeCanvas');
         const ctx = canvas.getContext('2d');
-        const logDiv = document.getElementById('logMessage');
+        const messageDiv = document.getElementById('gameMessage');
 
-        // Función para dibujar el juego en cada frame
-        function drawGame() {
+        // Posiciones de los nodos (en círculo)
+        const centerX = 460, centerY = 260, radius = 200;
+        const nodePositions = [];
+        for (let i = 0; i < 10; i++) {
+            const angle = (i / 10) * 2 * Math.PI - Math.PI / 2; // empezar arriba
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            nodePositions.push({ x, y });
+        }
+
+        // Almacén de conexiones: { from: index, to: index }
+        let connections = [];
+
+        // Modo conexión: nodo fuente (output seleccionado)
+        let sourceNodeIndex = null;          // índice del nodo cuyo output hemos clickado
+
+        // ---- crear los nodos visuales y sus puertos
+        function buildNodes() {
+            container.innerHTML = ''; // limpiar
+            for (let i = 0; i < 10; i++) {
+                const pos = nodePositions[i];
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = 'node';
+                nodeDiv.setAttribute('data-type', i);
+                nodeDiv.setAttribute('data-index', i);
+                nodeDiv.style.left = pos.x + 'px';
+                nodeDiv.style.top = pos.y + 'px';
+
+                // label
+                const labelSpan = document.createElement('div');
+                labelSpan.className = 'node-label';
+                labelSpan.textContent = nodeNames[i];
+                nodeDiv.appendChild(labelSpan);
+
+                // input port (izquierdo)
+                const inputPort = document.createElement('div');
+                inputPort.className = 'port input-port';
+                inputPort.setAttribute('data-port', 'input');
+                inputPort.setAttribute('data-node', i);
+                nodeDiv.appendChild(inputPort);
+
+                // output port (derecho)
+                const outputPort = document.createElement('div');
+                outputPort.className = 'port output-port';
+                outputPort.setAttribute('data-port', 'output');
+                outputPort.setAttribute('data-node', i);
+                nodeDiv.appendChild(outputPort);
+
+                container.appendChild(nodeDiv);
+            }
+        }
+        buildNodes();
+
+        // ---- dibujar líneas en canvas
+        function drawLines() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (connections.length === 0) return;
 
-            // Dibujar suelo (línea simple)
-            ctx.strokeStyle = '#4b5563';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(0, canvas.height - 50);
-            ctx.lineTo(canvas.width, canvas.height - 50);
-            ctx.stroke();
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#b7e0ff';
+            ctx.shadowColor = '#5dc9ff';
+            ctx.shadowBlur = 12;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
 
-            // Dibujar el cuadrado del jugador
-            ctx.fillStyle = '#f59e0b';
-            ctx.shadowColor = '#fbbf24';
-            ctx.shadowBlur = 15;
-            ctx.fillRect(gameState.x, gameState.y, gameState.width, gameState.height);
+            for (let conn of connections) {
+                const from = nodePositions[conn.from];
+                const to = nodePositions[conn.to];
+                if (!from || !to) continue;
+
+                // desplazar ligeramente para que empiece desde el borde del puerto
+                const startX = from.x + 40;  // lado derecho del nodo (aprox)
+                const startY = from.y;
+                const endX = to.x - 40;       // lado izquierdo del nodo
+                const endY = to.y;
+
+                // curva sencilla con control points
+                ctx.beginPath();
+                const cp1x = startX + (endX - startX) * 0.3;
+                const cp1y = startY - 15;
+                const cp2x = endX - (endX - startX) * 0.3;
+                const cp2y = endY + 15;
+                ctx.moveTo(startX, startY);
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
+                ctx.strokeStyle = '#b7e0ff';
+                ctx.stroke();
+
+                // flechita en el extremo (triángulo)
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = '#feeb85';
+                ctx.strokeStyle = '#b3771e';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const angle = Math.atan2(endY - cp2y, endX - cp2x); // dirección aproximada
+                const arrowSize = 16;
+                const ax = endX - 8 * Math.cos(angle);
+                const ay = endY - 8 * Math.sin(angle);
+                ctx.moveTo(ax, ay);
+                ctx.lineTo(ax - arrowSize * 0.5 * Math.cos(angle - 0.8), ay - arrowSize * 0.5 * Math.sin(angle - 0.8));
+                ctx.lineTo(ax - arrowSize * 0.5 * Math.cos(angle + 0.8), ay - arrowSize * 0.5 * Math.sin(angle + 0.8));
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
             ctx.shadowBlur = 0;
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(gameState.x, gameState.y, gameState.width, gameState.height);
-
-            requestAnimationFrame(drawGame);
-        }
-        drawGame();
-
-        // Función para actualizar el mensaje de log
-        function setLog(msg) {
-            logDiv.textContent = `📌 ${msg}`;
         }
 
-        // --------------------------------------------------------------
-        // CONFIGURACIÓN DEL EDITOR DE NODOS (LiteGraph)
-        // --------------------------------------------------------------
-        const graph = new LGraph();
-        const canvasNode = new LGraphCanvas("#editor", graph);
-
-        // Personalizar el menú contextual (para que sea más amigable)
-        canvasNode.allow_interaction = true;
-        canvasNode.show_info = true;
-
-        // --------------------------------------------------------------
-        // DEFINICIÓN DE NODOS PERSONALIZADOS
-        // --------------------------------------------------------------
-
-        // 1. NODO DE EVENTO: Tecla presionada
-        function NodeTecla() {
-            this.addOutput("Pulso", LiteGraph.EVENT);
-            this.addProperty("tecla", "Space");  // Space, ArrowRight, ArrowUp, etc.
-            this.tecla = "Space";
-            // Widget para seleccionar tecla en la interfaz
-            this.addWidget("combo", "Tecla", "Space", (v) => this.tecla = v, { values: ["Space", "ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "KeyA", "KeyD"] });
+        // ---- actualizar tras cambios en connections
+        function redraw() {
+            drawLines();
         }
-        NodeTecla.title = "Evento Tecla";
-        NodeTecla.desc = "Activa un pulso al presionar la tecla indicada";
-        NodeTecla.prototype.onExecute = function() {
-            // Este nodo se ejecuta manualmente desde el evento de teclado, no automáticamente
-            // Por eso el onExecute simplemente propaga el pulso si la tecla coincide.
-            // Pero lo manejaremos de otra forma: dispararemos el nodo desde el listener.
-        };
-        NodeTecla.prototype.onAction = function(action) {
-            // Cuando se llama a node.trigger() desde fuera, entra aquí
-            this.triggerSlot(0);
-        };
-        LiteGraph.registerNodeType("eventos/tecla", NodeTecla);
 
-        // 2. NODO DE ACCIÓN: Mover en X (derecha/izquierda)
-        function NodeMover() {
-            this.addInput("Activar", LiteGraph.ACTION);
-            this.addOutput("Completado", LiteGraph.EVENT);
-            this.addProperty("direccion", "derecha");
-            this.addProperty("velocidad", 5);
-            // Widgets
-            this.addWidget("combo", "Dirección", "derecha", (v) => this.properties.direccion = v, { values: ["derecha", "izquierda"] });
-            this.addWidget("number", "Velocidad", 5, (v) => this.properties.velocidad = v, { min: 1, max: 20 });
+        // ---- resetear todas las conexiones
+        function resetConnections() {
+            connections = [];
+            sourceNodeIndex = null;
+            removeActiveClassFromPorts();
+            redraw();
+            messageDiv.textContent = '⚡ conecta nodos';
         }
-        NodeMover.title = "Mover";
-        NodeMover.desc = "Desplaza el objeto horizontalmente";
-        NodeMover.prototype.onAction = function() {
-            const dir = this.properties.direccion === "derecha" ? 1 : -1;
-            gameState.x += dir * this.properties.velocidad;
-            // Limitar dentro del canvas (con margen)
-            if (gameState.x < 0) gameState.x = 0;
-            if (gameState.x > canvas.width - gameState.width) gameState.x = canvas.width - gameState.width;
-            setLog(`Moviendo ${this.properties.direccion} (vel:${this.properties.velocidad})`);
-            this.triggerSlot(0); // Activar salida
-        };
-        LiteGraph.registerNodeType("acciones/mover", NodeMover);
 
-        // 3. NODO DE ACCIÓN: Saltar
-        function NodeSaltar() {
-            this.addInput("Activar", LiteGraph.ACTION);
-            this.addOutput("Completado", LiteGraph.EVENT);
-            this.addProperty("fuerza", 30);
-            this.addWidget("number", "Fuerza", 30, (v) => this.properties.fuerza = v, { min: 10, max: 50 });
+        // ---- eliminar clase active-source de todos los puertos
+        function removeActiveClassFromPorts() {
+            document.querySelectorAll('.port.active-source').forEach(p => {
+                p.classList.remove('active-source');
+            });
         }
-        NodeSaltar.title = "Saltar";
-        NodeSaltar.desc = "Hace saltar al personaje";
-        NodeSaltar.prototype.onAction = function() {
-            // Simulación simple de salto: si no está saltando, inicia salto
-            if (!gameState.isJumping) {
-                gameState.isJumping = true;
-                gameState.jumpVelocity = -this.properties.fuerza; // negativo hacia arriba
-                setLog(`¡Salto! fuerza: ${this.properties.fuerza}`);
+
+        // ---- crear o reemplazar conexión (manteniendo máximo 1 in/out)
+        function setConnection(fromIdx, toIdx) {
+            if (fromIdx === toIdx) {
+                sourceNodeIndex = null;
+                removeActiveClassFromPorts();
+                return;
             }
-            this.triggerSlot(0);
-        };
-        LiteGraph.registerNodeType("acciones/saltar", NodeSaltar);
 
-        // 4. NODO DE ACCIÓN: Reproducir sonido (simulado)
-        function NodeSonido() {
-            this.addInput("Activar", LiteGraph.ACTION);
-            this.addOutput("Completado", LiteGraph.EVENT);
-            this.addProperty("sonido", "ping");
-            this.addWidget("text", "Sonido", "ping", (v) => this.properties.sonido = v);
-        }
-        NodeSonido.title = "Sonido";
-        NodeSonido.desc = "Reproduce un efecto (simulado)";
-        NodeSonido.prototype.onAction = function() {
-            setLog(`🔊 Sonido: ${this.properties.sonido}`);
-            console.log(`Reproduciendo sonido: ${this.properties.sonido}`);
-            this.triggerSlot(0);
-        };
-        LiteGraph.registerNodeType("acciones/sonido", NodeSonido);
+            // eliminar cualquier conexión existente que salga de 'fromIdx' o que llegue a 'toIdx'
+            connections = connections.filter(c => c.from !== fromIdx && c.to !== toIdx);
 
-        // --------------------------------------------------------------
-        // CREAR UN EJEMPLO PRECARGADO
-        // --------------------------------------------------------------
-        function createExampleGraph() {
-            // Nodo tecla espacio
-            var teclaEspacio = LiteGraph.createNode("eventos/tecla");
-            teclaEspacio.pos = [100, 100];
-            teclaEspacio.tecla = "Space";
-            teclaEspacio.properties.tecla = "Space";
-            graph.add(teclaEspacio);
+            // añadir nueva
+            connections.push({ from: fromIdx, to: toIdx });
+            redraw();
 
-            // Nodo mover derecha (con velocidad 5)
-            var moverDer = LiteGraph.createNode("acciones/mover");
-            moverDer.pos = [350, 50];
-            moverDer.properties.direccion = "derecha";
-            moverDer.properties.velocidad = 5;
-            graph.add(moverDer);
-
-            // Conectar espacio -> mover derecha
-            teclaEspacio.connect(0, moverDer, 0);
-
-            // Nodo tecla flecha arriba
-            var teclaArriba = LiteGraph.createNode("eventos/tecla");
-            teclaArriba.pos = [100, 250];
-            teclaArriba.tecla = "ArrowUp";
-            teclaArriba.properties.tecla = "ArrowUp";
-            graph.add(teclaArriba);
-
-            // Nodo saltar
-            var saltar = LiteGraph.createNode("acciones/saltar");
-            saltar.pos = [350, 200];
-            saltar.properties.fuerza = 30;
-            graph.add(saltar);
-
-            // Conectar flecha arriba -> saltar
-            teclaArriba.connect(0, saltar, 0);
-
-            // Nodo tecla flecha derecha (adicional)
-            var teclaRight = LiteGraph.createNode("eventos/tecla");
-            teclaRight.pos = [100, 400];
-            teclaRight.tecla = "ArrowRight";
-            teclaRight.properties.tecla = "ArrowRight";
-            graph.add(teclaRight);
-
-            // Otro mover (con velocidad 10)
-            var moverFast = LiteGraph.createNode("acciones/mover");
-            moverFast.pos = [350, 350];
-            moverFast.properties.direccion = "derecha";
-            moverFast.properties.velocidad = 10;
-            graph.add(moverFast);
-
-            // Conectar flecha derecha -> mover rápido
-            teclaRight.connect(0, moverFast, 0);
+            // desactivar modo fuente
+            sourceNodeIndex = null;
+            removeActiveClassFromPorts();
         }
 
-        createExampleGraph();
+        // ---- comprobar si forman un camino hamiltoniano de 0 a 9
+        function checkVictory() {
+            // construir arreglos de grado
+            const out = Array(10).fill(null);
+            const in_ = Array(10).fill(null);
 
-        // --------------------------------------------------------------
-        // FÍSICA DEL JUEGO (gravedad y salto)
-        // --------------------------------------------------------------
-        const GRAVEDAD = 1.5;
-        const SUELO_Y = canvas.height - 50 - gameState.height; // altura del suelo
+            for (let c of connections) {
+                out[c.from] = c.to;
+                in_[c.to] = c.from;
+            }
 
-        function updatePhysics() {
-            if (gameState.isJumping) {
-                // Aplicar gravedad
-                gameState.jumpVelocity += GRAVEDAD;
-                gameState.y += gameState.jumpVelocity;
+            // reglas básicas: nodo 0 no debe tener entrada, nodo 9 no debe tener salida
+            if (in_[0] !== null) {
+                messageDiv.textContent = '❌ START no puede tener entrada';
+                return;
+            }
+            if (out[9] !== null) {
+                messageDiv.textContent = '❌ END no puede tener salida';
+                return;
+            }
 
-                // Comprobar suelo
-                if (gameState.y >= SUELO_Y) {
-                    gameState.y = SUELO_Y;
-                    gameState.isJumping = false;
-                    gameState.jumpVelocity = 0;
+            // cada nodo debe tener <=1 in y out (ya garantizado por nuestro filtro, pero puede haber ciclos raros)
+            // recorrer desde 0
+            let visited = new Set();
+            let current = 0;
+            let path = [];
+
+            while (current !== null && !visited.has(current)) {
+                visited.add(current);
+                path.push(current);
+                current = out[current];
+            }
+
+            if (visited.size === 10 && path[path.length-1] === 9) {
+                messageDiv.textContent = '✅ 🎉 PROGRAMA CORRECTO! has conectado todos';
+            } else {
+                // diagnósticos amigables
+                if (!visited.has(0)) messageDiv.textContent = '❌ START no está conectado';
+                else if (visited.has(9) && visited.size < 10) messageDiv.textContent = `⚠️ camino incompleto (${visited.size}/10 nodos)`;
+                else if (!visited.has(9)) messageDiv.textContent = '❌ no se alcanza END';
+                else messageDiv.textContent = '❌ aún no es un camino único';
+            }
+        }
+
+        // ---- manejadores de eventos en puertos
+        function attachPortListeners() {
+            document.querySelectorAll('.port').forEach(port => {
+                port.removeEventListener('mousedown', portHandler);
+                port.addEventListener('mousedown', portHandler);
+            });
+        }
+
+        function portHandler(e) {
+            e.stopPropagation();  // evitar que el documento lo cancele
+            const port = e.currentTarget;
+            const nodeIdx = parseInt(port.getAttribute('data-node'), 10);
+            const portType = port.getAttribute('data-port');
+
+            if (portType === 'output') {
+                // activar modo conexión desde este nodo
+                // limpiar otros sources
+                removeActiveClassFromPorts();
+                port.classList.add('active-source');
+                sourceNodeIndex = nodeIdx;
+            } else if (portType === 'input') {
+                // si hay un source activo, intentar conectar
+                if (sourceNodeIndex !== null && sourceNodeIndex !== nodeIdx) {
+                    setConnection(sourceNodeIndex, nodeIdx);
+                } else {
+                    // click en input sin source -> quizá cancelar
+                    if (sourceNodeIndex !== null) {
+                        removeActiveClassFromPorts();
+                        sourceNodeIndex = null;
+                    }
                 }
             }
-            requestAnimationFrame(updatePhysics);
         }
-        updatePhysics();
 
-        // --------------------------------------------------------------
-        // MANEJAR EVENTOS DE TECLADO PARA DISPARAR NODOS
-        // --------------------------------------------------------------
-        document.addEventListener('keydown', (e) => {
-            // Evitar que la tecla afecte la página (espacio hace scroll, flechas mueven)
-            if (e.code.startsWith('Arrow') || e.code === 'Space') {
-                e.preventDefault();
-            }
-
-            // Buscar todos los nodos de tipo "eventos/tecla" y activar aquellos cuya tecla coincida
-            for (let node of graph._nodes) {
-                if (node.type === "eventos/tecla" && node.tecla === e.code) {
-                    node.triggerSlot(0); // Activar la salida (acción)
-                    setLog(`Tecla ${e.code} activó nodo`);
-                }
+        // cancelar modo source si se hace clic fuera de puerto
+        document.addEventListener('mousedown', function(e) {
+            if (!e.target.classList.contains('port')) {
+                removeActiveClassFromPorts();
+                sourceNodeIndex = null;
             }
         });
 
-        // --------------------------------------------------------------
-        // BOTÓN DE REINICIO
-        // --------------------------------------------------------------
+        // actualizar listeners cada vez que se regeneren nodos (por si acaso, pero nosotros no regeneramos)
+        // sin embargo los puertos son estáticos tras buildNodes, así que llamar una vez
+        attachPortListeners();
+
+        // ---- botones
         document.getElementById('resetBtn').addEventListener('click', () => {
-            gameState.x = 300;
-            gameState.y = SUELO_Y;
-            gameState.isJumping = false;
-            gameState.jumpVelocity = 0;
-            setLog('Posición reiniciada');
+            resetConnections();
         });
 
-        // Ajustar posición inicial Y al suelo
-        gameState.y = SUELO_Y;
+        document.getElementById('checkBtn').addEventListener('click', () => {
+            checkVictory();
+        });
 
-        // Pequeña ayuda: mostrar los nodos disponibles en consola
-        console.log('Editor de nodos listo. Puedes agregar más nodos desde el menú contextual en el área gris.');
-    </script>
+        // dibujo inicial (sin líneas)
+        redraw();
+
+        // opcional: redibujar si cambia tamaño (no necesario, pero por si acaso)
+        window.addEventListener('resize', () => {}); // nada
+
+        // pequeños ajustes: recalcar que el nodo 0 y 9 tienen colores especiales en CSS
+
+        // Exponer reset por si se quiere usar desde consola, no necesario
+        // también añadir tecla de escape para cancelar source
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                removeActiveClassFromPorts();
+                sourceNodeIndex = null;
+            }
+        });
+
+        // mejora: si se hace clic en un nodo (fondo) también cancelar source
+        document.querySelectorAll('.node').forEach(node => {
+            node.addEventListener('mousedown', (e) => {
+                // si el clic no fue en un puerto, cancelar source
+                if (!e.target.classList.contains('port')) {
+                    removeActiveClassFromPorts();
+                    sourceNodeIndex = null;
+                }
+            });
+        });
+
+        // mensaje inicial
+        messageDiv.textContent = '⚡ 10 nodos: conecta START → ... → END';
+    })();
+</script>
 </body>
 </html>
