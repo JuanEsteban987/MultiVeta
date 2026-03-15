@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Twitch P2P - Juegos y Dibujo (Completo)</title>
+    <title>Twitch P2P - Juegos Completos con VETS</title>
     <style>
+        /* ===== ESTILOS GENERALES ===== */
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
+            margin: 0;
+            padding: 0;
         }
         body {
-            margin: 0;
             background: #0e0e10;
             color: #efeff1;
             display: flex;
@@ -20,6 +21,7 @@
             min-height: 100vh;
             padding: 8px;
         }
+        /* Pantalla de inicio */
         .join-screen {
             background: #1f1f23;
             padding: 40px 20px;
@@ -67,6 +69,7 @@
             font-size: 14px;
             margin-top: 20px;
         }
+        /* Contenedor principal */
         .container {
             display: flex;
             width: 100%;
@@ -85,10 +88,8 @@
                 height: auto;
                 min-height: 90vh;
             }
-            body {
-                padding: 4px;
-            }
         }
+        /* Esquinas */
         .room-code-corner {
             position: absolute;
             top: 10px;
@@ -102,19 +103,24 @@
             z-index: 10;
             border: 1px solid #9147ff;
         }
-        .vets-corner {
+        .donation-overlay {
             position: absolute;
             top: 10px;
             right: 10px;
             background: rgba(0,0,0,0.7);
-            color: gold;
-            padding: 5px 12px;
+            color: #ff79c6;
+            padding: 8px 16px;
             border-radius: 20px;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             z-index: 10;
-            border: 1px solid gold;
+            border: 1px solid #ff79c6;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            pointer-events: none;
         }
+        /* Área de stream */
         .stream-area {
             flex: 3;
             display: flex;
@@ -138,7 +144,8 @@
             color: #bf94ff;
             font-weight: bold;
         }
-        .game-menu-button {
+        /* Botón selector de juegos (solo host) */
+        .game-selector-toggle {
             background: #9147ff;
             border: none;
             color: white;
@@ -146,9 +153,10 @@
             border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
+            margin-bottom: 8px;
         }
         .game-selector {
-            display: none; /* Oculto por defecto */
+            display: none;
             gap: 8px;
             background: #1f1f23;
             padding: 8px;
@@ -157,7 +165,7 @@
             flex-wrap: wrap;
             justify-content: center;
         }
-        .game-selector.show {
+        .game-selector.visible {
             display: flex;
         }
         .game-btn {
@@ -179,6 +187,7 @@
             background: #9147ff;
             font-weight: bold;
         }
+        /* Canvas y overlay */
         .canvas-wrapper {
             background: #0e0e10;
             border-radius: 8px;
@@ -194,7 +203,6 @@
         canvas {
             background: white;
             border-radius: 4px;
-            cursor: crosshair;
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
             width: 100%;
             height: auto;
@@ -217,26 +225,7 @@
             pointer-events: none;
             z-index: 5;
         }
-        .donation-notification {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(255, 215, 0, 0.9);
-            color: black;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 20;
-            animation: fadeInOut 3s ease-in-out;
-            pointer-events: none;
-        }
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(20px); }
-            10% { opacity: 1; transform: translateY(0); }
-            90% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-20px); }
-        }
+        /* Herramientas de dibujo */
         .tools {
             margin-top: 16px;
             display: flex;
@@ -285,6 +274,30 @@
         .tools button:hover {
             background: #772ce8;
         }
+        /* Controles específicos de juegos */
+        .game-controls {
+            margin-top: 10px;
+            background: #26262c;
+            padding: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+        .game-controls.visible {
+            display: block;
+        }
+        .game-controls button {
+            background: #9147ff;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .game-controls p {
+            margin: 8px 0;
+        }
+        /* Panel de chat */
         .chat-panel {
             flex: 1;
             background: #1f1f23;
@@ -374,9 +387,6 @@
             font-size: 16px;
             min-width: 150px;
         }
-        .chat-row input::placeholder {
-            color: #5a5a66;
-        }
         .chat-row button {
             background: #9147ff;
             border: none;
@@ -388,8 +398,11 @@
             font-size: 16px;
             white-space: nowrap;
         }
-        .chat-row button:hover {
-            background: #772ce8;
+        .donation-btn {
+            background: #ff4444;
+        }
+        .donation-btn:hover {
+            background: #cc0000;
         }
         .emoji-panel {
             display: flex;
@@ -411,78 +424,51 @@
         .emoji-btn:hover {
             background: #9147ff;
         }
-        .donation-btn {
-            background: #ff4444;
-            border: none;
-            color: white;
-            font-weight: bold;
-            padding: 12px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: background 0.2s;
-            white-space: nowrap;
-        }
-        .donation-btn:hover {
-            background: #cc0000;
-        }
-        .donation-btn:disabled {
-            background: #666;
-            cursor: not-allowed;
-        }
-        @media (max-width: 768px) {
-            .game-btn, .tools button, .chat-row button, .donation-btn, .emoji-btn {
-                padding: 14px 18px;
-                font-size: 18px;
-            }
-            .tools input[type="range"] {
-                width: 150px;
-            }
-        }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
+    <!-- Pantalla de inicio -->
     <div id="join-screen" class="join-screen">
-        <h1>Twitch P2P - Juegos y Dibujo</h1>
+        <h1>Twitch P2P - Juegos Completos</h1>
         <div class="form">
             <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
             <div>
                 <button id="create-room-btn">Crear sala (host)</button>
                 <button id="join-room-btn">Unirse como espectador</button>
             </div>
-            <p class="info">El host controla los juegos. Los espectadores ven y chatean. Conexión directa P2P.</p>
+            <p class="info">El host elige el juego. Ganas 1 VET cada 3 segundos. Dona 50 VETS para aparecer en pantalla.</p>
         </div>
     </div>
 
+    <!-- Aplicación de dibujo -->
     <div id="drawing-app" class="container" style="display: none;">
-        <!-- Código de sala en esquina -->
+        <!-- Esquinas -->
         <div id="room-code-corner" class="room-code-corner">Sala: </div>
-        <!-- Vets del host -->
-        <div id="vets-corner" class="vets-corner">🪙 Vets: 0</div>
+        <div id="donation-overlay" class="donation-overlay">🪙 VETS: <span id="vets-count">0</span></div>
 
         <div class="stream-area">
             <div class="room-bar">
                 <span>Bienvenido</span>
                 <span id="role-display" class="role"></span>
-                <button id="game-menu-toggle" class="game-menu-button">🎮 Juegos</button>
                 <button id="leave-room-btn" style="background: #ff4444; padding: 8px 16px;">Salir</button>
             </div>
 
-            <!-- Selector de juegos (oculto inicialmente) -->
-            <div class="game-selector" id="game-selector">
+            <!-- Selector de juegos (solo host) -->
+            <button id="toggle-games-btn" class="game-selector-toggle" style="display: none;">🎮 Cambiar juego</button>
+            <div id="game-selector" class="game-selector">
                 <button class="game-btn" data-game="paint">🎨 Pintar</button>
-                <button class="game-btn" data-game="football">⚽ Fútbol</button>
                 <button class="game-btn" data-game="pokemon">🐱 Pokémon</button>
+                <button class="game-btn" data-game="football">⚽ Fútbol</button>
                 <button class="game-btn" data-game="parkour">🏃 Parkour</button>
             </div>
 
             <div class="canvas-wrapper">
                 <canvas id="drawCanvas" width="1000" height="600"></canvas>
                 <div id="game-overlay" class="game-overlay">🎨 Modo Pintar</div>
-                <!-- Elementos específicos de juegos (se dibujan en canvas, pero overlay para info) -->
             </div>
 
-            <!-- Herramientas de dibujo (solo visibles en modo pintar y para host) -->
+            <!-- Herramientas de dibujo (solo modo pintar) -->
             <div class="tools" id="tools-container" style="display: none;">
                 <select id="toolSelect">
                     <option value="pencil">Lápiz</option>
@@ -497,8 +483,35 @@
                 <input type="range" id="brushSize" min="1" max="30" value="5">
                 <button id="clearCanvas">Limpiar todo</button>
             </div>
+
+            <!-- Controles Pokémon -->
+            <div id="pokemon-controls" class="game-controls">
+                <h4>Pokémon</h4>
+                <button id="pokemon-attack">⚔️ Atacar (10 VETS)</button>
+                <button id="pokemon-heal">💚 Curar (15 VETS)</button>
+                <button id="pokemon-catch">🎯 Capturar (20 VETS)</button>
+                <p>Tu Pokémon: <span id="pokemon-hp">100</span> HP | Bot: <span id="bot-hp">100</span> HP</p>
+                <p>Estado: <span id="pokemon-status">Combatiendo</span></p>
+            </div>
+
+            <!-- Controles Fútbol -->
+            <div id="football-controls" class="game-controls">
+                <h4>Fútbol - Penaltis</h4>
+                <button id="football-shoot">⚽ Lanzar penalti</button>
+                <p>Goles: <span id="football-score">0</span> | Intentos: <span id="football-attempts">5</span></p>
+                <p>Dificultad: <span id="football-difficulty">1</span></p>
+            </div>
+
+            <!-- Controles Parkour -->
+            <div id="parkour-controls" class="game-controls">
+                <h4>Parkour Infinito</h4>
+                <p>Usa ← → para moverte, ↑ para saltar</p>
+                <p>Puntuación: <span id="parkour-score">0</span></p>
+                <p>Mejor marca: <span id="parkour-best">0</span></p>
+            </div>
         </div>
 
+        <!-- Panel de chat -->
         <div class="chat-panel">
             <div class="viewers">
                 <h3>Espectadores 👁️</h3>
@@ -514,7 +527,7 @@
                     <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
                     <input type="text" id="messageInput" placeholder="Mensaje...">
                     <button id="sendMessage">Enviar</button>
-                    <button id="donationBtn" class="donation-btn">💜 Donar (50 Vets)</button>
+                    <button id="donationBtn" class="donation-btn">💜 Donar (50 VETS)</button>
                 </div>
                 <div class="emoji-panel">
                     <button class="emoji-btn" data-emoji="😀">😀</button>
@@ -529,9 +542,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Contenedor para notificaciones de donación -->
-    <div id="donation-notification-area" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;"></div>
 
     <script>
         (function() {
@@ -557,12 +567,29 @@
             const sendBtn = document.getElementById('sendMessage');
             const donationBtn = document.getElementById('donationBtn');
             const roomCodeCorner = document.getElementById('room-code-corner');
-            const vetsCorner = document.getElementById('vets-corner');
             const gameOverlay = document.getElementById('game-overlay');
+            const toggleGamesBtn = document.getElementById('toggle-games-btn');
             const gameSelector = document.getElementById('game-selector');
-            const gameMenuToggle = document.getElementById('game-menu-toggle');
             const gameBtns = document.querySelectorAll('.game-btn');
-            const donationArea = document.getElementById('donation-notification-area');
+            const vetsSpan = document.getElementById('vets-count');
+            const donationOverlay = document.getElementById('donation-overlay');
+
+            // Controles de juegos
+            const pokemonControls = document.getElementById('pokemon-controls');
+            const footballControls = document.getElementById('football-controls');
+            const parkourControls = document.getElementById('parkour-controls');
+            const pokemonAttack = document.getElementById('pokemon-attack');
+            const pokemonHeal = document.getElementById('pokemon-heal');
+            const pokemonCatch = document.getElementById('pokemon-catch');
+            const pokemonHpSpan = document.getElementById('pokemon-hp');
+            const botHpSpan = document.getElementById('bot-hp');
+            const pokemonStatusSpan = document.getElementById('pokemon-status');
+            const footballShoot = document.getElementById('football-shoot');
+            const footballScoreSpan = document.getElementById('football-score');
+            const footballAttemptsSpan = document.getElementById('football-attempts');
+            const footballDifficultySpan = document.getElementById('football-difficulty');
+            const parkourScoreSpan = document.getElementById('parkour-score');
+            const parkourBestSpan = document.getElementById('parkour-best');
 
             // --- Estado P2P ---
             let peer = null;
@@ -571,45 +598,33 @@
             let roomId = null;
             let myPeerId = null;
             let hostConnection = null; // para espectador
-
-            // --- Estado de dibujo (modo pintar) ---
-            let drawing = false;
-            let startX, startY, lastX, lastY;
-            let paintHistory = []; // historial de acciones de dibujo (solo para modo pintar)
+            let history = []; // historial de acciones de dibujo
             let currentGame = 'paint'; // juego por defecto
 
             // --- Estado de juegos ---
-            // Fútbol
-            let footballState = {
-                ballX: 500, ballY: 300, ballVx: 0, ballVy: 0,
-                playerX: 200, playerY: 300,
-                botX: 800, botY: 300,
-                goalLeft: 50, goalRight: 950,
-                score: 0,
-                gameActive: false
-            };
             // Pokémon
-            let pokemonState = {
-                playerPokemon: { name: 'Pikachu', hp: 100, maxHp: 100, attack: 20 },
-                enemyPokemon: { name: 'Charmander', hp: 100, maxHp: 100, attack: 18 },
-                battleLog: [],
-                turn: 'player', // 'player' o 'enemy'
-                gameActive: false
-            };
+            let pokemon = { playerHP: 100, botHP: 100, status: 'fighting' };
+            // Fútbol
+            let football = { score: 0, attempts: 5, difficulty: 1, goalWidth: 200, keeperSpeed: 2 };
             // Parkour
-            let parkourState = {
-                playerY: 300, playerVy: 0, onGround: true,
-                platforms: [{ x: 0, y: 500, w: 200 }, { x: 300, y: 450, w: 150 }, { x: 600, y: 400, w: 150 }],
-                score: 0,
-                gameActive: false,
-                frame: 0
+            let parkour = {
+                score: 0, best: 0,
+                player: { x: 100, y: 500, vy: 0, width: 20, height: 20 },
+                platforms: [{ x: 400, y: 550, w: 200 }],
+                gameOver: false
             };
+            let parkourInterval = null;
+            let parkourKeys = { left: false, right: false, up: false };
 
-            // --- Vets (moneda) ---
+            // --- Moneda Vets ---
             let vets = 0;
             let vetsInterval = null;
 
-            // --- Configuración del canvas ---
+            // --- Estado de dibujo ---
+            let drawing = false;
+            let startX, startY, lastX, lastY;
+
+            // Configuración del canvas
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = colorPicker.value;
@@ -617,34 +632,55 @@
             ctx.lineWidth = brushSizeInput.value;
             ctx.font = '16px Arial';
 
-            // --- Funciones de almacenamiento local (solo host, modo pintar) ---
-            function savePaintProgress() {
+            // ========== FUNCIONES DE ALMACENAMIENTO ==========
+            function saveProgress() {
                 if (!isHost || !roomId) return;
                 try {
-                    localStorage.setItem(`paint_${roomId}`, JSON.stringify(paintHistory));
+                    localStorage.setItem(`historial_${roomId}`, JSON.stringify(history));
+                    localStorage.setItem(`juego_${roomId}`, currentGame);
+                    localStorage.setItem(`pokemon_${roomId}`, JSON.stringify(pokemon));
+                    localStorage.setItem(`football_${roomId}`, JSON.stringify(football));
+                    localStorage.setItem(`parkour_${roomId}`, JSON.stringify({ best: parkour.best }));
                 } catch (e) {}
             }
 
-            function loadPaintProgress() {
+            function loadProgress() {
                 if (!isHost || !roomId) return;
                 try {
-                    const saved = localStorage.getItem(`paint_${roomId}`);
-                    if (saved) {
-                        paintHistory = JSON.parse(saved);
-                        if (currentGame === 'paint') {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            paintHistory.forEach(action => applyPaintAction(action));
-                        }
+                    const savedHistory = localStorage.getItem(`historial_${roomId}`);
+                    if (savedHistory) {
+                        history = JSON.parse(savedHistory);
+                        redrawHistory();
+                    }
+                    const savedGame = localStorage.getItem(`juego_${roomId}`);
+                    if (savedGame) {
+                        currentGame = savedGame;
+                        setGame(currentGame);
+                    }
+                    const savedPokemon = localStorage.getItem(`pokemon_${roomId}`);
+                    if (savedPokemon) {
+                        pokemon = JSON.parse(savedPokemon);
+                        updatePokemonUI();
+                    }
+                    const savedFootball = localStorage.getItem(`football_${roomId}`);
+                    if (savedFootball) {
+                        football = JSON.parse(savedFootball);
+                        updateFootballUI();
+                    }
+                    const savedParkour = localStorage.getItem(`parkour_${roomId}`);
+                    if (savedParkour) {
+                        parkour.best = JSON.parse(savedParkour).best;
+                        updateParkourUI();
                     }
                 } catch (e) {}
             }
 
-            function clearPaintProgress() {
-                if (!isHost || !roomId) return;
-                localStorage.removeItem(`paint_${roomId}`);
+            function redrawHistory() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                history.forEach(action => applyAction(action));
             }
 
-            // --- Funciones de dibujo (modo pintar) ---
+            // ========== FUNCIONES DE DIBUJO ==========
             function drawShape(action) {
                 ctx.save();
                 ctx.strokeStyle = action.color;
@@ -694,7 +730,7 @@
                 ctx.beginPath();
             }
 
-            function applyPaintAction(action) {
+            function applyAction(action) {
                 switch (action.type) {
                     case 'draw_start': drawStart(action); break;
                     case 'draw': drawMove(action); break;
@@ -705,301 +741,285 @@
                 }
             }
 
-            // --- Lógica de juegos ---
+            // ========== FUNCIONES DE JUEGOS ==========
             function setGame(game) {
                 currentGame = game;
-                let emoji = '🎨';
-                let text = 'Pintar';
-                if (game === 'football') { emoji = '⚽'; text = 'Fútbol'; }
-                else if (game === 'pokemon') { emoji = '🐱'; text = 'Pokémon'; }
+                let emoji = '🎨', text = 'Pintar';
+                if (game === 'pokemon') { emoji = '🐱'; text = 'Pokémon'; }
+                else if (game === 'football') { emoji = '⚽'; text = 'Fútbol'; }
                 else if (game === 'parkour') { emoji = '🏃'; text = 'Parkour'; }
                 gameOverlay.innerHTML = `${emoji} Modo ${text}`;
 
-                // Limpiar canvas y preparar según juego
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Ocultar/mostrar herramientas de dibujo
-                if (game === 'paint' && isHost) {
+                // Ocultar todos los controles
+                toolsContainer.style.display = 'none';
+                pokemonControls.classList.remove('visible');
+                footballControls.classList.remove('visible');
+                parkourControls.classList.remove('visible');
+
+                if (game === 'paint') {
                     toolsContainer.style.display = 'flex';
-                    // Restaurar dibujo si existe
-                    paintHistory.forEach(action => applyPaintAction(action));
+                    redrawHistory();
                 } else {
-                    toolsContainer.style.display = 'none';
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    if (game === 'pokemon') {
+                        pokemonControls.classList.add('visible');
+                        updatePokemonUI();
+                    } else if (game === 'football') {
+                        footballControls.classList.add('visible');
+                        updateFootballUI();
+                    } else if (game === 'parkour') {
+                        parkourControls.classList.add('visible');
+                        startParkour();
+                    }
                 }
 
-                // Inicializar juegos si es necesario
-                if (game === 'football') {
-                    footballState.gameActive = true;
-                    footballState.ballX = 500; footballState.ballY = 300;
-                    footballState.playerX = 200; footballState.playerY = 300;
-                    footballState.botX = 800; footballState.botY = 300;
-                    footballState.score = 0;
-                } else if (game === 'pokemon') {
-                    pokemonState.gameActive = true;
-                    pokemonState.playerPokemon.hp = 100;
-                    pokemonState.enemyPokemon.hp = 100;
-                    pokemonState.turn = 'player';
-                    pokemonState.battleLog = ['¡Comienza la batalla!'];
-                } else if (game === 'parkour') {
-                    parkourState.gameActive = true;
-                    parkourState.playerY = 300;
-                    parkourState.playerVy = 0;
-                    parkourState.onGround = true;
-                    parkourState.platforms = [
-                        { x: 0, y: 500, w: 200 },
-                        { x: 300, y: 450, w: 150 },
-                        { x: 600, y: 400, w: 150 },
-                        { x: 900, y: 350, w: 150 }
-                    ];
-                    parkourState.score = 0;
+                // Detener parkour si no está activo
+                if (game !== 'parkour' && parkourInterval) {
+                    clearInterval(parkourInterval);
+                    parkourInterval = null;
                 }
 
-                // Notificar a espectadores
                 if (isHost) {
-                    broadcastToViewers({ type: 'game-change', game: game });
+                    broadcastToViewers({ type: 'game-change', game: game,
+                        pokemon: pokemon, football: football, parkourBest: parkour.best });
+                    saveProgress();
                 }
             }
 
-            // Actualizar canvas según el juego (llamado en cada frame)
-            function updateGame() {
-                if (!isHost) return; // Solo el host actualiza la lógica
-
-                if (currentGame === 'football') {
-                    updateFootball();
-                } else if (currentGame === 'pokemon') {
-                    updatePokemon();
-                } else if (currentGame === 'parkour') {
-                    updateParkour();
-                }
+            // --- Pokémon ---
+            function updatePokemonUI() {
+                pokemonHpSpan.textContent = pokemon.playerHP;
+                botHpSpan.textContent = pokemon.botHP;
+                pokemonStatusSpan.textContent = pokemon.status === 'fighting' ? 'Combatiendo' : 'Capturado';
             }
 
-            function updateFootball() {
-                if (!footballState.gameActive) return;
-                // Física simple
-                let ball = footballState;
-                // Movimiento del jugador (controlado por teclas, pero aquí simularemos con IA simple o teclado)
-                // Por simplicidad, el jugador se mueve con teclas A/D (lo manejamos en eventos)
-                // Movimiento del bot (sigue la pelota)
-                if (ball.botX < ball.ballX) ball.botX += 2;
-                else ball.botX -= 2;
-                if (ball.botY < ball.ballY) ball.botY += 2;
-                else ball.botY -= 2;
-
-                // Pelota se mueve
-                ball.ballX += ball.ballVx;
-                ball.ballY += ball.ballVy;
-                // Rozamiento
-                ball.ballVx *= 0.98;
-                ball.ballVy *= 0.98;
-
-                // Colisiones con bordes
-                if (ball.ballX < 0 || ball.ballX > canvas.width) ball.ballVx *= -0.8;
-                if (ball.ballY < 0 || ball.ballY > canvas.height) ball.ballVy *= -0.8;
-
-                // Gol?
-                if (ball.ballX < ball.goalLeft && ball.ballY > 250 && ball.ballY < 350) {
-                    ball.score++;
-                    ball.ballX = 500; ball.ballY = 300;
-                    ball.ballVx = ball.ballVy = 0;
-                }
-
-                // Dibujar
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = 'green';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                // Porterías
-                ctx.fillStyle = 'white';
-                ctx.fillRect(ball.goalLeft-5, 250, 10, 100);
-                ctx.fillRect(ball.goalRight-5, 250, 10, 100);
-                // Jugador
-                ctx.fillStyle = 'blue';
-                ctx.beginPath();
-                ctx.arc(ball.playerX, ball.playerY, 15, 0, 2*Math.PI);
-                ctx.fill();
-                // Bot
-                ctx.fillStyle = 'red';
-                ctx.beginPath();
-                ctx.arc(ball.botX, ball.botY, 15, 0, 2*Math.PI);
-                ctx.fill();
-                // Pelota
-                ctx.fillStyle = 'white';
-                ctx.beginPath();
-                ctx.arc(ball.ballX, ball.ballY, 10, 0, 2*Math.PI);
-                ctx.fill();
-                // Marcador
-                ctx.fillStyle = 'black';
-                ctx.font = '20px Arial';
-                ctx.fillText(`Goles: ${ball.score}`, 10, 30);
-            }
-
-            function updatePokemon() {
-                if (!pokemonState.gameActive) return;
-                // Lógica por turnos, pero aquí manejamos con botones
-                // Dibujar
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = 'lightgray';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                // Pokémon del jugador
-                ctx.fillStyle = 'yellow';
-                ctx.beginPath();
-                ctx.arc(300, 400, 50, 0, 2*Math.PI);
-                ctx.fill();
-                ctx.fillStyle = 'black';
-                ctx.font = '16px Arial';
-                ctx.fillText(pokemonState.playerPokemon.name, 250, 470);
-                ctx.fillText(`HP: ${pokemonState.playerPokemon.hp}/${pokemonState.playerPokemon.maxHp}`, 250, 500);
-                // Pokémon enemigo
-                ctx.fillStyle = 'red';
-                ctx.beginPath();
-                ctx.arc(700, 200, 50, 0, 2*Math.PI);
-                ctx.fill();
-                ctx.fillStyle = 'black';
-                ctx.fillText(pokemonState.enemyPokemon.name, 650, 270);
-                ctx.fillText(`HP: ${pokemonState.enemyPokemon.hp}/${pokemonState.enemyPokemon.maxHp}`, 650, 300);
-                // Log de batalla
-                ctx.fillStyle = 'black';
-                ctx.font = '14px Arial';
-                let y = 550;
-                pokemonState.battleLog.slice(-3).forEach(line => {
-                    ctx.fillText(line, 10, y);
-                    y += 20;
-                });
-            }
-
-            function updateParkour() {
-                if (!parkourState.gameActive) return;
-                let p = parkourState;
-                // Gravedad
-                p.playerVy += 0.5;
-                p.playerY += p.playerVy;
-                // Colisión con plataformas
-                p.onGround = false;
-                for (let plat of p.platforms) {
-                    if (p.playerY + 20 > plat.y && p.playerY + 20 < plat.y + 20 && 
-                        p.playerX + 10 > plat.x && p.playerX - 10 < plat.x + plat.w) {
-                        p.playerY = plat.y - 20;
-                        p.playerVy = 0;
-                        p.onGround = true;
-                    }
-                }
-                // Si cae al vacío, reaparece
-                if (p.playerY > canvas.height) {
-                    p.playerY = 300;
-                    p.playerVy = 0;
-                }
-                // Mover plataformas hacia la izquierda (efecto scroll)
-                for (let plat of p.platforms) {
-                    plat.x -= 2;
-                }
-                // Si una plataforma sale de la pantalla, generar nueva
-                if (p.platforms[0].x + p.platforms[0].w < 0) {
-                    p.platforms.shift();
-                    let last = p.platforms[p.platforms.length-1];
-                    p.platforms.push({ x: last.x + 400, y: 300 + Math.random()*200, w: 150 });
-                    p.score++;
-                }
-                // Dibujar
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = 'skyblue';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                // Plataformas
-                ctx.fillStyle = 'brown';
-                p.platforms.forEach(plat => {
-                    ctx.fillRect(plat.x, plat.y, plat.w, 20);
-                });
-                // Jugador (cuadrado)
-                ctx.fillStyle = 'red';
-                ctx.fillRect(p.playerX-10, p.playerY-20, 20, 20);
-                // Puntuación
-                ctx.fillStyle = 'black';
-                ctx.font = '20px Arial';
-                ctx.fillText(`Puntos: ${p.score}`, 10, 30);
-            }
-
-            // --- Controles de juegos (solo host) ---
-            function handleKeyDown(e) {
+            function pokemonAttack() {
                 if (!isHost) return;
-                if (currentGame === 'football') {
-                    if (e.key === 'a' || e.key === 'A') footballState.playerX -= 10;
-                    if (e.key === 'd' || e.key === 'D') footballState.playerX += 10;
-                    if (e.key === 'w' || e.key === 'W') footballState.playerY -= 10;
-                    if (e.key === 's' || e.key === 'S') footballState.playerY += 10;
-                    // Golpear pelota
-                    if (e.key === ' ') {
-                        let dx = footballState.ballX - footballState.playerX;
-                        let dy = footballState.ballY - footballState.playerY;
-                        let dist = Math.sqrt(dx*dx + dy*dy);
-                        if (dist < 30) {
-                            footballState.ballVx += dx * 0.2;
-                            footballState.ballVy += dy * 0.2;
-                        }
-                    }
-                } else if (currentGame === 'pokemon') {
-                    if (e.key === ' ' && pokemonState.turn === 'player') {
-                        // Atacar
-                        let damage = Math.floor(Math.random() * 15) + 10;
-                        pokemonState.enemyPokemon.hp -= damage;
-                        pokemonState.battleLog.push(`¡Atacas! Causas ${damage} de daño.`);
-                        if (pokemonState.enemyPokemon.hp <= 0) {
-                            pokemonState.battleLog.push('¡Ganaste!');
-                            pokemonState.gameActive = false;
-                        } else {
-                            pokemonState.turn = 'enemy';
-                            // Turno enemigo
-                            setTimeout(() => {
-                                if (!pokemonState.gameActive) return;
-                                let dmg = Math.floor(Math.random() * 12) + 8;
-                                pokemonState.playerPokemon.hp -= dmg;
-                                pokemonState.battleLog.push(`Enemigo ataca: ${dmg} daño.`);
-                                if (pokemonState.playerPokemon.hp <= 0) {
-                                    pokemonState.battleLog.push('¡Perdiste!');
-                                    pokemonState.gameActive = false;
-                                } else {
-                                    pokemonState.turn = 'player';
-                                }
-                            }, 1000);
-                        }
-                    }
-                } else if (currentGame === 'parkour') {
-                    if (e.key === ' ' && parkourState.onGround) {
-                        parkourState.playerVy = -12; // salto
-                    }
+                if (vets < 10) {
+                    addChatMessage('Sistema', 'Necesitas 10 VETS para atacar', false, true);
+                    return;
                 }
+                vets -= 10;
+                updateVetsUI();
+                let damage = 20;
+                pokemon.botHP -= damage;
+                if (pokemon.botHP < 0) pokemon.botHP = 0;
+                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP, status: pokemon.status });
+                addChatMessage('Sistema', `¡Atacas! El bot pierde ${damage} HP.`, false, true);
+
+                if (pokemon.botHP <= 0) {
+                    pokemon.status = 'captured';
+                    addChatMessage('Sistema', '¡Has derrotado al bot! Puedes capturarlo.', false, true);
+                } else {
+                    // Turno del bot
+                    let botDamage = 15;
+                    pokemon.playerHP -= botDamage;
+                    if (pokemon.playerHP < 0) pokemon.playerHP = 0;
+                    addChatMessage('Sistema', `El bot te ataca, pierdes ${botDamage} HP.`, false, true);
+                }
+                if (pokemon.playerHP <= 0) {
+                    addChatMessage('Sistema', 'Has perdido. Reiniciando...', false, true);
+                    pokemon = { playerHP: 100, botHP: 100, status: 'fighting' };
+                }
+                updatePokemonUI();
+                saveProgress();
+            }
+
+            function pokemonHeal() {
+                if (!isHost) return;
+                if (vets < 15) {
+                    addChatMessage('Sistema', 'Necesitas 15 VETS para curarte', false, true);
+                    return;
+                }
+                vets -= 15;
+                updateVetsUI();
+                pokemon.playerHP = Math.min(100, pokemon.playerHP + 30);
+                addChatMessage('Sistema', 'Te curas 30 HP.', false, true);
+                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP, status: pokemon.status });
+                updatePokemonUI();
+                saveProgress();
+            }
+
+            function pokemonCatch() {
+                if (!isHost) return;
+                if (vets < 20) {
+                    addChatMessage('Sistema', 'Necesitas 20 VETS para capturar', false, true);
+                    return;
+                }
+                vets -= 20;
+                updateVetsUI();
+                if (pokemon.botHP <= 20 || pokemon.status === 'captured') {
+                    let success = Math.random() > 0.3;
+                    if (success) {
+                        addChatMessage('Sistema', '¡Capturado! Has ganado 50 VETS.', false, true);
+                        vets += 50;
+                        updateVetsUI();
+                        pokemon = { playerHP: 100, botHP: 100, status: 'fighting' };
+                    } else {
+                        addChatMessage('Sistema', 'Fallaste la captura.', false, true);
+                    }
+                } else {
+                    addChatMessage('Sistema', 'El bot tiene demasiada vida. Debilítalo más.', false, true);
+                }
+                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP, status: pokemon.status });
+                updatePokemonUI();
+                saveProgress();
+            }
+
+            // --- Fútbol ---
+            function shootPenalty() {
+                if (!isHost) return;
+                if (football.attempts <= 0) {
+                    addChatMessage('Sistema', 'No te quedan intentos. Reiniciando...', false, true);
+                    football.attempts = 5;
+                    football.score = 0;
+                    football.difficulty = 1;
+                }
+                football.attempts--;
+                // Dificultad: el portero se mueve más rápido y la portería se reduce
+                let goalWidth = Math.max(80, 200 - football.difficulty * 20);
+                let keeperPos = 400 + (Math.random() * 200 - 100) * (football.difficulty * 0.5);
+                let shootPos = 400 + (Math.random() * 300 - 150);
+                let scored = Math.abs(shootPos - keeperPos) > goalWidth / 2;
+                if (scored) {
+                    football.score++;
+                    football.difficulty++;
+                    addChatMessage('Sistema', '¡GOOOOL! Dificultad aumentada.', false, true);
+                } else {
+                    addChatMessage('Sistema', '¡Atajó el portero!', false, true);
+                }
+                broadcastToViewers({ type: 'football-update', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
+                updateFootballUI();
+                saveProgress();
+            }
+
+            function updateFootballUI() {
+                footballScoreSpan.textContent = football.score;
+                footballAttemptsSpan.textContent = football.attempts;
+                footballDifficultySpan.textContent = football.difficulty;
+            }
+
+            // --- Parkour ---
+            function startParkour() {
+                if (!isHost) return;
+                parkour = {
+                    score: 0, best: parkour.best,
+                    player: { x: 100, y: 500, vy: 0, width: 20, height: 20 },
+                    platforms: [{ x: 400, y: 550, w: 200 }],
+                    gameOver: false
+                };
+                if (parkourInterval) clearInterval(parkourInterval);
+                parkourInterval = setInterval(() => {
+                    if (parkour.gameOver) return;
+                    // Gravedad
+                    parkour.player.vy += 0.5;
+                    parkour.player.y += parkour.player.vy;
+                    // Límite suelo
+                    if (parkour.player.y > 570) {
+                        parkour.player.y = 570;
+                        parkour.player.vy = 0;
+                        parkour.gameOver = true;
+                        addChatMessage('Sistema', '¡Caíste! Puntuación: ' + parkour.score, false, true);
+                        if (parkour.score > parkour.best) parkour.best = parkour.score;
+                        setTimeout(() => {
+                            parkour = {
+                                score: 0, best: parkour.best,
+                                player: { x: 100, y: 500, vy: 0, width: 20, height: 20 },
+                                platforms: [{ x: 400, y: 550, w: 200 }],
+                                gameOver: false
+                            };
+                        }, 2000);
+                    }
+                    // Movimiento horizontal
+                    if (parkourKeys.left) parkour.player.x -= 5;
+                    if (parkourKeys.right) parkour.player.x += 5;
+                    if (parkour.player.x < 0) parkour.player.x = 0;
+                    if (parkour.player.x > 980) parkour.player.x = 980;
+
+                    // Salto
+                    if (parkourKeys.up && parkour.player.y >= 570) {
+                        parkour.player.vy = -12;
+                    }
+
+                    // Plataformas
+                    parkour.platforms.forEach(p => p.x -= 3);
+                    if (Math.random() < 0.02) {
+                        parkour.platforms.push({ x: 1000, y: 500 + Math.random() * 100, w: 150 });
+                    }
+                    parkour.platforms = parkour.platforms.filter(p => p.x + p.w > 0);
+
+                    // Colisión con plataformas
+                    parkour.platforms.forEach(p => {
+                        if (parkour.player.x < p.x + p.w &&
+                            parkour.player.x + parkour.player.width > p.x &&
+                            parkour.player.y + parkour.player.height > p.y &&
+                            parkour.player.y < p.y + 10 &&
+                            parkour.player.vy > 0) {
+                            parkour.player.y = p.y - parkour.player.height;
+                            parkour.player.vy = 0;
+                        }
+                    });
+
+                    parkour.score++;
+                    broadcastToViewers({ type: 'parkour-update', score: parkour.score, best: parkour.best });
+                    updateParkourUI();
+                    drawParkour();
+                }, 30);
+            }
+
+            function drawParkour() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Dibujar personaje
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(parkour.player.x, parkour.player.y, parkour.player.width, parkour.player.height);
+                // Dibujar plataformas
+                ctx.fillStyle = 'green';
+                parkour.platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, 10));
+                // Dibujar puntaje
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.fillText('Score: ' + parkour.score, 10, 30);
+            }
+
+            function updateParkourUI() {
+                parkourScoreSpan.textContent = parkour.score;
+                parkourBestSpan.textContent = parkour.best;
             }
 
             // --- Vets ---
-            function startVetsEarning() {
-                if (vetsInterval) clearInterval(vetsInterval);
-                vetsInterval = setInterval(() => {
-                    if (isHost) {
-                        vets += 3; // 3 Vets cada 3 segundos
-                        updateVetsDisplay();
-                    }
-                }, 3000);
+            function updateVetsUI() {
+                vetsSpan.textContent = vets;
+                if (isHost) broadcastToViewers({ type: 'vets-update', vets: vets });
             }
 
-            function updateVetsDisplay() {
-                vetsCorner.textContent = `🪙 Vets: ${vets}`;
-                donationBtn.disabled = vets < 50;
-            }
-
-            // --- Donaciones ---
-            function showDonationNotification(user, amount) {
-                const notif = document.createElement('div');
-                notif.className = 'donation-notification';
-                notif.textContent = `💜 ${user} donó ${amount} Vets! 💜`;
-                donationArea.appendChild(notif);
+            // --- Donación ---
+            function donate() {
+                if (vets < 50) {
+                    addChatMessage('Sistema', 'Necesitas 50 VETS para donar.', false, true);
+                    return;
+                }
+                vets -= 50;
+                updateVetsUI();
+                const user = usernameInput.value.trim() || 'Anon';
+                // Mostrar en overlay
+                donationOverlay.innerHTML = `💜 ${user} donó 50 VETS! 💜 <span>🪙 ${vets}</span>`;
                 setTimeout(() => {
-                    notif.remove();
-                }, 3000);
+                    donationOverlay.innerHTML = `🪙 VETS: <span>${vets}</span>`;
+                }, 5000);
+                addChatMessage(user, '💜 Donó 50 VETS! 💜', true);
+                if (isHost) {
+                    broadcastToViewers({ type: 'donation', user: user, amount: 50 });
+                } else {
+                    if (hostConnection && hostConnection.open) {
+                        hostConnection.send({ type: 'donation', user: user, amount: 50 });
+                    }
+                }
             }
 
-            // --- Funciones de red ---
+            // ========== FUNCIONES DE RED ==========
             function broadcastToViewers(message) {
                 connections.forEach(conn => {
-                    if (conn.open) {
-                        conn.send(message);
-                    }
+                    if (conn.open) conn.send(message);
                 });
             }
 
@@ -1016,14 +1036,11 @@
                 viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú (espectador)</li>';
             }
 
-            function addChatMessage(user, message, isDonation = false) {
+            function addChatMessage(user, message, isDonation = false, isSystem = false) {
                 const div = document.createElement('div');
                 div.className = 'message';
-                if (isDonation) {
-                    div.innerHTML = `<span class="user" style="color: #ff79c6;">${escapeHtml(user)} 💜 donó:</span> <span class="text">${escapeHtml(message)}</span>`;
-                } else {
-                    div.innerHTML = `<span class="user">${escapeHtml(user)}:</span> <span class="text">${escapeHtml(message)}</span>`;
-                }
+                let color = isDonation ? '#ff79c6' : (isSystem ? '#ffaa00' : '#bf94ff');
+                div.innerHTML = `<span class="user" style="color: ${color};">${isSystem ? '🔧' : ''}${escapeHtml(user)}:</span> <span class="text">${escapeHtml(message)}</span>`;
                 chatMessages.appendChild(div);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
@@ -1034,7 +1051,7 @@
                 return div.innerHTML;
             }
 
-            // --- Crear sala como host ---
+            // ========== CREAR SALA (HOST) ==========
             function createRoom(roomId) {
                 peer = new Peer(roomId);
                 myPeerId = roomId;
@@ -1043,63 +1060,83 @@
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
                 roomCodeCorner.textContent = `Sala: ${roomId}`;
-                vets = 0;
-                updateVetsDisplay();
-                startVetsEarning();
+                toggleGamesBtn.style.display = 'inline-block';
 
-                // Cargar progreso de pintura
-                loadPaintProgress();
+                // Cargar progreso
+                loadProgress();
 
-                // Activar selector de juegos (solo host puede cambiar)
-                gameMenuToggle.addEventListener('click', () => {
-                    gameSelector.classList.toggle('show');
+                // Iniciar VETS
+                vetsInterval = setInterval(() => {
+                    vets++;
+                    updateVetsUI();
+                }, 3000);
+
+                toggleGamesBtn.addEventListener('click', () => {
+                    gameSelector.classList.toggle('visible');
                 });
 
                 gameBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
                         const game = btn.dataset.game;
                         setGame(game);
-                        // Marcar activo
                         gameBtns.forEach(b => b.classList.remove('active'));
                         btn.classList.add('active');
-                        gameSelector.classList.remove('show'); // ocultar después de seleccionar
+                        gameSelector.classList.remove('visible');
                     });
                 });
 
+                // Eventos de juegos
+                pokemonAttack.addEventListener('click', pokemonAttack);
+                pokemonHeal.addEventListener('click', pokemonHeal);
+                pokemonCatch.addEventListener('click', pokemonCatch);
+                footballShoot.addEventListener('click', shootPenalty);
+
+                // Controles de parkour con teclado
+                window.addEventListener('keydown', (e) => {
+                    if (!isHost || currentGame !== 'parkour') return;
+                    if (e.key === 'ArrowLeft') parkourKeys.left = true;
+                    if (e.key === 'ArrowRight') parkourKeys.right = true;
+                    if (e.key === 'ArrowUp') parkourKeys.up = true;
+                });
+                window.addEventListener('keyup', (e) => {
+                    if (!isHost || currentGame !== 'parkour') return;
+                    if (e.key === 'ArrowLeft') parkourKeys.left = false;
+                    if (e.key === 'ArrowRight') parkourKeys.right = false;
+                    if (e.key === 'ArrowUp') parkourKeys.up = false;
+                });
+
                 peer.on('open', (id) => {
-                    console.log('Host peer abierto con ID:', id);
-                    addChatMessage('Sistema', 'Sala creada. Esperando espectadores...');
+                    addChatMessage('Sistema', 'Sala creada. Esperando espectadores...', false, true);
                 });
 
                 peer.on('connection', (conn) => {
-                    console.log('Nuevo espectador conectado:', conn.peer);
                     connections.set(conn.peer, conn);
-
                     conn.on('data', (data) => {
                         if (data.type === 'chat') {
                             addChatMessage(data.user, data.message);
                             broadcastToViewers({ type: 'chat', user: data.user, message: data.message });
                         } else if (data.type === 'donation') {
-                            // Solo procesar si el espectador tiene suficientes Vets? pero aquí no sabemos sus Vets.
-                            // El host maneja las donaciones (simuladas)
-                            // Como es ficticio, aceptamos
-                            addChatMessage(data.user, `💜 Donó ${data.amount} Vets! 💜`, true);
-                            showDonationNotification(data.user, data.amount);
+                            addChatMessage(data.user, `💜 Donó ${data.amount} VETS! 💜`, true);
+                            donationOverlay.innerHTML = `💜 ${data.user} donó ${data.amount} VETS! 💜 <span>🪙 ${vets}</span>`;
+                            setTimeout(() => {
+                                donationOverlay.innerHTML = `🪙 VETS: <span>${vets}</span>`;
+                            }, 5000);
                             broadcastToViewers({ type: 'donation', user: data.user, amount: data.amount });
                         }
                     });
-
                     conn.on('close', () => {
-                        console.log('Espectador desconectado:', conn.peer);
                         connections.delete(conn.peer);
                         updateViewerList();
                         broadcastToViewers({ type: 'system', message: 'Un espectador se ha desconectado.' });
                     });
-
-                    // Enviar estado inicial
-                    conn.send({ type: 'history', history: paintHistory });
-                    conn.send({ type: 'game-change', game: currentGame });
-
+                    // Enviar estado completo al nuevo espectador
+                    conn.send({ type: 'history', history: history });
+                    conn.send({ type: 'game-change', game: currentGame,
+                        pokemon: pokemon, football: football, parkourBest: parkour.best });
+                    conn.send({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP, status: pokemon.status });
+                    conn.send({ type: 'football-update', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
+                    conn.send({ type: 'parkour-update', score: parkour.score, best: parkour.best });
+                    conn.send({ type: 'vets-update', vets: vets });
                     updateViewerList();
                     broadcastToViewers({ type: 'system', message: 'Nuevo espectador conectado.' });
                 });
@@ -1108,28 +1145,14 @@
                     if (err.type === 'unavailable-id') {
                         alert('El ID de sala ya está en uso. Elige otro.');
                         leaveRoom();
-                    } else {
-                        console.error('Error de Peer:', err);
                     }
                 });
 
-                // Juego inicial
-                setGame('paint');
-                document.querySelector('.game-btn[data-game="paint"]').classList.add('active');
-
-                // Loop de juego
-                setInterval(() => {
-                    if (isHost) {
-                        updateGame();
-                        // Enviar estado a espectadores (solo si es necesario, pero para simplificar no enviamos el estado completo, solo acciones)
-                        // En este ejemplo, los espectadores no ven la lógica del juego en tiempo real, solo el host.
-                        // Para que vean, necesitaríamos enviar el canvas por imagen, pero es complejo.
-                        // Por ahora, los espectadores solo ven el modo pintar. Mejorable.
-                    }
-                }, 30);
+                setGame(currentGame);
+                document.querySelector(`.game-btn[data-game="${currentGame}"]`)?.classList.add('active');
             }
 
-            // --- Unirse como espectador ---
+            // ========== UNIRSE COMO ESPECTADOR ==========
             function joinRoom(roomId) {
                 peer = new Peer();
                 isHost = false;
@@ -1138,52 +1161,68 @@
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
                 roomCodeCorner.textContent = `Sala: ${roomId}`;
-                vetsCorner.style.display = 'none'; // los espectadores no ven Vets
+                toggleGamesBtn.style.display = 'none';
+                gameSelector.style.display = 'none';
 
-                // Deshabilitar selector de juegos para espectador
-                gameBtns.forEach(btn => {
-                    btn.disabled = true;
-                    btn.style.opacity = 0.5;
-                });
-                gameMenuToggle.style.display = 'none';
+                // VETS también para espectadores
+                vetsInterval = setInterval(() => {
+                    vets++;
+                    updateVetsUI();
+                }, 3000);
 
                 peer.on('open', (id) => {
                     myPeerId = id;
-                    console.log('Mi ID de espectador:', id);
                     const conn = peer.connect(roomId);
                     hostConnection = conn;
 
                     conn.on('open', () => {
-                        console.log('Conectado al host');
                         setViewerListForGuest();
-                        addChatMessage('Sistema', 'Conectado a la sala. Esperando historial...');
+                        addChatMessage('Sistema', 'Conectado a la sala. Esperando...', false, true);
                     });
 
                     conn.on('data', (data) => {
                         if (data.type === 'history') {
-                            paintHistory = data.history;
-                            if (currentGame === 'paint') {
-                                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                                paintHistory.forEach(action => applyPaintAction(action));
-                            }
-                            addChatMessage('Sistema', 'Historial cargado.');
+                            history = data.history;
+                            redrawHistory();
                         } else if (data.type === 'draw-action') {
-                            if (currentGame === 'paint') applyPaintAction(data.action);
+                            if (currentGame === 'paint') applyAction(data.action);
                         } else if (data.type === 'clear') {
-                            if (currentGame === 'paint') ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
                         } else if (data.type === 'chat') {
                             addChatMessage(data.user, data.message);
                         } else if (data.type === 'donation') {
-                            addChatMessage(data.user, `💜 Donó ${data.amount} Vets! 💜`, true);
-                            showDonationNotification(data.user, data.amount);
+                            addChatMessage(data.user, `💜 Donó ${data.amount} VETS! 💜`, true);
+                            donationOverlay.innerHTML = `💜 ${data.user} donó ${data.amount} VETS! 💜 <span>🪙 ${vets}</span>`;
+                            setTimeout(() => {
+                                donationOverlay.innerHTML = `🪙 VETS: <span>${vets}</span>`;
+                            }, 5000);
                         } else if (data.type === 'system') {
-                            addChatMessage('Sistema', data.message);
+                            addChatMessage('Sistema', data.message, false, true);
                         } else if (data.type === 'game-change') {
-                            setGame(data.game);
+                            currentGame = data.game;
+                            setGame(currentGame);
                             gameBtns.forEach(btn => {
                                 btn.classList.remove('active');
                                 if (btn.dataset.game === data.game) btn.classList.add('active');
                             });
+                        } else if (data.type === 'pokemon-update') {
+                            pokemon.playerHP = data.playerHP;
+                            pokemon.botHP = data.botHP;
+                            pokemon.status = data.status;
+                            updatePokemonUI();
+                        } else if (data.type === 'football-update') {
+                            football.score = data.score;
+                            football.attempts = data.attempts;
+                            football.difficulty = data.difficulty;
+                            updateFootballUI();
+                        } else if (data.type === 'parkour-update') {
+                            parkour.score = data.score;
+                            parkour.best = data.best;
+                            updateParkourUI();
+                            drawParkour();
+                        } else if (data.type === 'vets-update') {
+                            vets = data.vets;
+                            updateVetsUI();
                         }
                     });
 
@@ -1191,25 +1230,18 @@
                         alert('El host se ha desconectado.');
                         leaveRoom();
                     });
-
-                    conn.on('error', (err) => {
-                        console.error('Error en conexión:', err);
-                    });
                 });
 
                 peer.on('error', (err) => {
                     if (err.type === 'peer-unavailable') {
                         alert('No se encontró la sala. Verifica el ID.');
                         leaveRoom();
-                    } else {
-                        console.error('Error de Peer:', err);
                     }
                 });
             }
 
-            // --- Salir de la sala ---
+            // ========== SALIR DE LA SALA ==========
             function leaveRoom() {
-                if (vetsInterval) clearInterval(vetsInterval);
                 if (peer) {
                     peer.destroy();
                     peer = null;
@@ -1218,69 +1250,47 @@
                 hostConnection = null;
                 isHost = false;
                 roomId = null;
-                paintHistory = [];
+                history = [];
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 joinScreen.style.display = 'block';
                 drawingApp.style.display = 'none';
-                gameBtns.forEach(btn => {
-                    btn.disabled = false;
-                    btn.style.opacity = 1;
-                    btn.classList.remove('active');
-                });
-                gameMenuToggle.style.display = 'inline-block';
-                vetsCorner.style.display = 'block';
+                if (vetsInterval) clearInterval(vetsInterval);
+                if (parkourInterval) clearInterval(parkourInterval);
+                gameSelector.classList.remove('visible');
+                gameBtns.forEach(btn => btn.classList.remove('active'));
             }
 
-            // --- Eventos de dibujo (solo host y modo pintar) ---
+            // ========== EVENTOS DE DIBUJO (solo host) ==========
             canvas.addEventListener('mousedown', (e) => {
-                e.preventDefault();
                 if (!isHost || currentGame !== 'paint') return;
+                e.preventDefault();
                 const pos = getMousePos(e);
-                startX = pos.x;
-                startY = pos.y;
-                lastX = pos.x;
-                lastY = pos.y;
-
+                startX = pos.x; startY = pos.y; lastX = pos.x; lastY = pos.y;
                 if (toolSelect.value === 'pencil') {
                     drawing = true;
                     ctx.beginPath();
                     ctx.moveTo(lastX, lastY);
-                    const action = {
-                        type: 'draw_start',
-                        x: lastX,
-                        y: lastY,
-                        color: colorPicker.value,
-                        size: parseInt(brushSizeInput.value)
-                    };
-                    paintHistory.push(action);
+                    const action = { type: 'draw_start', x: lastX, y: lastY, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
+                    history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    savePaintProgress();
+                    saveProgress();
                 } else if (toolSelect.value === 'text') {
-                    const text = prompt('Escribe el texto:');
+                    const text = prompt('Texto:');
                     if (text) {
-                        const action = {
-                            type: 'text',
-                            text: text,
-                            x: startX,
-                            y: startY,
-                            color: colorPicker.value,
-                            size: parseInt(brushSizeInput.value)
-                        };
+                        const action = { type: 'text', text, x: startX, y: startY, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
                         drawText(action);
-                        paintHistory.push(action);
+                        history.push(action);
                         broadcastToViewers({ type: 'draw-action', action });
-                        savePaintProgress();
+                        saveProgress();
                     }
                 }
             });
 
             canvas.addEventListener('mousemove', (e) => {
-                e.preventDefault();
                 if (!isHost || !drawing || currentGame !== 'paint') return;
+                e.preventDefault();
                 const pos = getMousePos(e);
-                const x = pos.x;
-                const y = pos.y;
-
+                const x = pos.x, y = pos.y;
                 if (toolSelect.value === 'pencil') {
                     ctx.strokeStyle = colorPicker.value;
                     ctx.lineWidth = parseInt(brushSizeInput.value);
@@ -1288,60 +1298,42 @@
                     ctx.stroke();
                     ctx.beginPath();
                     ctx.moveTo(x, y);
-
-                    const action = {
-                        type: 'draw',
-                        x: x,
-                        y: y,
-                        color: colorPicker.value,
-                        size: parseInt(brushSizeInput.value)
-                    };
-                    paintHistory.push(action);
+                    const action = { type: 'draw', x, y, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
+                    history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    savePaintProgress();
-
-                    lastX = x;
-                    lastY = y;
+                    saveProgress();
+                    lastX = x; lastY = y;
                 }
             });
 
             canvas.addEventListener('mouseup', (e) => {
-                e.preventDefault();
                 if (!isHost || currentGame !== 'paint') return;
+                e.preventDefault();
                 if (toolSelect.value === 'pencil' && drawing) {
                     drawing = false;
                     ctx.beginPath();
                     const action = { type: 'draw_end' };
-                    paintHistory.push(action);
+                    history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    savePaintProgress();
+                    saveProgress();
                 } else if (toolSelect.value !== 'pencil' && toolSelect.value !== 'text') {
                     const pos = getMousePos(e);
-                    const action = {
-                        type: 'shape',
-                        shape: toolSelect.value,
-                        x: startX,
-                        y: startY,
-                        x2: pos.x,
-                        y2: pos.y,
-                        color: colorPicker.value,
-                        size: parseInt(brushSizeInput.value)
-                    };
+                    const action = { type: 'shape', shape: toolSelect.value, x: startX, y: startY, x2: pos.x, y2: pos.y, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
                     drawShape(action);
-                    paintHistory.push(action);
+                    history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    savePaintProgress();
+                    saveProgress();
                 }
             });
 
             canvas.addEventListener('mouseout', () => {
-                if (drawing && currentGame === 'paint') {
+                if (drawing) {
                     drawing = false;
                     ctx.beginPath();
                     const action = { type: 'draw_end' };
-                    paintHistory.push(action);
+                    history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
-                    savePaintProgress();
+                    saveProgress();
                 }
             });
 
@@ -1349,33 +1341,22 @@
             canvas.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousedown', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
+                const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
                 canvas.dispatchEvent(mouseEvent);
             });
-
             canvas.addEventListener('touchmove', (e) => {
                 e.preventDefault();
                 const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousemove', {
-                    clientX: touch.clientX,
-                    clientY: touch.clientY
-                });
+                const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
                 canvas.dispatchEvent(mouseEvent);
             });
-
             canvas.addEventListener('touchend', (e) => {
                 e.preventDefault();
-                const mouseEvent = new MouseEvent('mouseup', {});
-                canvas.dispatchEvent(mouseEvent);
+                canvas.dispatchEvent(new MouseEvent('mouseup', {}));
             });
-
             canvas.addEventListener('touchcancel', (e) => {
                 e.preventDefault();
-                const mouseEvent = new MouseEvent('mouseout', {});
-                canvas.dispatchEvent(mouseEvent);
+                canvas.dispatchEvent(new MouseEvent('mouseout', {}));
             });
 
             function getMousePos(e) {
@@ -1390,58 +1371,41 @@
                     clientX = e.clientX;
                     clientY = e.clientY;
                 }
-                return {
-                    x: (clientX - rect.left) * scaleX,
-                    y: (clientY - rect.top) * scaleY
-                };
+                return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
             }
 
-            // --- Limpiar canvas (solo host, modo pintar) ---
+            // --- Limpiar canvas ---
             clearBtn.addEventListener('click', () => {
                 if (!isHost || currentGame !== 'paint') return;
-                if (confirm('¿Limpiar todo el canvas?')) {
+                if (confirm('¿Limpiar todo?')) {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    paintHistory = [];
+                    history = [];
                     broadcastToViewers({ type: 'clear' });
-                    clearPaintProgress();
+                    localStorage.removeItem(`historial_${roomId}`);
                 }
             });
 
-            // --- Eventos de teclado para juegos ---
-            window.addEventListener('keydown', handleKeyDown);
-
-            // --- Eventos de UI ---
+            // ========== EVENTOS UI ==========
             createBtn.addEventListener('click', () => {
                 const roomId = roomInput.value.trim();
-                if (!roomId) {
-                    alert('Ingresa un ID para la sala');
-                    return;
-                }
+                if (!roomId) return alert('Ingresa un ID');
                 createRoom(roomId);
             });
-
             joinBtn.addEventListener('click', () => {
                 const roomId = roomInput.value.trim();
-                if (!roomId) {
-                    alert('Ingresa el ID de la sala a la que quieres unirte');
-                    return;
-                }
+                if (!roomId) return alert('Ingresa un ID');
                 joinRoom(roomId);
             });
-
             leaveBtn.addEventListener('click', leaveRoom);
 
-            // Chat
             sendBtn.addEventListener('click', sendChatMessage);
             messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendChatMessage();
             });
-
             function sendChatMessage() {
                 const user = usernameInput.value.trim() || 'Anon';
                 const message = messageInput.value.trim();
                 if (!message) return;
-
                 if (isHost) {
                     addChatMessage(user, message);
                     broadcastToViewers({ type: 'chat', user, message });
@@ -1454,44 +1418,17 @@
                 messageInput.value = '';
             }
 
-            // Emojis
             document.querySelectorAll('.emoji-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const emoji = btn.dataset.emoji;
-                    messageInput.value += emoji;
+                    messageInput.value += btn.dataset.emoji;
                     messageInput.focus();
                 });
             });
 
-            // Donación
-            donationBtn.addEventListener('click', () => {
-                if (!isHost) {
-                    // Espectador: enviar solicitud de donación
-                    if (hostConnection && hostConnection.open) {
-                        const amount = 50; // Donación fija de 50
-                        hostConnection.send({ type: 'donation', user: usernameInput.value.trim() || 'Anon', amount: amount });
-                        addChatMessage(usernameInput.value.trim() || 'Anon', `💜 Donó ${amount} Vets! 💜`, true);
-                        showDonationNotification(usernameInput.value.trim() || 'Anon', amount);
-                    }
-                } else {
-                    // Host: puede donar usando sus Vets
-                    if (vets >= 50) {
-                        vets -= 50;
-                        updateVetsDisplay();
-                        const amount = 50;
-                        addChatMessage(usernameInput.value.trim() || 'Anon', `💜 Donó ${amount} Vets! 💜`, true);
-                        showDonationNotification(usernameInput.value.trim() || 'Anon', amount);
-                        broadcastToViewers({ type: 'donation', user: usernameInput.value.trim() || 'Anon', amount: amount });
-                    } else {
-                        alert('No tienes suficientes Vets (necesitas 50)');
-                    }
-                }
-            });
+            donationBtn.addEventListener('click', donate);
 
             window.addEventListener('beforeunload', () => {
-                if (peer) {
-                    peer.destroy();
-                }
+                if (peer) peer.destroy();
                 if (vetsInterval) clearInterval(vetsInterval);
             });
         })();
