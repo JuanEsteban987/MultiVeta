@@ -1,73 +1,414 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Editor de Nodos para Juego</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Juegos Visual con Nodos</title>
+    <!-- Fuente moderna -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- LiteGraph.js desde CDN -->
     <script src="https://cdn.jsdelivr.net/npm/litegraph.js"></script>
     <style>
-        #editor { width: 60%; height: 500px; float: left; }
-        #gameCanvas { width: 40%; height: 500px; float: right; background: #222; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #1e1f2c;
+            color: #e1e1e6;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background: #2a2b3a;
+            padding: 0.8rem 2rem;
+            border-bottom: 1px solid #3f4050;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #a78bfa, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .badge {
+            background: #3f4050;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+        }
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        /* Panel del editor de nodos */
+        #editor {
+            width: 60%;
+            height: 100%;
+            background: #252634;
+            border-right: 2px solid #3f4050;
+        }
+        /* Panel de vista previa */
+        .preview-panel {
+            width: 40%;
+            display: flex;
+            flex-direction: column;
+            background: #1a1b26;
+        }
+        .preview-header {
+            padding: 0.8rem 1.5rem;
+            background: #2a2b3a;
+            border-bottom: 1px solid #3f4050;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .preview-header span {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        #gameCanvas {
+            flex: 1;
+            width: 100%;
+            background: #0f0f17;
+            display: block;
+            image-rendering: pixelated; /* Opcional para estilo retro */
+        }
+        .info-panel {
+            padding: 0.8rem 1.5rem;
+            background: #2a2b3a;
+            border-top: 1px solid #3f4050;
+            font-size: 0.9rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .info-panel button {
+            background: #7c3aed;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .info-panel button:hover {
+            background: #6d28d9;
+        }
+        .info-panel .log {
+            color: #a5b4fc;
+            font-family: monospace;
+            font-size: 0.8rem;
+            flex: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        /* Pequeños ajustes para los nodos (LiteGraph ya tiene sus estilos, solo retoques) */
+        .litegraph .graph-node {
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            border: 1px solid #4f5260;
+        }
+        .litegraph .graph-node-title {
+            background: #3b3e4f;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
-    <div id="editor"></div>
-    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <header>
+        <h1>🎮 Visual Game Node Editor</h1>
+        <div class="badge">v0.1 · LiteGraph + Canvas</div>
+    </header>
+    <div class="main-container">
+        <!-- Editor de nodos (LiteGraph se inyecta aquí) -->
+        <div id="editor"></div>
+        <!-- Panel de vista previa -->
+        <div class="preview-panel">
+            <div class="preview-header">
+                Vista previa del juego
+                <span>Presiona ESPACIO, FLECHA DERECHA o FLECHA ARRIBA</span>
+            </div>
+            <canvas id="gameCanvas" width="600" height="400"></canvas>
+            <div class="info-panel">
+                <button id="resetBtn">🔄 Reiniciar posición</button>
+                <div class="log" id="logMessage">👾 Listo. Interactúa con los nodos o teclas.</div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // Configurar el editor
-        var graph = new LGraph();
-        var canvas = new LGraphCanvas("#editor", graph);
-
-        // Variable global para el estado del juego
-        let gameState = {
-            x: 200,
-            y: 250,
-            speed: 5
+        // --------------------------------------------------------------
+        // CONFIGURACIÓN DEL ESTADO DEL JUEGO (compartido con los nodos)
+        // --------------------------------------------------------------
+        const gameState = {
+            x: 300,        // posición inicial del cuadrado
+            y: 200,
+            width: 40,
+            height: 40,
+            speedX: 5,
+            jumpPower: 30,
+            isJumping: false,
+            jumpVelocity: 0
         };
 
-        // Dibujar el juego en el canvas
-        const ctx = document.getElementById('gameCanvas').getContext('2d');
+        // Referencias al canvas y al mensaje de log
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const logDiv = document.getElementById('logMessage');
+
+        // Función para dibujar el juego en cada frame
         function drawGame() {
-            ctx.clearRect(0, 0, 400, 500);
-            ctx.fillStyle = 'red';
-            ctx.fillRect(gameState.x, gameState.y, 30, 30);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dibujar suelo (línea simple)
+            ctx.strokeStyle = '#4b5563';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 50);
+            ctx.lineTo(canvas.width, canvas.height - 50);
+            ctx.stroke();
+
+            // Dibujar el cuadrado del jugador
+            ctx.fillStyle = '#f59e0b';
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 15;
+            ctx.fillRect(gameState.x, gameState.y, gameState.width, gameState.height);
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(gameState.x, gameState.y, gameState.width, gameState.height);
+
             requestAnimationFrame(drawGame);
         }
         drawGame();
 
-        // Nodo personalizado: Mover derecha
-        function MoverDerecha() {
-            this.addInput("in", LiteGraph.ACTION);
-            this.addOutput("out", LiteGraph.EVENT);
-            this.addProperty("incremento", 5);
+        // Función para actualizar el mensaje de log
+        function setLog(msg) {
+            logDiv.textContent = `📌 ${msg}`;
         }
-        MoverDerecha.prototype.onExecute = function() {
-            gameState.x += this.properties.incremento;
-            this.triggerSlot(0); // Activar salida
-        };
-        LiteGraph.registerNodeType("juego/moverDerecha", MoverDerecha);
 
-        // Nodo de inicio (evento)
-        function Inicio() {
-            this.addOutput("out", LiteGraph.EVENT);
+        // --------------------------------------------------------------
+        // CONFIGURACIÓN DEL EDITOR DE NODOS (LiteGraph)
+        // --------------------------------------------------------------
+        const graph = new LGraph();
+        const canvasNode = new LGraphCanvas("#editor", graph);
+
+        // Personalizar el menú contextual (para que sea más amigable)
+        canvasNode.allow_interaction = true;
+        canvasNode.show_info = true;
+
+        // --------------------------------------------------------------
+        // DEFINICIÓN DE NODOS PERSONALIZADOS
+        // --------------------------------------------------------------
+
+        // 1. NODO DE EVENTO: Tecla presionada
+        function NodeTecla() {
+            this.addOutput("Pulso", LiteGraph.EVENT);
+            this.addProperty("tecla", "Space");  // Space, ArrowRight, ArrowUp, etc.
+            this.tecla = "Space";
+            // Widget para seleccionar tecla en la interfaz
+            this.addWidget("combo", "Tecla", "Space", (v) => this.tecla = v, { values: ["Space", "ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "KeyA", "KeyD"] });
         }
-        Inicio.prototype.onExecute = function() {
+        NodeTecla.title = "Evento Tecla";
+        NodeTecla.desc = "Activa un pulso al presionar la tecla indicada";
+        NodeTecla.prototype.onExecute = function() {
+            // Este nodo se ejecuta manualmente desde el evento de teclado, no automáticamente
+            // Por eso el onExecute simplemente propaga el pulso si la tecla coincide.
+            // Pero lo manejaremos de otra forma: dispararemos el nodo desde el listener.
+        };
+        NodeTecla.prototype.onAction = function(action) {
+            // Cuando se llama a node.trigger() desde fuera, entra aquí
             this.triggerSlot(0);
         };
-        LiteGraph.registerNodeType("eventos/inicio", Inicio);
+        LiteGraph.registerNodeType("eventos/tecla", NodeTecla);
 
-        // Crear nodos iniciales
-        var inicio = LiteGraph.createNode("eventos/inicio");
-        var mover = LiteGraph.createNode("juego/moverDerecha");
-        graph.add(inicio);
-        graph.add(mover);
-        inicio.connect(0, mover, 0);
+        // 2. NODO DE ACCIÓN: Mover en X (derecha/izquierda)
+        function NodeMover() {
+            this.addInput("Activar", LiteGraph.ACTION);
+            this.addOutput("Completado", LiteGraph.EVENT);
+            this.addProperty("direccion", "derecha");
+            this.addProperty("velocidad", 5);
+            // Widgets
+            this.addWidget("combo", "Dirección", "derecha", (v) => this.properties.direccion = v, { values: ["derecha", "izquierda"] });
+            this.addWidget("number", "Velocidad", 5, (v) => this.properties.velocidad = v, { min: 1, max: 20 });
+        }
+        NodeMover.title = "Mover";
+        NodeMover.desc = "Desplaza el objeto horizontalmente";
+        NodeMover.prototype.onAction = function() {
+            const dir = this.properties.direccion === "derecha" ? 1 : -1;
+            gameState.x += dir * this.properties.velocidad;
+            // Limitar dentro del canvas (con margen)
+            if (gameState.x < 0) gameState.x = 0;
+            if (gameState.x > canvas.width - gameState.width) gameState.x = canvas.width - gameState.width;
+            setLog(`Moviendo ${this.properties.direccion} (vel:${this.properties.velocidad})`);
+            this.triggerSlot(0); // Activar salida
+        };
+        LiteGraph.registerNodeType("acciones/mover", NodeMover);
 
-        // Botón para ejecutar el grafo manualmente
+        // 3. NODO DE ACCIÓN: Saltar
+        function NodeSaltar() {
+            this.addInput("Activar", LiteGraph.ACTION);
+            this.addOutput("Completado", LiteGraph.EVENT);
+            this.addProperty("fuerza", 30);
+            this.addWidget("number", "Fuerza", 30, (v) => this.properties.fuerza = v, { min: 10, max: 50 });
+        }
+        NodeSaltar.title = "Saltar";
+        NodeSaltar.desc = "Hace saltar al personaje";
+        NodeSaltar.prototype.onAction = function() {
+            // Simulación simple de salto: si no está saltando, inicia salto
+            if (!gameState.isJumping) {
+                gameState.isJumping = true;
+                gameState.jumpVelocity = -this.properties.fuerza; // negativo hacia arriba
+                setLog(`¡Salto! fuerza: ${this.properties.fuerza}`);
+            }
+            this.triggerSlot(0);
+        };
+        LiteGraph.registerNodeType("acciones/saltar", NodeSaltar);
+
+        // 4. NODO DE ACCIÓN: Reproducir sonido (simulado)
+        function NodeSonido() {
+            this.addInput("Activar", LiteGraph.ACTION);
+            this.addOutput("Completado", LiteGraph.EVENT);
+            this.addProperty("sonido", "ping");
+            this.addWidget("text", "Sonido", "ping", (v) => this.properties.sonido = v);
+        }
+        NodeSonido.title = "Sonido";
+        NodeSonido.desc = "Reproduce un efecto (simulado)";
+        NodeSonido.prototype.onAction = function() {
+            setLog(`🔊 Sonido: ${this.properties.sonido}`);
+            console.log(`Reproduciendo sonido: ${this.properties.sonido}`);
+            this.triggerSlot(0);
+        };
+        LiteGraph.registerNodeType("acciones/sonido", NodeSonido);
+
+        // --------------------------------------------------------------
+        // CREAR UN EJEMPLO PRECARGADO
+        // --------------------------------------------------------------
+        function createExampleGraph() {
+            // Nodo tecla espacio
+            var teclaEspacio = LiteGraph.createNode("eventos/tecla");
+            teclaEspacio.pos = [100, 100];
+            teclaEspacio.tecla = "Space";
+            teclaEspacio.properties.tecla = "Space";
+            graph.add(teclaEspacio);
+
+            // Nodo mover derecha (con velocidad 5)
+            var moverDer = LiteGraph.createNode("acciones/mover");
+            moverDer.pos = [350, 50];
+            moverDer.properties.direccion = "derecha";
+            moverDer.properties.velocidad = 5;
+            graph.add(moverDer);
+
+            // Conectar espacio -> mover derecha
+            teclaEspacio.connect(0, moverDer, 0);
+
+            // Nodo tecla flecha arriba
+            var teclaArriba = LiteGraph.createNode("eventos/tecla");
+            teclaArriba.pos = [100, 250];
+            teclaArriba.tecla = "ArrowUp";
+            teclaArriba.properties.tecla = "ArrowUp";
+            graph.add(teclaArriba);
+
+            // Nodo saltar
+            var saltar = LiteGraph.createNode("acciones/saltar");
+            saltar.pos = [350, 200];
+            saltar.properties.fuerza = 30;
+            graph.add(saltar);
+
+            // Conectar flecha arriba -> saltar
+            teclaArriba.connect(0, saltar, 0);
+
+            // Nodo tecla flecha derecha (adicional)
+            var teclaRight = LiteGraph.createNode("eventos/tecla");
+            teclaRight.pos = [100, 400];
+            teclaRight.tecla = "ArrowRight";
+            teclaRight.properties.tecla = "ArrowRight";
+            graph.add(teclaRight);
+
+            // Otro mover (con velocidad 10)
+            var moverFast = LiteGraph.createNode("acciones/mover");
+            moverFast.pos = [350, 350];
+            moverFast.properties.direccion = "derecha";
+            moverFast.properties.velocidad = 10;
+            graph.add(moverFast);
+
+            // Conectar flecha derecha -> mover rápido
+            teclaRight.connect(0, moverFast, 0);
+        }
+
+        createExampleGraph();
+
+        // --------------------------------------------------------------
+        // FÍSICA DEL JUEGO (gravedad y salto)
+        // --------------------------------------------------------------
+        const GRAVEDAD = 1.5;
+        const SUELO_Y = canvas.height - 50 - gameState.height; // altura del suelo
+
+        function updatePhysics() {
+            if (gameState.isJumping) {
+                // Aplicar gravedad
+                gameState.jumpVelocity += GRAVEDAD;
+                gameState.y += gameState.jumpVelocity;
+
+                // Comprobar suelo
+                if (gameState.y >= SUELO_Y) {
+                    gameState.y = SUELO_Y;
+                    gameState.isJumping = false;
+                    gameState.jumpVelocity = 0;
+                }
+            }
+            requestAnimationFrame(updatePhysics);
+        }
+        updatePhysics();
+
+        // --------------------------------------------------------------
+        // MANEJAR EVENTOS DE TECLADO PARA DISPARAR NODOS
+        // --------------------------------------------------------------
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                graph.start(); // Ejecuta todos los nodos
+            // Evitar que la tecla afecte la página (espacio hace scroll, flechas mueven)
+            if (e.code.startsWith('Arrow') || e.code === 'Space') {
+                e.preventDefault();
+            }
+
+            // Buscar todos los nodos de tipo "eventos/tecla" y activar aquellos cuya tecla coincida
+            for (let node of graph._nodes) {
+                if (node.type === "eventos/tecla" && node.tecla === e.code) {
+                    node.triggerSlot(0); // Activar la salida (acción)
+                    setLog(`Tecla ${e.code} activó nodo`);
+                }
             }
         });
+
+        // --------------------------------------------------------------
+        // BOTÓN DE REINICIO
+        // --------------------------------------------------------------
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            gameState.x = 300;
+            gameState.y = SUELO_Y;
+            gameState.isJumping = false;
+            gameState.jumpVelocity = 0;
+            setLog('Posición reiniciada');
+        });
+
+        // Ajustar posición inicial Y al suelo
+        gameState.y = SUELO_Y;
+
+        // Pequeña ayuda: mostrar los nodos disponibles en consola
+        console.log('Editor de nodos listo. Puedes agregar más nodos desde el menú contextual en el área gris.');
     </script>
 </body>
 </html>
