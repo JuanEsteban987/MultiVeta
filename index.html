@@ -3,37 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>programa con nodos · juego visual</title>
+    <title>NODOS · juego visual como Unity · arrastra y ejecuta</title>
     <style>
         * {
             box-sizing: border-box;
             user-select: none;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
         }
         body {
-            background: linear-gradient(145deg, #1a2639 0%, #0d1b2a 100%);
-            min-height: 100vh;
             margin: 0;
+            min-height: 100vh;
+            background: #1a1f2e;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            padding: 20px;
         }
-        .game-wrapper {
-            background: #1e2a3a;
-            border-radius: 3rem 3rem 2rem 2rem;
-            box-shadow: 0 20px 30px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.05);
-            padding: 2rem 2rem 2rem 2rem;
+        .workspace {
+            display: flex;
+            gap: 24px;
+            background: #232a3a;
+            border-radius: 3rem;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.8), inset 0 0 0 1px #4f637b;
+            padding: 30px;
+            width: 1500px;
+            max-width: 95vw;
         }
-        .canvas-container {
+        /* Panel de herramientas (lista de nodos) */
+        .toolbox {
+            width: 220px;
+            background: #1b2533;
+            border-radius: 2rem;
+            padding: 20px 12px;
+            box-shadow: inset 0 3px 8px #0f151f, 0 10px 15px #03060a;
+            border: 1px solid #3a5068;
+            height: fit-content;
+        }
+        .toolbox h3 {
+            color: #deecff;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 3px black;
+        }
+        .tool-node {
+            background: #2e4057;
+            border-radius: 2rem;
+            padding: 14px 10px;
+            margin-bottom: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            text-align: center;
+            border: 2px solid #6082a0;
+            box-shadow: 0 6px 0 #15212b, 0 6px 12px black;
+            cursor: grab;
+            transition: 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .tool-node:active {
+            cursor: grabbing;
+            opacity: 0.9;
+            transform: translateY(2px);
+            box-shadow: 0 4px 0 #15212b, 0 6px 10px black;
+        }
+        .tool-node span {
+            font-size: 1.5rem;
+        }
+        .tool-node[data-type="0"] { background: #2b6e4e; } /* start */
+        .tool-node[data-type="9"] { background: #a13d3d; } /* end */
+
+        /* Área de trabajo (canvas + nodos) */
+        .canvas-area {
+            flex: 1;
             position: relative;
-            width: 920px;
-            height: 520px;
             background: #14212b;
             border-radius: 2.5rem;
-            box-shadow: inset 0 5px 8px #0f1a22, 0 10px 18px #03070c;
-            border: 1px solid #3d5a73;
+            box-shadow: inset 0 5px 10px #0b141c, 0 15px 25px #03080e;
+            border: 2px solid #3c627c;
+            height: 700px;  /* pantalla grande */
+            overflow: hidden;
         }
-        #nodeCanvas {
+        #bgCanvas {
             position: absolute;
             top: 0;
             left: 0;
@@ -42,21 +100,21 @@
             pointer-events: none;
             z-index: 10;
         }
-        .nodes-layer {
+        .nodes-wrapper {
             position: relative;
             width: 100%;
             height: 100%;
             z-index: 20;
         }
+        /* Estilo de los nodos (igual que antes) */
         .node {
             position: absolute;
-            width: 90px;
-            height: 90px;
-            background: #2e3b4e;
+            width: 110px;   /* un poco más grande */
+            height: 110px;
             background: radial-gradient(circle at 25% 25%, #4f6d7d, #26394b);
-            border-radius: 30px 30px 25px 25px;
-            border: 2px solid #6c8b9f;
-            box-shadow: 0 8px 0 #0e1a24, 0 12px 18px rgba(0,0,0,0.5);
+            border-radius: 35px 35px 30px 30px;
+            border: 3px solid #7ca2bc;
+            box-shadow: 0 10px 0 #0e1a24, 0 15px 20px rgba(0,0,0,0.6);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -64,249 +122,242 @@
             color: white;
             font-weight: bold;
             font-size: 14px;
-            text-shadow: 0 2px 3px black;
+            text-shadow: 0 2px 4px black;
             transform: translate(-50%, -50%);
-            transition: box-shadow 0.1s, border-color 0.1s;
-            cursor: pointer;
+            cursor: grab;
+            transition: box-shadow 0.1s, filter 0.2s;
             z-index: 30;
         }
+        .node:active {
+            cursor: grabbing;
+        }
         .node-label {
-            background: rgba(0,0,0,0.5);
-            padding: 4px 8px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
             border-radius: 40px;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-            border: 1px solid #b9d8e9;
-            box-shadow: inset 0 1px 3px black;
+            font-size: 13px;
+            border: 1px solid #b9e6ff;
+            pointer-events: none;  /* para que el mousedown pase al nodo */
         }
         .port {
             position: absolute;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            background: #f5e56b;
             background: radial-gradient(circle at 30% 30%, #ffd966, #d4a017);
             border: 3px solid #fcf3cf;
-            box-shadow: 0 0 0 1px #1f3a4b, 0 4px 6px black;
-            transition: transform 0.15s, background 0.1s, border-color 0.1s;
+            box-shadow: 0 0 0 2px #1f3a4b, 0 5px 8px black;
+            transition: transform 0.1s, background 0.1s;
             cursor: crosshair;
             z-index: 50;
+            pointer-events: auto;
         }
         .port.input-port {
-            left: -12px;
+            left: -14px;
             top: 50%;
             transform: translateY(-50%);
         }
         .port.output-port {
-            right: -12px;
+            right: -14px;
             top: 50%;
             transform: translateY(-50%);
         }
         .port.active-source {
-            background: radial-gradient(circle at 30% 30%, #b5e6ff, #3b9eff);
+            background: radial-gradient(circle at 30% 30%, #8dc9ff, #2b78ff);
             border-color: white;
-            transform: translateY(-50%) scale(1.25);
-            box-shadow: 0 0 18px cyan;
+            transform: translateY(-50%) scale(1.3);
+            box-shadow: 0 0 22px cyan;
         }
         .port:hover {
-            transform: translateY(-50%) scale(1.2);
-            border-color: #ffeeaa;
-            background: #ffe570;
+            transform: translateY(-50%) scale(1.25);
+            border-color: #ffffaa;
         }
-        .node[data-type="0"] .node-label { background: #3f7e4c; }  /* start */
-        .node[data-type="9"] .node-label { background: #b13e3e; }  /* end */
-        .control-panel {
+        .node.dragging {
+            opacity: 0.9;
+            filter: drop-shadow(0 0 15px #96d9ff);
+            z-index: 100;
+        }
+        .control-bar {
             display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 25px;
+            justify-content: flex-end;
             align-items: center;
+            margin-top: 20px;
+            gap: 30px;
+            padding-right: 20px;
         }
         button {
-            background: #3d5f7a;
+            background: #3d6b8c;
             border: none;
-            border-bottom: 5px solid #1d3140;
+            border-bottom: 6px solid #1e3a4f;
             color: white;
-            font-size: 1.4rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            padding: 12px 36px;
-            border-radius: 60px;
-            letter-spacing: 1.5px;
+            padding: 16px 50px;
+            border-radius: 80px;
+            letter-spacing: 2px;
             cursor: pointer;
-            box-shadow: 0 8px 0 #0e1f2b, 0 10px 15px rgba(0, 0, 0, 0.5);
-            transition: all 0.08s linear;
+            box-shadow: 0 10px 0 #10212e, 0 12px 20px black;
+            transition: 0.06s linear;
             text-transform: uppercase;
         }
         button:active {
-            transform: translateY(5px);
+            transform: translateY(6px);
             border-bottom-width: 2px;
-            box-shadow: 0 3px 0 #0e1f2b, 0 8px 12px black;
+            box-shadow: 0 5px 0 #10212e, 0 10px 18px black;
         }
-        .message {
-            background: #26323f;
-            border-radius: 40px;
-            padding: 14px 30px;
-            min-width: 240px;
-            text-align: center;
-            color: #d9edff;
-            font-size: 1.2rem;
+        #message {
+            background: #1e2f3d;
+            border-radius: 60px;
+            padding: 16px 40px;
+            color: #ddf0ff;
+            font-size: 1.4rem;
             font-weight: 600;
-            border: 1px solid #608a9f;
-            box-shadow: inset 0 2px 5px #0d181f;
+            border: 1px solid #5f8fb0;
+            box-shadow: inset 0 3px 8px #0d1b26;
+            min-width: 280px;
+            text-align: center;
         }
         .instruction {
-            color: #bbd8f0;
-            text-align: center;
-            margin-top: 10px;
+            color: #b4d9f0;
+            margin-top: 15px;
             font-size: 1rem;
-            font-weight: 400;
-            text-shadow: 0 2px 3px black;
+            text-align: center;
+            background: #1b2935;
+            padding: 10px 20px;
+            border-radius: 40px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
         }
-        .instruction span {
-            display: inline-block;
-            background: #2e4d3e;
-            padding: 3px 12px;
-            border-radius: 30px;
-            margin: 0 5px;
-            border: 1px solid #9fc9b0;
+        .tooltip-warning {
+            color: #ffbe7f;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
-<div class="game-wrapper">
-    <div class="canvas-container" id="canvasContainer">
-        <canvas id="nodeCanvas" width="920" height="520"></canvas>
-        <div class="nodes-layer" id="nodesLayer"></div>
+<div style="display: flex; flex-direction: column; width: 100%; align-items: center;">
+    <div class="workspace">
+        <!-- Panel izquierdo: lista de nodos (arrastrables) -->
+        <div class="toolbox">
+            <h3>⚙️ CAJA DE NODOS</h3>
+            <div class="tool-node" draggable="true" data-type="0" data-name="🏁 START"> <span>🏁</span> START</div>
+            <div class="tool-node" draggable="true" data-type="1" data-name="⬆️ MOVE"> <span>⬆️</span> MOVE</div>
+            <div class="tool-node" draggable="true" data-type="2" data-name="🔄 TURN"> <span>🔄</span> TURN</div>
+            <div class="tool-node" draggable="true" data-type="3" data-name="🔁 LOOP"> <span>🔁</span> LOOP</div>
+            <div class="tool-node" draggable="true" data-type="4" data-name="❓ IF"> <span>❓</span> IF</div>
+            <div class="tool-node" draggable="true" data-type="5" data-name="📦 VAR"> <span>📦</span> VAR</div>
+            <div class="tool-node" draggable="true" data-type="6" data-name="➕ ADD"> <span>➕</span> ADD</div>
+            <div class="tool-node" draggable="true" data-type="7" data-name="➖ SUB"> <span>➖</span> SUB</div>
+            <div class="tool-node" draggable="true" data-type="8" data-name="🖨️ PRINT"> <span>🖨️</span> PRINT</div>
+            <div class="tool-node" draggable="true" data-type="9" data-name="🎯 END"> <span>🎯</span> END</div>
+            <div class="tooltip-warning">⛶ Arrástralos al área</div>
+        </div>
+
+        <!-- Área de trabajo grande -->
+        <div class="canvas-area" id="dropZone">
+            <canvas id="bgCanvas" width="1200" height="700"></canvas>
+            <div class="nodes-wrapper" id="nodesWrapper"></div>
+        </div>
     </div>
 
-    <div class="control-panel">
-        <button id="resetBtn">⟲ reset</button>
-        <div class="message" id="gameMessage">⚡ conecta nodos</div>
-        <button id="checkBtn">✓ comprobar</button>
+    <!-- Barra inferior -->
+    <div class="control-bar">
+        <div id="message">🎮 Coloca los 10 nodos</div>
+        <button id="startBtn">▶ INICIAR</button>
+        <button id="resetBtn">⟲ RESET</button>
     </div>
     <div class="instruction">
-        <span>⚪ salida (dcha)</span> → <span>⚪ entrada (izq)</span>  ·  recorre todos los nodos del 0 al 9
+        <span>⚪ salida (derecha) → entrada (izquierda)</span> · Conecta START → ... → END · luego INICIAR
     </div>
 </div>
 
 <script>
-    (function() {
-        // --- configuración: 10 nodos con nombres simpáticos
+    (function(){
+        // --------------------------------------------------------------
+        // Configuración: 10 tipos de nodo (el índice es el tipo)
         const nodeNames = [
-            "🏁 START",      // 0
-            "⬆️ MOVE",       // 1
-            "🔄 TURN",       // 2
-            "🔁 LOOP",       // 3
-            "❓ IF",         // 4
-            "📦 VAR",        // 5
-            "➕ ADD",        // 6
-            "➖ SUB",        // 7
-            "🖨️ PRINT",      // 8
-            "🎯 END"         // 9
+            "🏁 START", "⬆️ MOVE", "🔄 TURN", "🔁 LOOP", "❓ IF",
+            "📦 VAR", "➕ ADD", "➖ SUB", "🖨️ PRINT", "🎯 END"
         ];
 
-        const container = document.getElementById('nodesLayer');
-        const canvas = document.getElementById('nodeCanvas');
+        const container = document.getElementById('nodesWrapper');
+        const canvas = document.getElementById('bgCanvas');
         const ctx = canvas.getContext('2d');
-        const messageDiv = document.getElementById('gameMessage');
+        const messageDiv = document.getElementById('message');
+        const dropZone = document.getElementById('dropZone');
 
-        // Posiciones de los nodos (en círculo)
-        const centerX = 460, centerY = 260, radius = 200;
-        const nodePositions = [];
-        for (let i = 0; i < 10; i++) {
-            const angle = (i / 10) * 2 * Math.PI - Math.PI / 2; // empezar arriba
-            const x = centerX + radius * Math.cos(angle);
-            const y = centerY + radius * Math.sin(angle);
-            nodePositions.push({ x, y });
+        // Almacén de nodos actuales (solo uno por tipo)
+        let nodes = []; // contendrá los elementos DOM de cada tipo (índice = tipo, valor = div)
+        let connections = []; // { fromType, toType } (usamos tipo como id único)
+
+        // Variable para conexión activa (output seleccionado)
+        let sourceType = null;
+
+        // Para arrastrar nodos (movimiento)
+        let draggingNode = null;
+        let dragOffsetX = 0, dragOffsetY = 0;
+
+        // --------------------------------------------------------------
+        // Inicializar canvas y eventos
+        function resizeCanvas() {
+            canvas.width = dropZone.clientWidth;
+            canvas.height = dropZone.clientHeight;
+            drawLines();
         }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-        // Almacén de conexiones: { from: index, to: index }
-        let connections = [];
-
-        // Modo conexión: nodo fuente (output seleccionado)
-        let sourceNodeIndex = null;          // índice del nodo cuyo output hemos clickado
-
-        // ---- crear los nodos visuales y sus puertos
-        function buildNodes() {
-            container.innerHTML = ''; // limpiar
-            for (let i = 0; i < 10; i++) {
-                const pos = nodePositions[i];
-                const nodeDiv = document.createElement('div');
-                nodeDiv.className = 'node';
-                nodeDiv.setAttribute('data-type', i);
-                nodeDiv.setAttribute('data-index', i);
-                nodeDiv.style.left = pos.x + 'px';
-                nodeDiv.style.top = pos.y + 'px';
-
-                // label
-                const labelSpan = document.createElement('div');
-                labelSpan.className = 'node-label';
-                labelSpan.textContent = nodeNames[i];
-                nodeDiv.appendChild(labelSpan);
-
-                // input port (izquierdo)
-                const inputPort = document.createElement('div');
-                inputPort.className = 'port input-port';
-                inputPort.setAttribute('data-port', 'input');
-                inputPort.setAttribute('data-node', i);
-                nodeDiv.appendChild(inputPort);
-
-                // output port (derecho)
-                const outputPort = document.createElement('div');
-                outputPort.className = 'port output-port';
-                outputPort.setAttribute('data-port', 'output');
-                outputPort.setAttribute('data-node', i);
-                nodeDiv.appendChild(outputPort);
-
-                container.appendChild(nodeDiv);
-            }
-        }
-        buildNodes();
-
-        // ---- dibujar líneas en canvas
+        // --------------------------------------------------------------
+        // Dibujar todas las conexiones
         function drawLines() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if (connections.length === 0) return;
 
             ctx.lineWidth = 6;
             ctx.strokeStyle = '#b7e0ff';
-            ctx.shadowColor = '#5dc9ff';
-            ctx.shadowBlur = 12;
+            ctx.shadowColor = '#4db8ff';
+            ctx.shadowBlur = 15;
             ctx.lineJoin = 'round';
             ctx.lineCap = 'round';
 
             for (let conn of connections) {
-                const from = nodePositions[conn.from];
-                const to = nodePositions[conn.to];
-                if (!from || !to) continue;
+                const fromNode = nodes[conn.fromType];
+                const toNode = nodes[conn.toType];
+                if (!fromNode || !toNode) continue;
 
-                // desplazar ligeramente para que empiece desde el borde del puerto
-                const startX = from.x + 40;  // lado derecho del nodo (aprox)
-                const startY = from.y;
-                const endX = to.x - 40;       // lado izquierdo del nodo
-                const endY = to.y;
+                const fromRect = fromNode.getBoundingClientRect();
+                const toRect = toNode.getBoundingClientRect();
+                const areaRect = dropZone.getBoundingClientRect();
 
-                // curva sencilla con control points
+                // Coordenadas relativas al canvas
+                const startX = fromRect.right - areaRect.left - 8;  // borde derecho nodo
+                const startY = (fromRect.top + fromRect.bottom) / 2 - areaRect.top;
+                const endX = toRect.left - areaRect.left + 8;       // borde izquierdo
+                const endY = (toRect.top + toRect.bottom) / 2 - areaRect.top;
+
                 ctx.beginPath();
                 const cp1x = startX + (endX - startX) * 0.3;
-                const cp1y = startY - 15;
+                const cp1y = startY - 20;
                 const cp2x = endX - (endX - startX) * 0.3;
-                const cp2y = endY + 15;
+                const cp2y = endY + 20;
                 ctx.moveTo(startX, startY);
                 ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, endX, endY);
                 ctx.strokeStyle = '#b7e0ff';
                 ctx.stroke();
 
-                // flechita en el extremo (triángulo)
-                ctx.shadowBlur = 8;
+                // Flecha
+                ctx.shadowBlur = 10;
                 ctx.fillStyle = '#feeb85';
                 ctx.strokeStyle = '#b3771e';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                const angle = Math.atan2(endY - cp2y, endX - cp2x); // dirección aproximada
-                const arrowSize = 16;
-                const ax = endX - 8 * Math.cos(angle);
-                const ay = endY - 8 * Math.sin(angle);
+                const angle = Math.atan2(endY - cp2y, endX - cp2x);
+                const arrowSize = 18;
+                const ax = endX - 10 * Math.cos(angle);
+                const ay = endY - 10 * Math.sin(angle);
                 ctx.moveTo(ax, ay);
                 ctx.lineTo(ax - arrowSize * 0.5 * Math.cos(angle - 0.8), ay - arrowSize * 0.5 * Math.sin(angle - 0.8));
                 ctx.lineTo(ax - arrowSize * 0.5 * Math.cos(angle + 0.8), ay - arrowSize * 0.5 * Math.sin(angle + 0.8));
@@ -317,176 +368,287 @@
             ctx.shadowBlur = 0;
         }
 
-        // ---- actualizar tras cambios en connections
-        function redraw() {
+        // --------------------------------------------------------------
+        // Actualizar posición de un nodo y redibujar
+        function updateNodePosition(nodeDiv, x, y) {
+            nodeDiv.style.left = x + 'px';
+            nodeDiv.style.top = y + 'px';
             drawLines();
         }
 
-        // ---- resetear todas las conexiones
-        function resetConnections() {
-            connections = [];
-            sourceNodeIndex = null;
-            removeActiveClassFromPorts();
-            redraw();
-            messageDiv.textContent = '⚡ conecta nodos';
+        // --------------------------------------------------------------
+        // Crear un nodo visual dentro del wrapper (solo si no existe ya ese tipo)
+        function createNode(type, posX, posY) {
+            if (nodes[type]) {
+                messageDiv.textContent = `⚠️ Ya existe ${nodeNames[type]}`;
+                return null;
+            }
+
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'node';
+            nodeDiv.setAttribute('data-type', type);
+            nodeDiv.style.left = posX + 'px';
+            nodeDiv.style.top = posY + 'px';
+
+            // Label
+            const label = document.createElement('div');
+            label.className = 'node-label';
+            label.textContent = nodeNames[type];
+            nodeDiv.appendChild(label);
+
+            // Puertos
+            const inputPort = document.createElement('div');
+            inputPort.className = 'port input-port';
+            inputPort.setAttribute('data-port', 'input');
+            inputPort.setAttribute('data-type', type);
+            nodeDiv.appendChild(inputPort);
+
+            const outputPort = document.createElement('div');
+            outputPort.className = 'port output-port';
+            outputPort.setAttribute('data-port', 'output');
+            outputPort.setAttribute('data-type', type);
+            nodeDiv.appendChild(outputPort);
+
+            container.appendChild(nodeDiv);
+            nodes[type] = nodeDiv;
+
+            // Activar listeners en los puertos de este nodo
+            attachPortListeners(nodeDiv);
+
+            // Hacer el nodo arrastrable (moverlo)
+            makeNodeDraggable(nodeDiv);
+
+            messageDiv.textContent = `Nodo ${nodeNames[type]} colocado`;
+            drawLines();
+            return nodeDiv;
         }
 
-        // ---- eliminar clase active-source de todos los puertos
-        function removeActiveClassFromPorts() {
-            document.querySelectorAll('.port.active-source').forEach(p => {
-                p.classList.remove('active-source');
+        // --------------------------------------------------------------
+        // Hacer que un nodo se pueda mover (arrastrar con el ratón)
+        function makeNodeDraggable(node) {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            node.addEventListener('mousedown', (e) => {
+                // Si el clic es en un puerto, no arrastrar
+                if (e.target.classList.contains('port')) return;
+
+                e.preventDefault();
+                const rect = node.getBoundingClientRect();
+                const areaRect = dropZone.getBoundingClientRect();
+
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = rect.left - areaRect.left;
+                startTop = rect.top - areaRect.top;
+
+                isDragging = true;
+                node.classList.add('dragging');
+
+                function onMouseMove(e) {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    let newLeft = startLeft + dx;
+                    let newTop = startTop + dy;
+
+                    // Limitar al área (opcional)
+                    newLeft = Math.min(dropZone.clientWidth - 20, Math.max(20, newLeft));
+                    newTop = Math.min(dropZone.clientHeight - 20, Math.max(20, newTop));
+
+                    node.style.left = newLeft + 'px';
+                    node.style.top = newTop + 'px';
+                    drawLines(); // redibujar líneas mientras se mueve
+                }
+
+                function onMouseUp(e) {
+                    isDragging = false;
+                    node.classList.remove('dragging');
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
             });
         }
 
-        // ---- crear o reemplazar conexión (manteniendo máximo 1 in/out)
-        function setConnection(fromIdx, toIdx) {
-            if (fromIdx === toIdx) {
-                sourceNodeIndex = null;
-                removeActiveClassFromPorts();
-                return;
-            }
-
-            // eliminar cualquier conexión existente que salga de 'fromIdx' o que llegue a 'toIdx'
-            connections = connections.filter(c => c.from !== fromIdx && c.to !== toIdx);
-
-            // añadir nueva
-            connections.push({ from: fromIdx, to: toIdx });
-            redraw();
-
-            // desactivar modo fuente
-            sourceNodeIndex = null;
-            removeActiveClassFromPorts();
-        }
-
-        // ---- comprobar si forman un camino hamiltoniano de 0 a 9
-        function checkVictory() {
-            // construir arreglos de grado
-            const out = Array(10).fill(null);
-            const in_ = Array(10).fill(null);
-
-            for (let c of connections) {
-                out[c.from] = c.to;
-                in_[c.to] = c.from;
-            }
-
-            // reglas básicas: nodo 0 no debe tener entrada, nodo 9 no debe tener salida
-            if (in_[0] !== null) {
-                messageDiv.textContent = '❌ START no puede tener entrada';
-                return;
-            }
-            if (out[9] !== null) {
-                messageDiv.textContent = '❌ END no puede tener salida';
-                return;
-            }
-
-            // cada nodo debe tener <=1 in y out (ya garantizado por nuestro filtro, pero puede haber ciclos raros)
-            // recorrer desde 0
-            let visited = new Set();
-            let current = 0;
-            let path = [];
-
-            while (current !== null && !visited.has(current)) {
-                visited.add(current);
-                path.push(current);
-                current = out[current];
-            }
-
-            if (visited.size === 10 && path[path.length-1] === 9) {
-                messageDiv.textContent = '✅ 🎉 PROGRAMA CORRECTO! has conectado todos';
-            } else {
-                // diagnósticos amigables
-                if (!visited.has(0)) messageDiv.textContent = '❌ START no está conectado';
-                else if (visited.has(9) && visited.size < 10) messageDiv.textContent = `⚠️ camino incompleto (${visited.size}/10 nodos)`;
-                else if (!visited.has(9)) messageDiv.textContent = '❌ no se alcanza END';
-                else messageDiv.textContent = '❌ aún no es un camino único';
-            }
-        }
-
-        // ---- manejadores de eventos en puertos
-        function attachPortListeners() {
-            document.querySelectorAll('.port').forEach(port => {
+        // --------------------------------------------------------------
+        // Listeners para puertos (conexiones)
+        function attachPortListeners(node) {
+            const ports = node.querySelectorAll('.port');
+            ports.forEach(port => {
                 port.removeEventListener('mousedown', portHandler);
                 port.addEventListener('mousedown', portHandler);
             });
         }
 
         function portHandler(e) {
-            e.stopPropagation();  // evitar que el documento lo cancele
+            e.stopPropagation();
             const port = e.currentTarget;
-            const nodeIdx = parseInt(port.getAttribute('data-node'), 10);
+            const type = parseInt(port.getAttribute('data-type'), 10);
             const portType = port.getAttribute('data-port');
 
             if (portType === 'output') {
-                // activar modo conexión desde este nodo
-                // limpiar otros sources
-                removeActiveClassFromPorts();
+                // Activar modo source
+                removeActiveSource();
                 port.classList.add('active-source');
-                sourceNodeIndex = nodeIdx;
+                sourceType = type;
             } else if (portType === 'input') {
-                // si hay un source activo, intentar conectar
-                if (sourceNodeIndex !== null && sourceNodeIndex !== nodeIdx) {
-                    setConnection(sourceNodeIndex, nodeIdx);
+                if (sourceType !== null && sourceType !== type) {
+                    // Crear conexión: reemplaza si ya existía alguna desde source o hacia input
+                    // Eliminar conexión existente que salga de sourceType o que llegue a type
+                    connections = connections.filter(c => c.fromType !== sourceType && c.toType !== type);
+                    connections.push({ fromType: sourceType, toType: type });
+                    removeActiveSource();
+                    drawLines();
                 } else {
-                    // click en input sin source -> quizá cancelar
-                    if (sourceNodeIndex !== null) {
-                        removeActiveClassFromPorts();
-                        sourceNodeIndex = null;
-                    }
+                    // Click en input sin source -> cancelar source
+                    removeActiveSource();
                 }
             }
         }
 
-        // cancelar modo source si se hace clic fuera de puerto
-        document.addEventListener('mousedown', function(e) {
-            if (!e.target.classList.contains('port')) {
-                removeActiveClassFromPorts();
-                sourceNodeIndex = null;
-            }
-        });
+        function removeActiveSource() {
+            document.querySelectorAll('.port.active-source').forEach(p => p.classList.remove('active-source'));
+            sourceType = null;
+        }
 
-        // actualizar listeners cada vez que se regeneren nodos (por si acaso, pero nosotros no regeneramos)
-        // sin embargo los puertos son estáticos tras buildNodes, así que llamar una vez
-        attachPortListeners();
-
-        // ---- botones
-        document.getElementById('resetBtn').addEventListener('click', () => {
-            resetConnections();
-        });
-
-        document.getElementById('checkBtn').addEventListener('click', () => {
-            checkVictory();
-        });
-
-        // dibujo inicial (sin líneas)
-        redraw();
-
-        // opcional: redibujar si cambia tamaño (no necesario, pero por si acaso)
-        window.addEventListener('resize', () => {}); // nada
-
-        // pequeños ajustes: recalcar que el nodo 0 y 9 tienen colores especiales en CSS
-
-        // Exponer reset por si se quiere usar desde consola, no necesario
-        // también añadir tecla de escape para cancelar source
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                removeActiveClassFromPorts();
-                sourceNodeIndex = null;
-            }
-        });
-
-        // mejora: si se hace clic en un nodo (fondo) también cancelar source
-        document.querySelectorAll('.node').forEach(node => {
-            node.addEventListener('mousedown', (e) => {
-                // si el clic no fue en un puerto, cancelar source
-                if (!e.target.classList.contains('port')) {
-                    removeActiveClassFromPorts();
-                    sourceNodeIndex = null;
-                }
+        // --------------------------------------------------------------
+        // Drag & drop desde la caja de herramientas
+        const toolNodes = document.querySelectorAll('.tool-node');
+        toolNodes.forEach(tool => {
+            tool.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', tool.dataset.type);
+                e.dataTransfer.effectAllowed = 'copy';
             });
         });
 
-        // mensaje inicial
-        messageDiv.textContent = '⚡ 10 nodos: conecta START → ... → END';
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const type = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            if (isNaN(type)) return;
+
+            // Calcular posición dentro del área
+            const rect = dropZone.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            let y = e.clientY - rect.top;
+            // Ajustar para que el centro del nodo quede en esa posición
+            x = Math.min(rect.width - 60, Math.max(60, x));
+            y = Math.min(rect.height - 60, Math.max(60, y));
+
+            createNode(type, x, y);
+        });
+
+        // --------------------------------------------------------------
+        // Reset: eliminar todos los nodos y conexiones
+        function resetGame() {
+            container.innerHTML = '';
+            nodes = [];
+            connections = [];
+            sourceType = null;
+            removeActiveSource();
+            drawLines();
+            messageDiv.textContent = '🎮 Coloca los 10 nodos';
+        }
+
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+        // --------------------------------------------------------------
+        // INICIAR: recorrer camino desde START (tipo 0) y animar
+        function startProgram() {
+            // Verificar que existan START y END
+            if (!nodes[0]) {
+                messageDiv.textContent = '❌ Falta el nodo START';
+                return;
+            }
+            if (!nodes[9]) {
+                messageDiv.textContent = '❌ Falta el nodo END';
+                return;
+            }
+
+            // Construir mapa de conexiones (output -> input)
+            const nextMap = {};
+            connections.forEach(c => {
+                nextMap[c.fromType] = c.toType;
+            });
+
+            // Recorrer desde 0
+            let path = [];
+            let current = 0;
+            const visited = new Set();
+
+            while (current !== undefined && !visited.has(current)) {
+                visited.add(current);
+                path.push(current);
+                current = nextMap[current];
+            }
+
+            // Verificar si se llegó a END y se visitaron todos los nodos existentes
+            const existingTypes = nodes.map((n, idx) => n ? idx : null).filter(t => t !== null);
+            const allVisited = existingTypes.every(t => visited.has(t));
+
+            if (path.length > 0 && path[path.length-1] === 9 && allVisited) {
+                messageDiv.textContent = '✅ PROGRAMA CORRECTO! Ejecutando...';
+                animatePath(path);
+            } else {
+                if (!visited.has(9)) messageDiv.textContent = '❌ El camino no llega a END';
+                else messageDiv.textContent = `❌ Faltan nodos por conectar (${visited.size}/${existingTypes.length})`;
+            }
+        }
+
+        // Animación simple: iluminar nodos en orden
+        function animatePath(path) {
+            let index = 0;
+            const interval = setInterval(() => {
+                if (index >= path.length) {
+                    clearInterval(interval);
+                    // restaurar bordes
+                    path.forEach(t => {
+                        if (nodes[t]) nodes[t].style.borderColor = '#7ca2bc';
+                    });
+                    messageDiv.textContent = '🎉 Programa finalizado';
+                    return;
+                }
+                const type = path[index];
+                if (nodes[type]) {
+                    nodes[type].style.borderColor = '#f5d742';
+                    nodes[type].style.boxShadow = '0 0 25px #ffd966, 0 10px 0 #0e1a24';
+                }
+                if (index > 0) {
+                    const prevType = path[index-1];
+                    if (nodes[prevType]) {
+                        nodes[prevType].style.borderColor = '#7ca2bc';
+                        nodes[prevType].style.boxShadow = '0 10px 0 #0e1a24, 0 15px 20px rgba(0,0,0,0.6)';
+                    }
+                }
+                index++;
+            }, 500);
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startProgram);
+
+        // --------------------------------------------------------------
+        // Cancelar source al hacer clic en fondo
+        document.addEventListener('mousedown', (e) => {
+            if (!e.target.classList.contains('port')) {
+                removeActiveSource();
+            }
+        });
+
+        // También cancelar con Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') removeActiveSource();
+        });
+
+        // Inicialmente no hay nodos
+        resetGame();
     })();
 </script>
 </body>
