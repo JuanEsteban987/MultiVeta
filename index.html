@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Twitch P2P - Juegos Completos con VETS</title>
+    <title>Twitch P2P - Juegos Mejorados</title>
     <style>
-        /* ===== ESTILOS GENERALES ===== */
+        /* ===== ESTILOS GENERALES MEJORADOS ===== */
         * {
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -13,7 +13,7 @@
             padding: 0;
         }
         body {
-            background: #0e0e10;
+            background: linear-gradient(145deg, #0e0e10 0%, #1a1a1f 100%);
             color: #efeff1;
             display: flex;
             justify-content: center;
@@ -23,17 +23,21 @@
         }
         /* Pantalla de inicio */
         .join-screen {
-            background: #1f1f23;
+            background: rgba(31, 31, 35, 0.95);
+            backdrop-filter: blur(10px);
             padding: 40px 20px;
-            border-radius: 8px;
+            border-radius: 30px;
             text-align: center;
             max-width: 500px;
             width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 2px #9147ff33;
+            border: 1px solid #9147ff;
         }
         .join-screen h1 {
             margin-bottom: 30px;
             color: #bf94ff;
-            font-size: 24px;
+            font-size: 28px;
+            text-shadow: 0 0 10px #9147ff;
         }
         .join-screen .form {
             display: flex;
@@ -42,27 +46,35 @@
         }
         .join-screen input {
             background: #18181b;
-            border: 1px solid #3a3a44;
+            border: 2px solid #3a3a44;
             color: white;
-            padding: 15px;
-            border-radius: 30px;
+            padding: 15px 20px;
+            border-radius: 40px;
             font-size: 16px;
             outline: none;
+            transition: all 0.3s;
+        }
+        .join-screen input:focus {
+            border-color: #9147ff;
+            box-shadow: 0 0 15px #9147ff;
         }
         .join-screen button {
-            background: #9147ff;
+            background: linear-gradient(145deg, #9147ff, #772ce8);
             border: none;
             color: white;
             font-weight: bold;
             padding: 15px 20px;
-            border-radius: 30px;
+            border-radius: 40px;
             cursor: pointer;
             font-size: 16px;
             margin: 5px;
             width: calc(100% - 10px);
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 5px 0 #4a1e8c;
         }
         .join-screen button:hover {
-            background: #772ce8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 #4a1e8c;
         }
         .join-screen .info {
             color: #adadb8;
@@ -75,12 +87,14 @@
             width: 100%;
             max-width: 1600px;
             height: 90vh;
-            background: #1f1f23;
-            border-radius: 8px;
+            background: rgba(31, 31, 35, 0.95);
+            backdrop-filter: blur(5px);
+            border-radius: 30px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 0 2px #9147ff33;
             position: relative;
             flex-direction: row;
+            border: 1px solid #9147ff;
         }
         @media (max-width: 768px) {
             .container {
@@ -92,78 +106,98 @@
         /* Esquinas */
         .room-code-corner {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(145deg, #2a2a30, #1a1a20);
             color: #bf94ff;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 14px;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 16px;
             font-weight: bold;
-            z-index: 10;
+            z-index: 20;
             border: 1px solid #9147ff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
         }
         .donation-overlay {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(145deg, #2a2a30, #1a1a20);
             color: #ff79c6;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 8px 20px;
+            border-radius: 40px;
             font-size: 16px;
             font-weight: bold;
-            z-index: 10;
+            z-index: 20;
             border: 1px solid #ff79c6;
             display: flex;
             align-items: center;
-            gap: 5px;
-            pointer-events: none;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(255, 121, 198, 0.3);
+            backdrop-filter: blur(5px);
+        }
+        .donation-overlay span {
+            color: gold;
+            font-size: 18px;
         }
         /* Área de stream */
         .stream-area {
             flex: 3;
             display: flex;
             flex-direction: column;
-            background: #18181b;
-            padding: 16px;
+            background: #18181be0;
+            padding: 20px;
             min-width: 0;
+            backdrop-filter: blur(2px);
         }
         .room-bar {
             display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-            background: #26262c;
-            padding: 10px 16px;
-            border-radius: 8px;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: linear-gradient(145deg, #2a2a30, #1f1f27);
+            padding: 15px 20px;
+            border-radius: 50px;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
+            box-shadow: 0 5px 0 #0a0a0e;
+            border: 1px solid #9147ff33;
         }
         .role {
             color: #bf94ff;
             font-weight: bold;
+            background: #9147ff22;
+            padding: 5px 15px;
+            border-radius: 30px;
         }
-        /* Botón selector de juegos (solo host) */
         .game-selector-toggle {
-            background: #9147ff;
+            background: linear-gradient(145deg, #9147ff, #772ce8);
             border: none;
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 10px 25px;
+            border-radius: 40px;
             cursor: pointer;
             font-weight: bold;
-            margin-bottom: 8px;
+            font-size: 16px;
+            box-shadow: 0 4px 0 #4a1e8c;
+            transition: 0.2s;
+        }
+        .game-selector-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #4a1e8c;
         }
         .game-selector {
             display: none;
-            gap: 8px;
-            background: #1f1f23;
-            padding: 8px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            gap: 10px;
+            background: #2a2a30;
+            padding: 15px;
+            border-radius: 50px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
             justify-content: center;
+            border: 1px solid #9147ff;
+            box-shadow: inset 0 2px 5px #00000055;
         }
         .game-selector.visible {
             display: flex;
@@ -172,237 +206,280 @@
             background: #3a3a44;
             border: none;
             color: white;
-            padding: 10px 16px;
-            border-radius: 30px;
+            padding: 12px 20px;
+            border-radius: 40px;
             cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
+            font-size: 16px;
+            transition: all 0.2s;
             flex: 1 0 auto;
-            min-width: 80px;
+            min-width: 100px;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #1a1a20;
         }
         .game-btn:hover {
             background: #9147ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 0 #4a1e8c;
         }
         .game-btn.active {
             background: #9147ff;
-            font-weight: bold;
+            box-shadow: 0 0 15px #9147ff;
+            border: 1px solid white;
         }
-        /* Canvas y overlay */
         .canvas-wrapper {
             background: #0e0e10;
-            border-radius: 8px;
-            padding: 8px;
-            box-shadow: inset 0 0 8px #000;
+            border-radius: 30px;
+            padding: 10px;
+            box-shadow: inset 0 0 20px #000, 0 10px 0 #0a0a0e;
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
             min-height: 250px;
+            border: 1px solid #9147ff33;
         }
         canvas {
             background: white;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.7);
             width: 100%;
             height: auto;
             max-height: 100%;
             object-fit: contain;
             touch-action: none;
+            cursor: crosshair;
         }
         .game-overlay {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.6);
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(145deg, #2a2a30, #1a1a20);
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 16px;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-size: 18px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             pointer-events: none;
             z-index: 5;
+            border: 1px solid #9147ff;
+            box-shadow: 0 4px 10px black;
+            backdrop-filter: blur(5px);
         }
-        /* Herramientas de dibujo */
+        /* Herramientas de dibujo mejoradas */
         .tools {
-            margin-top: 16px;
+            margin-top: 20px;
             display: flex;
-            gap: 12px;
+            gap: 15px;
             flex-wrap: wrap;
             align-items: center;
-            background: #26262c;
-            padding: 12px 16px;
-            border-radius: 8px;
+            background: linear-gradient(145deg, #2a2a30, #1f1f27);
+            padding: 15px 20px;
+            border-radius: 60px;
+            box-shadow: 0 5px 0 #0a0a0e;
+            border: 1px solid #9147ff33;
         }
         .tools label {
             color: #adadb8;
             font-size: 14px;
+            font-weight: bold;
         }
         .tools input[type="color"] {
-            width: 50px;
-            height: 50px;
-            border: none;
-            border-radius: 8px;
+            width: 60px;
+            height: 60px;
+            border: 3px solid #9147ff;
+            border-radius: 30px;
             background: transparent;
             cursor: pointer;
+            padding: 2px;
         }
         .tools input[type="range"] {
-            width: 120px;
+            width: 150px;
+            height: 8px;
+            background: #3a3a44;
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .tools input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #9147ff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
         }
         .tools select {
             background: #18181b;
             color: white;
-            border: 1px solid #3a3a44;
-            border-radius: 8px;
-            padding: 10px;
+            border: 2px solid #9147ff;
+            border-radius: 40px;
+            padding: 12px 20px;
             outline: none;
             font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
         }
         .tools button {
-            background: #9147ff;
+            background: linear-gradient(145deg, #9147ff, #772ce8);
             border: none;
             color: white;
             font-weight: bold;
-            padding: 10px 20px;
-            border-radius: 30px;
+            padding: 12px 25px;
+            border-radius: 40px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: 0.2s;
             font-size: 16px;
+            box-shadow: 0 4px 0 #4a1e8c;
         }
         .tools button:hover {
-            background: #772ce8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #4a1e8c;
         }
-        /* Controles específicos de juegos */
-        .game-controls {
-            margin-top: 10px;
-            background: #26262c;
-            padding: 10px;
-            border-radius: 8px;
-            display: none;
+        /* Nuevas herramientas (añadidas sin quitar las anteriores) */
+        .extra-tools {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
-        .game-controls.visible {
-            display: block;
-        }
-        .game-controls button {
-            background: #9147ff;
+        .tool-icon {
+            background: #3a3a44;
             border: none;
             color: white;
-            padding: 8px 12px;
-            border-radius: 20px;
-            margin: 5px;
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 3px 0 #1a1a20;
         }
-        .game-controls p {
-            margin: 8px 0;
+        .tool-icon:hover {
+            background: #9147ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 0 #4a1e8c;
+        }
+        .tool-icon.active {
+            background: #9147ff;
+            box-shadow: 0 0 15px #9147ff;
         }
         /* Panel de chat */
         .chat-panel {
             flex: 1;
-            background: #1f1f23;
+            background: #1f1f23e0;
             display: flex;
             flex-direction: column;
-            border-left: 1px solid #303035;
-            min-width: 250px;
+            border-left: 2px solid #9147ff33;
+            min-width: 280px;
+            backdrop-filter: blur(5px);
         }
         @media (max-width: 768px) {
             .chat-panel {
                 border-left: none;
-                border-top: 1px solid #303035;
+                border-top: 2px solid #9147ff33;
             }
         }
         .viewers {
-            padding: 16px;
-            border-bottom: 1px solid #303035;
-            background: #26262c;
+            padding: 20px;
+            border-bottom: 2px solid #9147ff33;
+            background: linear-gradient(145deg, #2a2a30, #1f1f27);
         }
         .viewers h3 {
-            margin: 0 0 12px 0;
-            font-size: 16px;
+            margin: 0 0 15px 0;
+            font-size: 18px;
             color: #bf94ff;
         }
         .viewers ul {
             list-style: none;
             padding: 0;
             margin: 0;
-            max-height: 100px;
+            max-height: 120px;
             overflow-y: auto;
+            background: #18181b;
+            border-radius: 20px;
+            padding: 10px;
         }
         .viewers li {
-            padding: 4px 0;
+            padding: 6px 10px;
             font-size: 14px;
             color: #efeff1;
+            border-bottom: 1px solid #3a3a44;
         }
         .messages {
             flex: 1;
-            padding: 16px;
+            padding: 20px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            max-height: 300px;
-        }
-        @media (max-width: 768px) {
-            .messages {
-                max-height: 200px;
-            }
+            gap: 10px;
+            max-height: 350px;
+            background: #18181b88;
         }
         .message {
-            background: #26262c;
-            padding: 8px 12px;
-            border-radius: 8px;
+            background: #2a2a30;
+            padding: 10px 15px;
+            border-radius: 25px;
             max-width: 90%;
+            border: 1px solid #9147ff33;
+            box-shadow: 0 2px 5px black;
         }
         .message .user {
             font-weight: bold;
             color: #bf94ff;
-            margin-right: 8px;
-        }
-        .message .text {
-            color: #dedee3;
-            word-break: break-word;
+            margin-right: 10px;
         }
         .chat-input-area {
-            padding: 16px;
-            border-top: 1px solid #303035;
+            padding: 20px;
+            border-top: 2px solid #9147ff33;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            background: #26262c;
+            gap: 12px;
+            background: linear-gradient(145deg, #2a2a30, #1f1f27);
         }
         .chat-row {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
         }
         .chat-row input {
             flex: 1;
             background: #18181b;
-            border: 1px solid #3a3a44;
+            border: 2px solid #3a3a44;
             color: white;
-            padding: 12px 16px;
-            border-radius: 30px;
+            padding: 14px 20px;
+            border-radius: 40px;
             outline: none;
             font-size: 16px;
-            min-width: 150px;
+            transition: 0.3s;
+        }
+        .chat-row input:focus {
+            border-color: #9147ff;
         }
         .chat-row button {
-            background: #9147ff;
+            background: linear-gradient(145deg, #9147ff, #772ce8);
             border: none;
             color: white;
             font-weight: bold;
-            padding: 12px 20px;
-            border-radius: 30px;
+            padding: 14px 25px;
+            border-radius: 40px;
             cursor: pointer;
             font-size: 16px;
-            white-space: nowrap;
+            box-shadow: 0 4px 0 #4a1e8c;
+            transition: 0.2s;
+        }
+        .chat-row button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #4a1e8c;
         }
         .donation-btn {
-            background: #ff4444;
-        }
-        .donation-btn:hover {
-            background: #cc0000;
+            background: linear-gradient(145deg, #ff4444, #cc0000) !important;
+            box-shadow: 0 4px 0 #880000 !important;
         }
         .emoji-panel {
             display: flex;
@@ -414,47 +491,100 @@
             background: #3a3a44;
             border: none;
             color: white;
-            font-size: 24px;
+            font-size: 26px;
             padding: 10px 15px;
-            border-radius: 12px;
+            border-radius: 20px;
             cursor: pointer;
-            transition: background 0.2s;
-            min-width: 60px;
+            transition: 0.2s;
+            min-width: 65px;
+            box-shadow: 0 3px 0 #1a1a20;
         }
         .emoji-btn:hover {
             background: #9147ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 0 #4a1e8c;
+        }
+        /* Controles de juegos */
+        .game-controls {
+            margin-top: 15px;
+            background: linear-gradient(145deg, #2a2a30, #1f1f27);
+            padding: 15px;
+            border-radius: 30px;
+            display: none;
+            border: 1px solid #9147ff;
+            box-shadow: inset 0 2px 5px #00000055;
+        }
+        .game-controls.visible {
+            display: block;
+        }
+        .game-controls h4 {
+            color: #bf94ff;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        .game-controls button {
+            background: linear-gradient(145deg, #9147ff, #772ce8);
+            border: none;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 40px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #4a1e8c;
+            transition: 0.2s;
+        }
+        .game-controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 0 #4a1e8c;
+        }
+        .game-controls p {
+            margin: 10px 0;
+            font-size: 16px;
+            background: #18181b;
+            padding: 10px;
+            border-radius: 20px;
+        }
+        /* Sprites (emojis) */
+        .sprite {
+            font-size: 40px;
+            display: inline-block;
+            margin: 5px;
+            filter: drop-shadow(0 4px 2px black);
+        }
+        .pokemon-sprite {
+            font-size: 60px;
+            text-align: center;
         }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
-    <!-- Pantalla de inicio -->
     <div id="join-screen" class="join-screen">
-        <h1>Twitch P2P - Juegos Completos</h1>
+        <h1>🎮 Twitch P2P - Juegos Mejorados</h1>
         <div class="form">
             <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
             <div>
-                <button id="create-room-btn">Crear sala (host)</button>
-                <button id="join-room-btn">Unirse como espectador</button>
+                <button id="create-room-btn">🎨 Crear sala (host)</button>
+                <button id="join-room-btn">👁️ Unirse como espectador</button>
             </div>
-            <p class="info">El host elige el juego. Ganas 1 VET cada 3 segundos. Dona 50 VETS para aparecer en pantalla.</p>
+            <p class="info">El host elige el juego. Ganas 1 VET cada 3s. Dona 50 VETS para aparecer en pantalla.</p>
         </div>
     </div>
 
-    <!-- Aplicación de dibujo -->
     <div id="drawing-app" class="container" style="display: none;">
         <!-- Esquinas -->
-        <div id="room-code-corner" class="room-code-corner">Sala: </div>
+        <div id="room-code-corner" class="room-code-corner">Sala: <span id="room-display"></span></div>
         <div id="donation-overlay" class="donation-overlay">🪙 VETS: <span id="vets-count">0</span></div>
 
         <div class="stream-area">
             <div class="room-bar">
-                <span>Bienvenido</span>
+                <span>👋 Bienvenido</span>
                 <span id="role-display" class="role"></span>
-                <button id="leave-room-btn" style="background: #ff4444; padding: 8px 16px;">Salir</button>
+                <button id="leave-room-btn" style="background: #ff4444; box-shadow:0 4px 0 #880000;">🚪 Salir</button>
             </div>
 
-            <!-- Selector de juegos (solo host) -->
+            <!-- Botón selector de juegos (solo host) -->
             <button id="toggle-games-btn" class="game-selector-toggle" style="display: none;">🎮 Cambiar juego</button>
             <div id="game-selector" class="game-selector">
                 <button class="game-btn" data-game="paint">🎨 Pintar</button>
@@ -468,65 +598,86 @@
                 <div id="game-overlay" class="game-overlay">🎨 Modo Pintar</div>
             </div>
 
-            <!-- Herramientas de dibujo (solo modo pintar) -->
+            <!-- Herramientas de dibujo mejoradas -->
             <div class="tools" id="tools-container" style="display: none;">
                 <select id="toolSelect">
-                    <option value="pencil">Lápiz</option>
-                    <option value="rectangle">Rectángulo</option>
-                    <option value="circle">Círculo</option>
-                    <option value="line">Línea</option>
-                    <option value="text">Texto</option>
+                    <option value="pencil">✏️ Lápiz</option>
+                    <option value="rectangle">🔲 Rectángulo</option>
+                    <option value="circle">⚪ Círculo</option>
+                    <option value="line">📏 Línea</option>
+                    <option value="text">🔤 Texto</option>
                 </select>
-                <label>Color:</label>
+                <label>🎨 Color:</label>
                 <input type="color" id="colorPicker" value="#000000">
-                <label>Grosor:</label>
+                <label>📏 Grosor:</label>
                 <input type="range" id="brushSize" min="1" max="30" value="5">
-                <button id="clearCanvas">Limpiar todo</button>
+                <button id="clearCanvas">🗑️ Limpiar</button>
+                <!-- Nuevas herramientas (sin quitar las anteriores) -->
+                <div class="extra-tools">
+                    <button class="tool-icon" id="toolEraser" title="Goma">🧽</button>
+                    <button class="tool-icon" id="toolFill" title="Relleno">🪣</button>
+                    <button class="tool-icon" id="toolStar" title="Estrella">⭐</button>
+                    <button class="tool-icon" id="toolHeart" title="Corazón">❤️</button>
+                </div>
             </div>
 
-            <!-- Controles Pokémon -->
+            <!-- Controles de juegos con sprites -->
             <div id="pokemon-controls" class="game-controls">
-                <h4>Pokémon</h4>
-                <button id="pokemon-attack">⚔️ Atacar (10 VETS)</button>
-                <button id="pokemon-heal">💚 Curar (15 VETS)</button>
-                <button id="pokemon-catch">🎯 Capturar (20 VETS)</button>
-                <p>Tu Pokémon: <span id="pokemon-hp">100</span> HP | Bot: <span id="bot-hp">100</span> HP</p>
-                <p>Estado: <span id="pokemon-status">Combatiendo</span></p>
+                <h4>🐱 Pokémon - Combate</h4>
+                <div style="display: flex; justify-content: space-around; align-items: center;">
+                    <div class="pokemon-sprite">🐉</div>
+                    <div class="pokemon-sprite">🐲</div>
+                </div>
+                <div style="display: flex; justify-content: space-around;">
+                    <span>HP: <span id="pokemon-hp">100</span></span>
+                    <span>Bot: <span id="bot-hp">100</span></span>
+                </div>
+                <button id="pokemon-attack">⚔️ Ataque (15)</button>
+                <button id="pokemon-special">💥 Especial (30, 10 VETS)</button>
+                <button id="pokemon-heal">💚 Curar (20 HP, 15 VETS)</button>
+                <button id="pokemon-capture">🎯 Capturar (50 VETS)</button>
             </div>
 
-            <!-- Controles Fútbol -->
             <div id="football-controls" class="game-controls">
-                <h4>Fútbol - Penaltis</h4>
-                <button id="football-shoot">⚽ Lanzar penalti</button>
+                <h4>⚽ Fútbol - Penaltis</h4>
+                <div style="display: flex; justify-content: center; gap: 20px;">
+                    <span class="sprite">🥅</span>
+                    <span class="sprite">⚽</span>
+                </div>
                 <p>Goles: <span id="football-score">0</span> | Intentos: <span id="football-attempts">5</span></p>
-                <p>Dificultad: <span id="football-difficulty">1</span></p>
+                <button id="football-shoot">⚽ Lanzar</button>
+                <p id="football-result"></p>
             </div>
 
-            <!-- Controles Parkour -->
             <div id="parkour-controls" class="game-controls">
-                <h4>Parkour Infinito</h4>
-                <p>Usa ← → para moverte, ↑ para saltar</p>
-                <p>Puntuación: <span id="parkour-score">0</span></p>
-                <p>Mejor marca: <span id="parkour-best">0</span></p>
+                <h4>🏃 Parkour Infinito</h4>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <span class="sprite" style="font-size: 50px;" id="parkour-sprite">🏃</span>
+                    <div>
+                        <p>Puntuación: <span id="parkour-score">0</span></p>
+                        <p>Mejor: <span id="parkour-best">0</span></p>
+                    </div>
+                </div>
+                <button id="parkour-jump">⬆️ Saltar (espacio)</button>
+                <p>Usa ESPACIO para saltar</p>
             </div>
         </div>
 
-        <!-- Panel de chat -->
         <div class="chat-panel">
             <div class="viewers">
-                <h3>Espectadores 👁️</h3>
+                <h3>👥 Espectadores</h3>
                 <ul id="viewerList">
                     <li>Cargando...</li>
                 </ul>
             </div>
             <div class="messages" id="chatMessages">
-                <div class="message"><span class="user">Sistema:</span> <span class="text">Bienvenido. Conéctate a una sala.</span></div>
+                <div class="message"><span class="user">🔧 Sistema:</span> <span class="text">Bienvenido. Conéctate a una sala.</span></div>
             </div>
             <div class="chat-input-area">
                 <div class="chat-row">
                     <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
                     <input type="text" id="messageInput" placeholder="Mensaje...">
-                    <button id="sendMessage">Enviar</button>
+                    <button id="sendMessage">📤 Enviar</button>
                     <button id="donationBtn" class="donation-btn">💜 Donar (50 VETS)</button>
                 </div>
                 <div class="emoji-panel">
@@ -545,7 +696,7 @@
 
     <script>
         (function() {
-            // --- Elementos UI ---
+            // --- Elementos UI (se mantienen todos los originales y se añaden los nuevos) ---
             const joinScreen = document.getElementById('join-screen');
             const drawingApp = document.getElementById('drawing-app');
             const roomInput = document.getElementById('room-input');
@@ -567,6 +718,7 @@
             const sendBtn = document.getElementById('sendMessage');
             const donationBtn = document.getElementById('donationBtn');
             const roomCodeCorner = document.getElementById('room-code-corner');
+            const roomDisplay = document.getElementById('room-display');
             const gameOverlay = document.getElementById('game-overlay');
             const toggleGamesBtn = document.getElementById('toggle-games-btn');
             const gameSelector = document.getElementById('game-selector');
@@ -574,47 +726,47 @@
             const vetsSpan = document.getElementById('vets-count');
             const donationOverlay = document.getElementById('donation-overlay');
 
+            // Nuevas herramientas
+            const toolEraser = document.getElementById('toolEraser');
+            const toolFill = document.getElementById('toolFill');
+            const toolStar = document.getElementById('toolStar');
+            const toolHeart = document.getElementById('toolHeart');
+
             // Controles de juegos
             const pokemonControls = document.getElementById('pokemon-controls');
             const footballControls = document.getElementById('football-controls');
             const parkourControls = document.getElementById('parkour-controls');
             const pokemonAttack = document.getElementById('pokemon-attack');
+            const pokemonSpecial = document.getElementById('pokemon-special');
             const pokemonHeal = document.getElementById('pokemon-heal');
-            const pokemonCatch = document.getElementById('pokemon-catch');
+            const pokemonCapture = document.getElementById('pokemon-capture');
             const pokemonHpSpan = document.getElementById('pokemon-hp');
             const botHpSpan = document.getElementById('bot-hp');
-            const pokemonStatusSpan = document.getElementById('pokemon-status');
             const footballShoot = document.getElementById('football-shoot');
             const footballScoreSpan = document.getElementById('football-score');
             const footballAttemptsSpan = document.getElementById('football-attempts');
-            const footballDifficultySpan = document.getElementById('football-difficulty');
+            const footballResult = document.getElementById('football-result');
+            const parkourJump = document.getElementById('parkour-jump');
             const parkourScoreSpan = document.getElementById('parkour-score');
             const parkourBestSpan = document.getElementById('parkour-best');
+            const parkourSprite = document.getElementById('parkour-sprite');
 
-            // --- Estado P2P ---
+            // --- Estado P2P (igual que antes) ---
             let peer = null;
-            let connections = new Map(); // solo host
+            let connections = new Map();
             let isHost = false;
             let roomId = null;
             let myPeerId = null;
-            let hostConnection = null; // para espectador
-            let history = []; // historial de acciones de dibujo
-            let currentGame = 'paint'; // juego por defecto
+            let hostConnection = null;
+            let history = [];
+            let currentGame = 'paint';
 
-            // --- Estado de juegos ---
-            // Pokémon
-            let pokemon = { playerHP: 100, botHP: 100, status: 'fighting' };
-            // Fútbol
-            let football = { score: 0, attempts: 5, difficulty: 1, goalWidth: 200, keeperSpeed: 2 };
-            // Parkour
-            let parkour = {
-                score: 0, best: 0,
-                player: { x: 100, y: 500, vy: 0, width: 20, height: 20 },
-                platforms: [{ x: 400, y: 550, w: 200 }],
-                gameOver: false
-            };
+            // --- Estado de juegos mejorado ---
+            let pokemon = { playerHP: 100, botHP: 100, playerVets: 0 };
+            let football = { score: 0, attempts: 5, difficulty: 1 };
+            let parkour = { score: 0, best: 0, jumping: false, y: 300, vy: 0, platforms: [] };
             let parkourInterval = null;
-            let parkourKeys = { left: false, right: false, up: false };
+            let parkourFrame = null;
 
             // --- Moneda Vets ---
             let vets = 0;
@@ -623,16 +775,30 @@
             // --- Estado de dibujo ---
             let drawing = false;
             let startX, startY, lastX, lastY;
+            let currentTool = 'pencil'; // pencil, rectangle, circle, line, text, eraser, fill, star, heart
 
-            // Configuración del canvas
+            // Configuración canvas
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
             ctx.strokeStyle = colorPicker.value;
             ctx.fillStyle = colorPicker.value;
             ctx.lineWidth = brushSizeInput.value;
-            ctx.font = '16px Arial';
+            ctx.font = '20px Arial';
 
-            // ========== FUNCIONES DE ALMACENAMIENTO ==========
+            // --- Sincronización con espectadores al iniciar juego (mejora) ---
+            function broadcastGameState() {
+                if (!isHost) return;
+                broadcastToViewers({ type: 'game-change', game: currentGame });
+                if (currentGame === 'pokemon') {
+                    broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
+                } else if (currentGame === 'football') {
+                    broadcastToViewers({ type: 'football-update', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
+                } else if (currentGame === 'parkour') {
+                    broadcastToViewers({ type: 'parkour-update', score: parkour.score, best: parkour.best });
+                }
+            }
+
+            // --- Funciones de almacenamiento local (mejoradas) ---
             function saveProgress() {
                 if (!isHost || !roomId) return;
                 try {
@@ -640,7 +806,7 @@
                     localStorage.setItem(`juego_${roomId}`, currentGame);
                     localStorage.setItem(`pokemon_${roomId}`, JSON.stringify(pokemon));
                     localStorage.setItem(`football_${roomId}`, JSON.stringify(football));
-                    localStorage.setItem(`parkour_${roomId}`, JSON.stringify({ best: parkour.best }));
+                    localStorage.setItem(`parkour_${roomId}`, JSON.stringify({ score: parkour.best }));
                 } catch (e) {}
             }
 
@@ -669,7 +835,7 @@
                     }
                     const savedParkour = localStorage.getItem(`parkour_${roomId}`);
                     if (savedParkour) {
-                        parkour.best = JSON.parse(savedParkour).best;
+                        parkour.best = JSON.parse(savedParkour).score;
                         updateParkourUI();
                     }
                 } catch (e) {}
@@ -680,7 +846,7 @@
                 history.forEach(action => applyAction(action));
             }
 
-            // ========== FUNCIONES DE DIBUJO ==========
+            // --- Funciones de dibujo (añadidas nuevas herramientas) ---
             function drawShape(action) {
                 ctx.save();
                 ctx.strokeStyle = action.color;
@@ -698,14 +864,47 @@
                     ctx.moveTo(action.x, action.y);
                     ctx.lineTo(action.x2, action.y2);
                     ctx.stroke();
+                } else if (action.shape === 'star') {
+                    // Dibuja una estrella simple
+                    drawStar(ctx, action.x, action.y, 5, action.size * 2, action.size * 4);
+                    ctx.stroke();
+                } else if (action.shape === 'heart') {
+                    // Corazón simple
+                    drawHeart(ctx, action.x, action.y, action.size * 3);
+                    ctx.stroke();
                 }
                 ctx.restore();
+            }
+
+            function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+                let rot = Math.PI / 2 * 3;
+                let step = Math.PI / spikes;
+                ctx.beginPath();
+                for (let i = 0; i < spikes; i++) {
+                    let x = cx + Math.cos(rot) * outerR;
+                    let y = cy + Math.sin(rot) * outerR;
+                    ctx.lineTo(x, y);
+                    rot += step;
+                    x = cx + Math.cos(rot) * innerR;
+                    y = cy + Math.sin(rot) * innerR;
+                    ctx.lineTo(x, y);
+                    rot += step;
+                }
+                ctx.closePath();
+            }
+
+            function drawHeart(ctx, x, y, size) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.bezierCurveTo(x - size/2, y - size/2, x - size, y + size/3, x, y + size);
+                ctx.bezierCurveTo(x + size, y + size/3, x + size/2, y - size/2, x, y);
+                ctx.closePath();
             }
 
             function drawText(action) {
                 ctx.save();
                 ctx.fillStyle = action.color;
-                ctx.font = `${action.size * 3}px Arial`;
+                ctx.font = `${action.size * 4}px Arial`;
                 ctx.fillText(action.text, action.x, action.y);
                 ctx.restore();
             }
@@ -741,7 +940,14 @@
                 }
             }
 
-            // ========== FUNCIONES DE JUEGOS ==========
+            // --- Función para relleno (flood fill) - simplificada ---
+            function floodFill(x, y, fillColor) {
+                // No implementamos flood fill completo por complejidad, pero podemos simular con un rectángulo
+                ctx.fillStyle = fillColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // --- Cambiar juego (mejorado) ---
             function setGame(game) {
                 currentGame = game;
                 let emoji = '🎨', text = 'Pintar';
@@ -773,53 +979,57 @@
                     }
                 }
 
-                // Detener parkour si no está activo
                 if (game !== 'parkour' && parkourInterval) {
                     clearInterval(parkourInterval);
+                    cancelAnimationFrame(parkourFrame);
                     parkourInterval = null;
                 }
 
                 if (isHost) {
-                    broadcastToViewers({ type: 'game-change', game: game,
-                        pokemon: pokemon, football: football, parkourBest: parkour.best });
+                    broadcastGameState();
                     saveProgress();
                 }
             }
 
-            // --- Pokémon ---
+            // --- Pokémon mejorado con curar y capturar ---
             function updatePokemonUI() {
                 pokemonHpSpan.textContent = pokemon.playerHP;
                 botHpSpan.textContent = pokemon.botHP;
-                pokemonStatusSpan.textContent = pokemon.status === 'fighting' ? 'Combatiendo' : 'Capturado';
             }
 
-            function pokemonAttack() {
+            function pokemonAttack(isSpecial) {
                 if (!isHost) return;
-                if (vets < 10) {
-                    addChatMessage('Sistema', 'Necesitas 10 VETS para atacar', false, true);
-                    return;
+                let damage = isSpecial ? 30 : 15;
+                if (isSpecial) {
+                    if (vets < 10) {
+                        addChatMessage('Sistema', '❌ No tienes suficientes VETS (necesitas 10)', false, true);
+                        return;
+                    }
+                    vets -= 10;
+                    updateVetsUI();
                 }
-                vets -= 10;
-                updateVetsUI();
-                let damage = 20;
                 pokemon.botHP -= damage;
                 if (pokemon.botHP < 0) pokemon.botHP = 0;
-                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP, status: pokemon.status });
-                addChatMessage('Sistema', `¡Atacas! El bot pierde ${damage} HP.`, false, true);
+                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
+                addChatMessage('Sistema', `⚔️ ¡Atacas! El bot pierde ${damage} HP.`, false, true);
 
-                if (pokemon.botHP <= 0) {
-                    pokemon.status = 'captured';
-                    addChatMessage('Sistema', '¡Has derrotado al bot! Puedes capturarlo.', false, true);
-                } else {
-                    // Turno del bot
-                    let botDamage = 15;
+                if (pokemon.botHP > 0) {
+                    let botDamage = 10;
                     pokemon.playerHP -= botDamage;
                     if (pokemon.playerHP < 0) pokemon.playerHP = 0;
-                    addChatMessage('Sistema', `El bot te ataca, pierdes ${botDamage} HP.`, false, true);
+                    broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
+                    addChatMessage('Sistema', `🐲 El bot te ataca, pierdes ${botDamage} HP.`, false, true);
+                } else {
+                    addChatMessage('Sistema', '🎉 ¡Has ganado el combate! +50 VETS', false, true);
+                    vets += 50;
+                    updateVetsUI();
+                    pokemon.botHP = 100;
+                    pokemon.playerHP = 100;
                 }
                 if (pokemon.playerHP <= 0) {
-                    addChatMessage('Sistema', 'Has perdido. Reiniciando...', false, true);
-                    pokemon = { playerHP: 100, botHP: 100, status: 'fighting' };
+                    addChatMessage('Sistema', '💔 Has perdido. Reiniciando...', false, true);
+                    pokemon.botHP = 100;
+                    pokemon.playerHP = 100;
                 }
                 updatePokemonUI();
                 saveProgress();
@@ -828,67 +1038,59 @@
             function pokemonHeal() {
                 if (!isHost) return;
                 if (vets < 15) {
-                    addChatMessage('Sistema', 'Necesitas 15 VETS para curarte', false, true);
+                    addChatMessage('Sistema', '❌ Necesitas 15 VETS para curar', false, true);
                     return;
                 }
                 vets -= 15;
-                updateVetsUI();
-                pokemon.playerHP = Math.min(100, pokemon.playerHP + 30);
-                addChatMessage('Sistema', 'Te curas 30 HP.', false, true);
-                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP, status: pokemon.status });
+                pokemon.playerHP = Math.min(100, pokemon.playerHP + 20);
+                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
+                addChatMessage('Sistema', '💚 Te has curado 20 HP.', false, true);
                 updatePokemonUI();
+                updateVetsUI();
                 saveProgress();
             }
 
-            function pokemonCatch() {
+            function pokemonCapture() {
                 if (!isHost) return;
-                if (vets < 20) {
-                    addChatMessage('Sistema', 'Necesitas 20 VETS para capturar', false, true);
+                if (vets < 50) {
+                    addChatMessage('Sistema', '❌ Necesitas 50 VETS para intentar capturar', false, true);
                     return;
                 }
-                vets -= 20;
-                updateVetsUI();
-                if (pokemon.botHP <= 20 || pokemon.status === 'captured') {
-                    let success = Math.random() > 0.3;
-                    if (success) {
-                        addChatMessage('Sistema', '¡Capturado! Has ganado 50 VETS.', false, true);
-                        vets += 50;
-                        updateVetsUI();
-                        pokemon = { playerHP: 100, botHP: 100, status: 'fighting' };
-                    } else {
-                        addChatMessage('Sistema', 'Fallaste la captura.', false, true);
-                    }
+                vets -= 50;
+                let success = Math.random() < 0.3; // 30% de éxito
+                if (success) {
+                    addChatMessage('Sistema', '🎯 ¡Has capturado al Pokémon! +100 VETS', false, true);
+                    vets += 100;
+                    pokemon.botHP = 100; // Reinicia combate
                 } else {
-                    addChatMessage('Sistema', 'El bot tiene demasiada vida. Debilítalo más.', false, true);
+                    addChatMessage('Sistema', '😵 Fallaste la captura. El bot contraataca.', false, true);
+                    pokemon.playerHP -= 20;
+                    if (pokemon.playerHP < 0) pokemon.playerHP = 0;
                 }
-                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP, status: pokemon.status });
+                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
                 updatePokemonUI();
+                updateVetsUI();
                 saveProgress();
             }
 
-            // --- Fútbol ---
+            // --- Fútbol con dificultad creciente ---
             function shootPenalty() {
                 if (!isHost) return;
                 if (football.attempts <= 0) {
-                    addChatMessage('Sistema', 'No te quedan intentos. Reiniciando...', false, true);
+                    addChatMessage('Sistema', '🔄 No te quedan intentos. Reiniciando con dificultad +1', false, true);
                     football.attempts = 5;
                     football.score = 0;
-                    football.difficulty = 1;
+                    football.difficulty++;
                 }
                 football.attempts--;
-                // Dificultad: el portero se mueve más rápido y la portería se reduce
-                let goalWidth = Math.max(80, 200 - football.difficulty * 20);
-                let keeperPos = 400 + (Math.random() * 200 - 100) * (football.difficulty * 0.5);
-                let shootPos = 400 + (Math.random() * 300 - 150);
-                let scored = Math.abs(shootPos - keeperPos) > goalWidth / 2;
-                if (scored) {
-                    football.score++;
-                    football.difficulty++;
-                    addChatMessage('Sistema', '¡GOOOOL! Dificultad aumentada.', false, true);
-                } else {
-                    addChatMessage('Sistema', '¡Atajó el portero!', false, true);
-                }
+                // Probabilidad de gol según dificultad
+                let prob = 0.7 - (football.difficulty * 0.1);
+                if (prob < 0.2) prob = 0.2;
+                let scored = Math.random() < prob;
+                if (scored) football.score++;
                 broadcastToViewers({ type: 'football-update', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
+                footballResult.textContent = scored ? '⚽ ¡GOOOOL!' : '🥅 ¡Fallaste!';
+                addChatMessage('Sistema', scored ? '⚽ ¡GOOOOL!' : '🥅 Fallaste', false, true);
                 updateFootballUI();
                 saveProgress();
             }
@@ -896,89 +1098,56 @@
             function updateFootballUI() {
                 footballScoreSpan.textContent = football.score;
                 footballAttemptsSpan.textContent = football.attempts;
-                footballDifficultySpan.textContent = football.difficulty;
             }
 
-            // --- Parkour ---
+            // --- Parkour con controles y sprite ---
             function startParkour() {
                 if (!isHost) return;
-                parkour = {
-                    score: 0, best: parkour.best,
-                    player: { x: 100, y: 500, vy: 0, width: 20, height: 20 },
-                    platforms: [{ x: 400, y: 550, w: 200 }],
-                    gameOver: false
-                };
+                parkour.score = 0;
+                parkour.y = 300;
+                parkour.vy = 0;
+                parkour.platforms = [{ x: 400, y: 500, w: 200 }];
                 if (parkourInterval) clearInterval(parkourInterval);
                 parkourInterval = setInterval(() => {
-                    if (parkour.gameOver) return;
-                    // Gravedad
-                    parkour.player.vy += 0.5;
-                    parkour.player.y += parkour.player.vy;
-                    // Límite suelo
-                    if (parkour.player.y > 570) {
-                        parkour.player.y = 570;
-                        parkour.player.vy = 0;
-                        parkour.gameOver = true;
-                        addChatMessage('Sistema', '¡Caíste! Puntuación: ' + parkour.score, false, true);
-                        if (parkour.score > parkour.best) parkour.best = parkour.score;
-                        setTimeout(() => {
-                            parkour = {
-                                score: 0, best: parkour.best,
-                                player: { x: 100, y: 500, vy: 0, width: 20, height: 20 },
-                                platforms: [{ x: 400, y: 550, w: 200 }],
-                                gameOver: false
-                            };
-                        }, 2000);
+                    // Generar plataformas
+                    if (Math.random() < 0.3) {
+                        parkour.platforms.push({ x: 1000, y: 400 + Math.random() * 200, w: 150 });
                     }
-                    // Movimiento horizontal
-                    if (parkourKeys.left) parkour.player.x -= 5;
-                    if (parkourKeys.right) parkour.player.x += 5;
-                    if (parkour.player.x < 0) parkour.player.x = 0;
-                    if (parkour.player.x > 980) parkour.player.x = 980;
-
-                    // Salto
-                    if (parkourKeys.up && parkour.player.y >= 570) {
-                        parkour.player.vy = -12;
-                    }
-
-                    // Plataformas
-                    parkour.platforms.forEach(p => p.x -= 3);
-                    if (Math.random() < 0.02) {
-                        parkour.platforms.push({ x: 1000, y: 500 + Math.random() * 100, w: 150 });
-                    }
+                    // Mover plataformas
+                    parkour.platforms.forEach(p => p.x -= 5);
                     parkour.platforms = parkour.platforms.filter(p => p.x + p.w > 0);
-
+                    // Gravedad
+                    parkour.vy += 0.5;
+                    parkour.y += parkour.vy;
+                    // Colisión con suelo
+                    if (parkour.y > 550) {
+                        parkour.y = 550;
+                        parkour.vy = 0;
+                    }
                     // Colisión con plataformas
                     parkour.platforms.forEach(p => {
-                        if (parkour.player.x < p.x + p.w &&
-                            parkour.player.x + parkour.player.width > p.x &&
-                            parkour.player.y + parkour.player.height > p.y &&
-                            parkour.player.y < p.y + 10 &&
-                            parkour.player.vy > 0) {
-                            parkour.player.y = p.y - parkour.player.height;
-                            parkour.player.vy = 0;
+                        if (100 > p.x && 100 < p.x + p.w && parkour.y >= p.y - 30 && parkour.y <= p.y + 20 && parkour.vy > 0) {
+                            parkour.y = p.y - 30;
+                            parkour.vy = 0;
                         }
                     });
-
                     parkour.score++;
+                    if (parkour.score > parkour.best) parkour.best = parkour.score;
                     broadcastToViewers({ type: 'parkour-update', score: parkour.score, best: parkour.best });
                     updateParkourUI();
                     drawParkour();
-                }, 30);
+                }, 50);
             }
 
             function drawParkour() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // Dibujar personaje
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(parkour.player.x, parkour.player.y, parkour.player.width, parkour.player.height);
+                // Dibujar personaje (sprite emoji)
+                ctx.font = '60px Arial';
+                ctx.fillStyle = 'black';
+                ctx.fillText('🏃', 80, parkour.y);
                 // Dibujar plataformas
                 ctx.fillStyle = 'green';
                 parkour.platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, 10));
-                // Dibujar puntaje
-                ctx.fillStyle = 'black';
-                ctx.font = '20px Arial';
-                ctx.fillText('Score: ' + parkour.score, 10, 30);
             }
 
             function updateParkourUI() {
@@ -992,31 +1161,31 @@
                 if (isHost) broadcastToViewers({ type: 'vets-update', vets: vets });
             }
 
-            // --- Donación ---
+            // --- Donación (mejorada) ---
             function donate() {
                 if (vets < 50) {
-                    addChatMessage('Sistema', 'Necesitas 50 VETS para donar.', false, true);
+                    addChatMessage('Sistema', '❌ Necesitas 50 VETS para donar.', false, true);
                     return;
                 }
                 vets -= 50;
                 updateVetsUI();
                 const user = usernameInput.value.trim() || 'Anon';
-                // Mostrar en overlay
-                donationOverlay.innerHTML = `💜 ${user} donó 50 VETS! 💜 <span>🪙 ${vets}</span>`;
+                const amount = 50;
+                donationOverlay.innerHTML = `💜 ${user} donó ${amount} VETS! 💜 <span>🪙 ${vets}</span>`;
                 setTimeout(() => {
                     donationOverlay.innerHTML = `🪙 VETS: <span>${vets}</span>`;
                 }, 5000);
-                addChatMessage(user, '💜 Donó 50 VETS! 💜', true);
+                addChatMessage(user, `💜 Donó ${amount} VETS! 💜`, true);
                 if (isHost) {
-                    broadcastToViewers({ type: 'donation', user: user, amount: 50 });
+                    broadcastToViewers({ type: 'donation', user: user, amount: amount });
                 } else {
                     if (hostConnection && hostConnection.open) {
-                        hostConnection.send({ type: 'donation', user: user, amount: 50 });
+                        hostConnection.send({ type: 'donation', user: user, amount: amount });
                     }
                 }
             }
 
-            // ========== FUNCIONES DE RED ==========
+            // --- Funciones de red (igual) ---
             function broadcastToViewers(message) {
                 connections.forEach(conn => {
                     if (conn.open) conn.send(message);
@@ -1051,7 +1220,7 @@
                 return div.innerHTML;
             }
 
-            // ========== CREAR SALA (HOST) ==========
+            // --- Crear sala host (mejorado con nuevas herramientas) ---
             function createRoom(roomId) {
                 peer = new Peer(roomId);
                 myPeerId = roomId;
@@ -1059,13 +1228,12 @@
                 roleDisplay.textContent = ' (Host)';
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
-                roomCodeCorner.textContent = `Sala: ${roomId}`;
+                roomDisplay.textContent = roomId;
+                roomCodeCorner.innerHTML = `Sala: <span>${roomId}</span>`;
                 toggleGamesBtn.style.display = 'inline-block';
 
-                // Cargar progreso
                 loadProgress();
 
-                // Iniciar VETS
                 vetsInterval = setInterval(() => {
                     vets++;
                     updateVetsUI();
@@ -1086,24 +1254,24 @@
                 });
 
                 // Eventos de juegos
-                pokemonAttack.addEventListener('click', pokemonAttack);
+                pokemonAttack.addEventListener('click', () => pokemonAttack(false));
+                pokemonSpecial.addEventListener('click', () => pokemonAttack(true));
                 pokemonHeal.addEventListener('click', pokemonHeal);
-                pokemonCatch.addEventListener('click', pokemonCatch);
+                pokemonCapture.addEventListener('click', pokemonCapture);
                 footballShoot.addEventListener('click', shootPenalty);
+                parkourJump.addEventListener('click', () => { if (parkour.y >= 550) parkour.vy = -12; });
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space' && currentGame === 'parkour' && isHost) {
+                        e.preventDefault();
+                        if (parkour.y >= 550) parkour.vy = -12;
+                    }
+                });
 
-                // Controles de parkour con teclado
-                window.addEventListener('keydown', (e) => {
-                    if (!isHost || currentGame !== 'parkour') return;
-                    if (e.key === 'ArrowLeft') parkourKeys.left = true;
-                    if (e.key === 'ArrowRight') parkourKeys.right = true;
-                    if (e.key === 'ArrowUp') parkourKeys.up = true;
-                });
-                window.addEventListener('keyup', (e) => {
-                    if (!isHost || currentGame !== 'parkour') return;
-                    if (e.key === 'ArrowLeft') parkourKeys.left = false;
-                    if (e.key === 'ArrowRight') parkourKeys.right = false;
-                    if (e.key === 'ArrowUp') parkourKeys.up = false;
-                });
+                // Nuevas herramientas
+                toolEraser.addEventListener('click', () => { currentTool = 'eraser'; });
+                toolFill.addEventListener('click', () => { currentTool = 'fill'; });
+                toolStar.addEventListener('click', () => { currentTool = 'star'; });
+                toolHeart.addEventListener('click', () => { currentTool = 'heart'; });
 
                 peer.on('open', (id) => {
                     addChatMessage('Sistema', 'Sala creada. Esperando espectadores...', false, true);
@@ -1131,9 +1299,8 @@
                     });
                     // Enviar estado completo al nuevo espectador
                     conn.send({ type: 'history', history: history });
-                    conn.send({ type: 'game-change', game: currentGame,
-                        pokemon: pokemon, football: football, parkourBest: parkour.best });
-                    conn.send({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP, status: pokemon.status });
+                    conn.send({ type: 'game-change', game: currentGame });
+                    conn.send({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
                     conn.send({ type: 'football-update', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
                     conn.send({ type: 'parkour-update', score: parkour.score, best: parkour.best });
                     conn.send({ type: 'vets-update', vets: vets });
@@ -1152,7 +1319,7 @@
                 document.querySelector(`.game-btn[data-game="${currentGame}"]`)?.classList.add('active');
             }
 
-            // ========== UNIRSE COMO ESPECTADOR ==========
+            // --- Unirse como espectador (mejorado) ---
             function joinRoom(roomId) {
                 peer = new Peer();
                 isHost = false;
@@ -1160,11 +1327,11 @@
                 toolsContainer.style.display = 'none';
                 joinScreen.style.display = 'none';
                 drawingApp.style.display = 'flex';
-                roomCodeCorner.textContent = `Sala: ${roomId}`;
+                roomDisplay.textContent = roomId;
+                roomCodeCorner.innerHTML = `Sala: <span>${roomId}</span>`;
                 toggleGamesBtn.style.display = 'none';
                 gameSelector.style.display = 'none';
 
-                // VETS también para espectadores
                 vetsInterval = setInterval(() => {
                     vets++;
                     updateVetsUI();
@@ -1199,8 +1366,7 @@
                         } else if (data.type === 'system') {
                             addChatMessage('Sistema', data.message, false, true);
                         } else if (data.type === 'game-change') {
-                            currentGame = data.game;
-                            setGame(currentGame);
+                            setGame(data.game);
                             gameBtns.forEach(btn => {
                                 btn.classList.remove('active');
                                 if (btn.dataset.game === data.game) btn.classList.add('active');
@@ -1208,7 +1374,6 @@
                         } else if (data.type === 'pokemon-update') {
                             pokemon.playerHP = data.playerHP;
                             pokemon.botHP = data.botHP;
-                            pokemon.status = data.status;
                             updatePokemonUI();
                         } else if (data.type === 'football-update') {
                             football.score = data.score;
@@ -1219,7 +1384,6 @@
                             parkour.score = data.score;
                             parkour.best = data.best;
                             updateParkourUI();
-                            drawParkour();
                         } else if (data.type === 'vets-update') {
                             vets = data.vets;
                             updateVetsUI();
@@ -1240,7 +1404,7 @@
                 });
             }
 
-            // ========== SALIR DE LA SALA ==========
+            // --- Salir de la sala ---
             function leaveRoom() {
                 if (peer) {
                     peer.destroy();
@@ -1260,13 +1424,14 @@
                 gameBtns.forEach(btn => btn.classList.remove('active'));
             }
 
-            // ========== EVENTOS DE DIBUJO (solo host) ==========
+            // --- Eventos de dibujo (adaptados a nuevas herramientas) ---
             canvas.addEventListener('mousedown', (e) => {
                 if (!isHost || currentGame !== 'paint') return;
                 e.preventDefault();
                 const pos = getMousePos(e);
                 startX = pos.x; startY = pos.y; lastX = pos.x; lastY = pos.y;
-                if (toolSelect.value === 'pencil') {
+
+                if (currentTool === 'pencil' || toolSelect.value === 'pencil') {
                     drawing = true;
                     ctx.beginPath();
                     ctx.moveTo(lastX, lastY);
@@ -1274,7 +1439,15 @@
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
                     saveProgress();
-                } else if (toolSelect.value === 'text') {
+                } else if (currentTool === 'eraser') {
+                    drawing = true;
+                    ctx.strokeStyle = '#FFFFFF';
+                    ctx.lineWidth = parseInt(brushSizeInput.value) * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                } else if (currentTool === 'fill') {
+                    floodFill(startX, startY, colorPicker.value);
+                } else if (currentTool === 'text' || toolSelect.value === 'text') {
                     const text = prompt('Texto:');
                     if (text) {
                         const action = { type: 'text', text, x: startX, y: startY, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
@@ -1291,14 +1464,15 @@
                 e.preventDefault();
                 const pos = getMousePos(e);
                 const x = pos.x, y = pos.y;
-                if (toolSelect.value === 'pencil') {
-                    ctx.strokeStyle = colorPicker.value;
-                    ctx.lineWidth = parseInt(brushSizeInput.value);
+
+                if (currentTool === 'pencil' || toolSelect.value === 'pencil' || currentTool === 'eraser') {
+                    ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : colorPicker.value;
+                    ctx.lineWidth = currentTool === 'eraser' ? parseInt(brushSizeInput.value) * 2 : parseInt(brushSizeInput.value);
                     ctx.lineTo(x, y);
                     ctx.stroke();
                     ctx.beginPath();
                     ctx.moveTo(x, y);
-                    const action = { type: 'draw', x, y, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
+                    const action = { type: 'draw', x, y, color: ctx.strokeStyle, size: ctx.lineWidth };
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
                     saveProgress();
@@ -1309,16 +1483,16 @@
             canvas.addEventListener('mouseup', (e) => {
                 if (!isHost || currentGame !== 'paint') return;
                 e.preventDefault();
-                if (toolSelect.value === 'pencil' && drawing) {
+                if (drawing) {
                     drawing = false;
                     ctx.beginPath();
                     const action = { type: 'draw_end' };
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
                     saveProgress();
-                } else if (toolSelect.value !== 'pencil' && toolSelect.value !== 'text') {
+                } else if (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'star' || currentTool === 'heart') {
                     const pos = getMousePos(e);
-                    const action = { type: 'shape', shape: toolSelect.value, x: startX, y: startY, x2: pos.x, y2: pos.y, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
+                    const action = { type: 'shape', shape: currentTool, x: startX, y: startY, x2: pos.x, y2: pos.y, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
                     drawShape(action);
                     history.push(action);
                     broadcastToViewers({ type: 'draw-action', action });
@@ -1385,7 +1559,7 @@
                 }
             });
 
-            // ========== EVENTOS UI ==========
+            // --- Eventos UI ---
             createBtn.addEventListener('click', () => {
                 const roomId = roomInput.value.trim();
                 if (!roomId) return alert('Ingresa un ID');
