@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Twitch P2P - Juegos Mejorados</title>
+    <title>Twitch P2P - Juegos funcionales</title>
     <style>
-        /* ===== ESTILOS GENERALES MEJORADOS ===== */
         * {
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 0;
         }
         body {
-            background: linear-gradient(145deg, #0e0e10 0%, #1a1a1f 100%);
+            background: #0e0e10;
             color: #efeff1;
             display: flex;
             justify-content: center;
@@ -23,185 +22,144 @@
         }
         /* Pantalla de inicio */
         .join-screen {
-            background: rgba(31, 31, 35, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 40px 20px;
-            border-radius: 30px;
+            background: #1f1f23;
+            padding: 30px 20px;
+            border-radius: 20px;
             text-align: center;
-            max-width: 500px;
+            max-width: 400px;
             width: 100%;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 0 2px #9147ff33;
-            border: 1px solid #9147ff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
         .join-screen h1 {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             color: #bf94ff;
             font-size: 28px;
-            text-shadow: 0 0 10px #9147ff;
-        }
-        .join-screen .form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
         }
         .join-screen input {
             background: #18181b;
             border: 2px solid #3a3a44;
             color: white;
-            padding: 15px 20px;
+            padding: 15px;
             border-radius: 40px;
-            font-size: 16px;
+            font-size: 18px;
+            width: 100%;
+            margin-bottom: 15px;
             outline: none;
-            transition: all 0.3s;
-        }
-        .join-screen input:focus {
-            border-color: #9147ff;
-            box-shadow: 0 0 15px #9147ff;
         }
         .join-screen button {
-            background: linear-gradient(145deg, #9147ff, #772ce8);
+            background: #9147ff;
             border: none;
             color: white;
             font-weight: bold;
-            padding: 15px 20px;
+            padding: 15px;
             border-radius: 40px;
+            font-size: 18px;
+            width: 100%;
+            margin: 5px 0;
             cursor: pointer;
-            font-size: 16px;
-            margin: 5px;
-            width: calc(100% - 10px);
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 5px 0 #4a1e8c;
+            transition: 0.2s;
         }
         .join-screen button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 0 #4a1e8c;
+            background: #772ce8;
         }
         .join-screen .info {
             color: #adadb8;
-            font-size: 14px;
             margin-top: 20px;
+            font-size: 14px;
         }
-        /* Contenedor principal */
+        /* Sala */
         .container {
             display: flex;
             width: 100%;
             max-width: 1600px;
             height: 90vh;
-            background: rgba(31, 31, 35, 0.95);
-            backdrop-filter: blur(5px);
-            border-radius: 30px;
+            background: #1f1f23;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 0 2px #9147ff33;
             position: relative;
             flex-direction: row;
-            border: 1px solid #9147ff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                height: auto;
-                min-height: 90vh;
-            }
+        @media (max-width: 800px) {
+            .container { flex-direction: column; height: auto; }
         }
-        /* Esquinas */
         .room-code-corner {
             position: absolute;
             top: 15px;
             left: 15px;
-            background: linear-gradient(145deg, #2a2a30, #1a1a20);
+            background: #000000b3;
             color: #bf94ff;
-            padding: 8px 20px;
+            padding: 6px 18px;
             border-radius: 40px;
             font-size: 16px;
             font-weight: bold;
             z-index: 20;
             border: 1px solid #9147ff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(4px);
         }
         .donation-overlay {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: linear-gradient(145deg, #2a2a30, #1a1a20);
+            background: #000000b3;
             color: #ff79c6;
-            padding: 8px 20px;
+            padding: 6px 18px;
             border-radius: 40px;
             font-size: 16px;
             font-weight: bold;
             z-index: 20;
             border: 1px solid #ff79c6;
+            backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(255, 121, 198, 0.3);
-            backdrop-filter: blur(5px);
+            gap: 8px;
         }
-        .donation-overlay span {
-            color: gold;
-            font-size: 18px;
-        }
-        /* Área de stream */
+        .donation-overlay span { color: gold; }
+        /* Stream area */
         .stream-area {
             flex: 3;
             display: flex;
             flex-direction: column;
-            background: #18181be0;
+            background: #18181b;
             padding: 20px;
             min-width: 0;
-            backdrop-filter: blur(2px);
         }
         .room-bar {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            background: linear-gradient(145deg, #2a2a30, #1f1f27);
-            padding: 15px 20px;
-            border-radius: 50px;
+            gap: 10px;
+            margin-bottom: 15px;
+            background: #26262c;
+            padding: 12px 20px;
+            border-radius: 40px;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            box-shadow: 0 5px 0 #0a0a0e;
-            border: 1px solid #9147ff33;
         }
         .role {
             color: #bf94ff;
             font-weight: bold;
-            background: #9147ff22;
-            padding: 5px 15px;
-            border-radius: 30px;
         }
         .game-selector-toggle {
-            background: linear-gradient(145deg, #9147ff, #772ce8);
+            background: #9147ff;
             border: none;
             color: white;
-            padding: 10px 25px;
+            padding: 8px 20px;
             border-radius: 40px;
             cursor: pointer;
             font-weight: bold;
             font-size: 16px;
-            box-shadow: 0 4px 0 #4a1e8c;
-            transition: 0.2s;
-        }
-        .game-selector-toggle:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 #4a1e8c;
         }
         .game-selector {
             display: none;
-            gap: 10px;
+            gap: 8px;
             background: #2a2a30;
             padding: 15px;
-            border-radius: 50px;
+            border-radius: 40px;
             margin-bottom: 15px;
             flex-wrap: wrap;
             justify-content: center;
-            border: 1px solid #9147ff;
-            box-shadow: inset 0 2px 5px #00000055;
         }
-        .game-selector.visible {
-            display: flex;
-        }
+        .game-selector.visible { display: flex; }
         .game-btn {
             background: #3a3a44;
             border: none;
@@ -210,277 +168,158 @@
             border-radius: 40px;
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.2s;
+            transition: 0.2s;
             flex: 1 0 auto;
             min-width: 100px;
-            font-weight: bold;
-            box-shadow: 0 3px 0 #1a1a20;
         }
-        .game-btn:hover {
-            background: #9147ff;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 0 #4a1e8c;
-        }
-        .game-btn.active {
-            background: #9147ff;
-            box-shadow: 0 0 15px #9147ff;
-            border: 1px solid white;
-        }
+        .game-btn.active { background: #9147ff; font-weight: bold; }
+        /* Canvas */
         .canvas-wrapper {
             background: #0e0e10;
-            border-radius: 30px;
+            border-radius: 20px;
             padding: 10px;
-            box-shadow: inset 0 0 20px #000, 0 10px 0 #0a0a0e;
+            box-shadow: inset 0 0 10px #000;
             flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
             position: relative;
-            min-height: 250px;
-            border: 1px solid #9147ff33;
+            min-height: 300px;
         }
         canvas {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.7);
+            border-radius: 12px;
             width: 100%;
             height: auto;
             max-height: 100%;
             object-fit: contain;
             touch-action: none;
-            cursor: crosshair;
         }
         .game-overlay {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: linear-gradient(145deg, #2a2a30, #1a1a20);
+            background: #000000b3;
             color: white;
-            padding: 10px 20px;
+            padding: 6px 18px;
             border-radius: 40px;
             font-size: 18px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            pointer-events: none;
-            z-index: 5;
-            border: 1px solid #9147ff;
-            box-shadow: 0 4px 10px black;
-            backdrop-filter: blur(5px);
+            gap: 8px;
+            z-index: 10;
+            backdrop-filter: blur(4px);
         }
-        /* Herramientas de dibujo mejoradas */
+        /* Herramientas */
         .tools {
-            margin-top: 20px;
+            margin-top: 15px;
             display: flex;
-            gap: 15px;
+            gap: 12px;
             flex-wrap: wrap;
             align-items: center;
-            background: linear-gradient(145deg, #2a2a30, #1f1f27);
-            padding: 15px 20px;
-            border-radius: 60px;
-            box-shadow: 0 5px 0 #0a0a0e;
-            border: 1px solid #9147ff33;
+            background: #26262c;
+            padding: 15px;
+            border-radius: 40px;
         }
-        .tools label {
-            color: #adadb8;
-            font-size: 14px;
-            font-weight: bold;
-        }
+        .tools label { color: #adadb8; }
         .tools input[type="color"] {
-            width: 60px;
-            height: 60px;
-            border: 3px solid #9147ff;
-            border-radius: 30px;
-            background: transparent;
-            cursor: pointer;
-            padding: 2px;
-        }
-        .tools input[type="range"] {
-            width: 150px;
-            height: 8px;
-            background: #3a3a44;
-            border-radius: 10px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        .tools input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #9147ff;
-            border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid white;
-        }
-        .tools select {
-            background: #18181b;
-            color: white;
-            border: 2px solid #9147ff;
-            border-radius: 40px;
-            padding: 12px 20px;
-            outline: none;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .tools button {
-            background: linear-gradient(145deg, #9147ff, #772ce8);
-            border: none;
-            color: white;
-            font-weight: bold;
-            padding: 12px 25px;
-            border-radius: 40px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 16px;
-            box-shadow: 0 4px 0 #4a1e8c;
-        }
-        .tools button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 #4a1e8c;
-        }
-        /* Nuevas herramientas (añadidas sin quitar las anteriores) */
-        .extra-tools {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .tool-icon {
-            background: #3a3a44;
-            border: none;
-            color: white;
             width: 50px;
             height: 50px;
             border-radius: 25px;
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: transparent;
             cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 3px 0 #1a1a20;
         }
-        .tool-icon:hover {
+        .tools input[type="range"] { width: 150px; }
+        .tools select, .tools button {
             background: #9147ff;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 0 #4a1e8c;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 15px;
         }
-        .tool-icon.active {
+        /* Controles de juegos */
+        .game-controls {
+            margin-top: 15px;
+            background: #26262c;
+            padding: 15px;
+            border-radius: 40px;
+            display: none;
+        }
+        .game-controls.visible { display: block; }
+        .game-controls button {
             background: #9147ff;
-            box-shadow: 0 0 15px #9147ff;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 40px;
+            margin: 5px;
+            cursor: pointer;
         }
-        /* Panel de chat */
+        .game-controls p { margin-top: 10px; color: #bf94ff; }
+        /* Chat */
         .chat-panel {
             flex: 1;
-            background: #1f1f23e0;
+            background: #1f1f23;
             display: flex;
             flex-direction: column;
-            border-left: 2px solid #9147ff33;
-            min-width: 280px;
-            backdrop-filter: blur(5px);
-        }
-        @media (max-width: 768px) {
-            .chat-panel {
-                border-left: none;
-                border-top: 2px solid #9147ff33;
-            }
+            border-left: 2px solid #303035;
+            min-width: 260px;
         }
         .viewers {
-            padding: 20px;
-            border-bottom: 2px solid #9147ff33;
-            background: linear-gradient(145deg, #2a2a30, #1f1f27);
+            padding: 15px;
+            border-bottom: 2px solid #303035;
+            background: #26262c;
         }
-        .viewers h3 {
-            margin: 0 0 15px 0;
-            font-size: 18px;
-            color: #bf94ff;
-        }
-        .viewers ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            max-height: 120px;
-            overflow-y: auto;
-            background: #18181b;
-            border-radius: 20px;
-            padding: 10px;
-        }
-        .viewers li {
-            padding: 6px 10px;
-            font-size: 14px;
-            color: #efeff1;
-            border-bottom: 1px solid #3a3a44;
-        }
+        .viewers h3 { color: #bf94ff; margin-bottom: 10px; }
+        .viewers ul { list-style: none; max-height: 100px; overflow-y: auto; }
+        .viewers li { padding: 4px 0; }
         .messages {
             flex: 1;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 350px;
-            background: #18181b88;
+            gap: 8px;
+            max-height: 300px;
         }
         .message {
-            background: #2a2a30;
-            padding: 10px 15px;
-            border-radius: 25px;
+            background: #26262c;
+            padding: 8px 14px;
+            border-radius: 18px;
             max-width: 90%;
-            border: 1px solid #9147ff33;
-            box-shadow: 0 2px 5px black;
         }
-        .message .user {
-            font-weight: bold;
-            color: #bf94ff;
-            margin-right: 10px;
-        }
+        .message .user { font-weight: bold; color: #bf94ff; margin-right: 8px; }
         .chat-input-area {
-            padding: 20px;
-            border-top: 2px solid #9147ff33;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            background: linear-gradient(145deg, #2a2a30, #1f1f27);
+            padding: 15px;
+            border-top: 2px solid #303035;
+            background: #26262c;
         }
         .chat-row {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
+            margin-bottom: 10px;
         }
         .chat-row input {
             flex: 1;
             background: #18181b;
-            border: 2px solid #3a3a44;
+            border: 1px solid #3a3a44;
             color: white;
-            padding: 14px 20px;
+            padding: 12px 18px;
             border-radius: 40px;
             outline: none;
-            font-size: 16px;
-            transition: 0.3s;
-        }
-        .chat-row input:focus {
-            border-color: #9147ff;
         }
         .chat-row button {
-            background: linear-gradient(145deg, #9147ff, #772ce8);
+            background: #9147ff;
             border: none;
             color: white;
-            font-weight: bold;
-            padding: 14px 25px;
+            padding: 12px 20px;
             border-radius: 40px;
             cursor: pointer;
-            font-size: 16px;
-            box-shadow: 0 4px 0 #4a1e8c;
-            transition: 0.2s;
         }
-        .chat-row button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 0 #4a1e8c;
-        }
-        .donation-btn {
-            background: linear-gradient(145deg, #ff4444, #cc0000) !important;
-            box-shadow: 0 4px 0 #880000 !important;
-        }
+        .donation-btn { background: #ff4444; }
         .emoji-panel {
             display: flex;
             gap: 8px;
@@ -491,101 +330,35 @@
             background: #3a3a44;
             border: none;
             color: white;
-            font-size: 26px;
-            padding: 10px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: 0.2s;
-            min-width: 65px;
-            box-shadow: 0 3px 0 #1a1a20;
-        }
-        .emoji-btn:hover {
-            background: #9147ff;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 0 #4a1e8c;
-        }
-        /* Controles de juegos */
-        .game-controls {
-            margin-top: 15px;
-            background: linear-gradient(145deg, #2a2a30, #1f1f27);
-            padding: 15px;
+            font-size: 24px;
+            padding: 8px 15px;
             border-radius: 30px;
-            display: none;
-            border: 1px solid #9147ff;
-            box-shadow: inset 0 2px 5px #00000055;
-        }
-        .game-controls.visible {
-            display: block;
-        }
-        .game-controls h4 {
-            color: #bf94ff;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-        .game-controls button {
-            background: linear-gradient(145deg, #9147ff, #772ce8);
-            border: none;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 40px;
-            margin: 5px;
             cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 3px 0 #4a1e8c;
-            transition: 0.2s;
-        }
-        .game-controls button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 0 #4a1e8c;
-        }
-        .game-controls p {
-            margin: 10px 0;
-            font-size: 16px;
-            background: #18181b;
-            padding: 10px;
-            border-radius: 20px;
-        }
-        /* Sprites (emojis) */
-        .sprite {
-            font-size: 40px;
-            display: inline-block;
-            margin: 5px;
-            filter: drop-shadow(0 4px 2px black);
-        }
-        .pokemon-sprite {
-            font-size: 60px;
-            text-align: center;
         }
     </style>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 </head>
 <body>
     <div id="join-screen" class="join-screen">
-        <h1>🎮 Twitch P2P - Juegos Mejorados</h1>
-        <div class="form">
-            <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
-            <div>
-                <button id="create-room-btn">🎨 Crear sala (host)</button>
-                <button id="join-room-btn">👁️ Unirse como espectador</button>
-            </div>
-            <p class="info">El host elige el juego. Ganas 1 VET cada 3s. Dona 50 VETS para aparecer en pantalla.</p>
-        </div>
+        <h1>🎮 Twitch P2P</h1>
+        <input type="text" id="room-input" placeholder="Código de sala" value="sala1">
+        <button id="create-room-btn">🎨 Crear sala (host)</button>
+        <button id="join-room-btn">👀 Unirse como espectador</button>
+        <div class="info">Ganas 1 VET cada 3s. Dona 50 VETS para aparecer en pantalla.</div>
     </div>
 
     <div id="drawing-app" class="container" style="display: none;">
-        <!-- Esquinas -->
-        <div id="room-code-corner" class="room-code-corner">Sala: <span id="room-display"></span></div>
-        <div id="donation-overlay" class="donation-overlay">🪙 VETS: <span id="vets-count">0</span></div>
+        <div id="room-code-corner" class="room-code-corner">Sala: </div>
+        <div id="donation-overlay" class="donation-overlay">🪙 <span id="vets-count">0</span> VETS</div>
 
         <div class="stream-area">
             <div class="room-bar">
-                <span>👋 Bienvenido</span>
+                <span>Bienvenido</span>
                 <span id="role-display" class="role"></span>
-                <button id="leave-room-btn" style="background: #ff4444; box-shadow:0 4px 0 #880000;">🚪 Salir</button>
+                <button id="leave-room-btn" style="background:#ff4444;">Salir</button>
             </div>
 
-            <!-- Botón selector de juegos (solo host) -->
-            <button id="toggle-games-btn" class="game-selector-toggle" style="display: none;">🎮 Cambiar juego</button>
+            <button id="toggle-games-btn" class="game-selector-toggle" style="display:none;">🎮 Cambiar juego</button>
             <div id="game-selector" class="game-selector">
                 <button class="game-btn" data-game="paint">🎨 Pintar</button>
                 <button class="game-btn" data-game="pokemon">🐱 Pokémon</button>
@@ -598,8 +371,7 @@
                 <div id="game-overlay" class="game-overlay">🎨 Modo Pintar</div>
             </div>
 
-            <!-- Herramientas de dibujo mejoradas -->
-            <div class="tools" id="tools-container" style="display: none;">
+            <div class="tools" id="tools-container" style="display:none;">
                 <select id="toolSelect">
                     <option value="pencil">✏️ Lápiz</option>
                     <option value="rectangle">🔲 Rectángulo</option>
@@ -607,78 +379,47 @@
                     <option value="line">📏 Línea</option>
                     <option value="text">🔤 Texto</option>
                 </select>
-                <label>🎨 Color:</label>
+                <label>Color:</label>
                 <input type="color" id="colorPicker" value="#000000">
-                <label>📏 Grosor:</label>
+                <label>Grosor:</label>
                 <input type="range" id="brushSize" min="1" max="30" value="5">
                 <button id="clearCanvas">🗑️ Limpiar</button>
-                <!-- Nuevas herramientas (sin quitar las anteriores) -->
-                <div class="extra-tools">
-                    <button class="tool-icon" id="toolEraser" title="Goma">🧽</button>
-                    <button class="tool-icon" id="toolFill" title="Relleno">🪣</button>
-                    <button class="tool-icon" id="toolStar" title="Estrella">⭐</button>
-                    <button class="tool-icon" id="toolHeart" title="Corazón">❤️</button>
-                </div>
             </div>
 
-            <!-- Controles de juegos con sprites -->
             <div id="pokemon-controls" class="game-controls">
-                <h4>🐱 Pokémon - Combate</h4>
-                <div style="display: flex; justify-content: space-around; align-items: center;">
-                    <div class="pokemon-sprite">🐉</div>
-                    <div class="pokemon-sprite">🐲</div>
-                </div>
-                <div style="display: flex; justify-content: space-around;">
-                    <span>HP: <span id="pokemon-hp">100</span></span>
-                    <span>Bot: <span id="bot-hp">100</span></span>
-                </div>
-                <button id="pokemon-attack">⚔️ Ataque (15)</button>
-                <button id="pokemon-special">💥 Especial (30, 10 VETS)</button>
-                <button id="pokemon-heal">💚 Curar (20 HP, 15 VETS)</button>
-                <button id="pokemon-capture">🎯 Capturar (50 VETS)</button>
+                <h4>⚔️ Pokémon</h4>
+                <button id="pokemon-attack">💥 Atacar (gratis)</button>
+                <button id="pokemon-heal">💚 Curar (10 VETS)</button>
+                <button id="pokemon-catch">🎯 Capturar (20 VETS)</button>
+                <p>🔥 Tu HP: <span id="pokemon-hp">100</span> | 🐾 Bot HP: <span id="bot-hp">100</span></p>
             </div>
-
             <div id="football-controls" class="game-controls">
-                <h4>⚽ Fútbol - Penaltis</h4>
-                <div style="display: flex; justify-content: center; gap: 20px;">
-                    <span class="sprite">🥅</span>
-                    <span class="sprite">⚽</span>
-                </div>
-                <p>Goles: <span id="football-score">0</span> | Intentos: <span id="football-attempts">5</span></p>
-                <button id="football-shoot">⚽ Lanzar</button>
-                <p id="football-result"></p>
+                <h4>⚽ Penaltis</h4>
+                <button id="football-shoot">⚡ Lanzar</button>
+                <p>🎯 Goles: <span id="football-score">0</span> | 🧤 Intentos: <span id="football-attempts">5</span></p>
+                <p>📈 Dificultad: <span id="football-diff">1</span></p>
             </div>
-
             <div id="parkour-controls" class="game-controls">
-                <h4>🏃 Parkour Infinito</h4>
-                <div style="display: flex; align-items: center; gap: 20px;">
-                    <span class="sprite" style="font-size: 50px;" id="parkour-sprite">🏃</span>
-                    <div>
-                        <p>Puntuación: <span id="parkour-score">0</span></p>
-                        <p>Mejor: <span id="parkour-best">0</span></p>
-                    </div>
-                </div>
-                <button id="parkour-jump">⬆️ Saltar (espacio)</button>
-                <p>Usa ESPACIO para saltar</p>
+                <h4>🏃 Parkour</h4>
+                <button id="parkour-jump">🦘 Saltar (espacio)</button>
+                <p>📊 Puntos: <span id="parkour-score">0</span> | 🏆 Récord: <span id="parkour-best">0</span></p>
             </div>
         </div>
 
         <div class="chat-panel">
             <div class="viewers">
-                <h3>👥 Espectadores</h3>
-                <ul id="viewerList">
-                    <li>Cargando...</li>
-                </ul>
+                <h3>👁️ Espectadores</h3>
+                <ul id="viewerList"><li>Cargando...</li></ul>
             </div>
             <div class="messages" id="chatMessages">
-                <div class="message"><span class="user">🔧 Sistema:</span> <span class="text">Bienvenido. Conéctate a una sala.</span></div>
+                <div class="message"><span class="user">Sistema:</span> Conéctate a una sala.</div>
             </div>
             <div class="chat-input-area">
                 <div class="chat-row">
-                    <input type="text" id="usernameInput" placeholder="Tu nombre" value="Anon">
+                    <input type="text" id="usernameInput" placeholder="Nombre" value="Anon">
                     <input type="text" id="messageInput" placeholder="Mensaje...">
-                    <button id="sendMessage">📤 Enviar</button>
-                    <button id="donationBtn" class="donation-btn">💜 Donar (50 VETS)</button>
+                    <button id="sendMessage">Enviar</button>
+                    <button id="donationBtn" class="donation-btn">💜 Donar 50</button>
                 </div>
                 <div class="emoji-panel">
                     <button class="emoji-btn" data-emoji="😀">😀</button>
@@ -696,584 +437,401 @@
 
     <script>
         (function() {
-            // --- Elementos UI (se mantienen todos los originales y se añaden los nuevos) ---
-            const joinScreen = document.getElementById('join-screen');
-            const drawingApp = document.getElementById('drawing-app');
-            const roomInput = document.getElementById('room-input');
-            const createBtn = document.getElementById('create-room-btn');
-            const joinBtn = document.getElementById('join-room-btn');
-            const leaveBtn = document.getElementById('leave-room-btn');
-            const roleDisplay = document.getElementById('role-display');
-            const toolsContainer = document.getElementById('tools-container');
-            const canvas = document.getElementById('drawCanvas');
-            const ctx = canvas.getContext('2d');
-            const colorPicker = document.getElementById('colorPicker');
-            const brushSizeInput = document.getElementById('brushSize');
-            const toolSelect = document.getElementById('toolSelect');
-            const clearBtn = document.getElementById('clearCanvas');
-            const viewerList = document.getElementById('viewerList');
-            const chatMessages = document.getElementById('chatMessages');
-            const usernameInput = document.getElementById('usernameInput');
-            const messageInput = document.getElementById('messageInput');
-            const sendBtn = document.getElementById('sendMessage');
-            const donationBtn = document.getElementById('donationBtn');
-            const roomCodeCorner = document.getElementById('room-code-corner');
-            const roomDisplay = document.getElementById('room-display');
-            const gameOverlay = document.getElementById('game-overlay');
-            const toggleGamesBtn = document.getElementById('toggle-games-btn');
-            const gameSelector = document.getElementById('game-selector');
-            const gameBtns = document.querySelectorAll('.game-btn');
-            const vetsSpan = document.getElementById('vets-count');
-            const donationOverlay = document.getElementById('donation-overlay');
+            // --- Elementos UI ---
+            const ui = {
+                joinScreen: document.getElementById('join-screen'),
+                drawingApp: document.getElementById('drawing-app'),
+                roomInput: document.getElementById('room-input'),
+                createBtn: document.getElementById('create-room-btn'),
+                joinBtn: document.getElementById('join-room-btn'),
+                leaveBtn: document.getElementById('leave-room-btn'),
+                roleDisplay: document.getElementById('role-display'),
+                toolsContainer: document.getElementById('tools-container'),
+                canvas: document.getElementById('drawCanvas'),
+                ctx: document.getElementById('drawCanvas').getContext('2d'),
+                colorPicker: document.getElementById('colorPicker'),
+                brushSize: document.getElementById('brushSize'),
+                toolSelect: document.getElementById('toolSelect'),
+                clearBtn: document.getElementById('clearCanvas'),
+                viewerList: document.getElementById('viewerList'),
+                chatMessages: document.getElementById('chatMessages'),
+                username: document.getElementById('usernameInput'),
+                messageInput: document.getElementById('messageInput'),
+                sendBtn: document.getElementById('sendMessage'),
+                donationBtn: document.getElementById('donationBtn'),
+                roomCode: document.getElementById('room-code-corner'),
+                gameOverlay: document.getElementById('game-overlay'),
+                toggleGames: document.getElementById('toggle-games-btn'),
+                gameSelector: document.getElementById('game-selector'),
+                gameBtns: document.querySelectorAll('.game-btn'),
+                vetsSpan: document.getElementById('vets-count'),
+                donationOverlay: document.getElementById('donation-overlay'),
+                pokemonControls: document.getElementById('pokemon-controls'),
+                footballControls: document.getElementById('football-controls'),
+                parkourControls: document.getElementById('parkour-controls'),
+                pokemonAttack: document.getElementById('pokemon-attack'),
+                pokemonHeal: document.getElementById('pokemon-heal'),
+                pokemonCatch: document.getElementById('pokemon-catch'),
+                pokemonHp: document.getElementById('pokemon-hp'),
+                botHp: document.getElementById('bot-hp'),
+                footballShoot: document.getElementById('football-shoot'),
+                footballScore: document.getElementById('football-score'),
+                footballAttempts: document.getElementById('football-attempts'),
+                footballDiff: document.getElementById('football-diff'),
+                parkourJump: document.getElementById('parkour-jump'),
+                parkourScore: document.getElementById('parkour-score'),
+                parkourBest: document.getElementById('parkour-best')
+            };
 
-            // Nuevas herramientas
-            const toolEraser = document.getElementById('toolEraser');
-            const toolFill = document.getElementById('toolFill');
-            const toolStar = document.getElementById('toolStar');
-            const toolHeart = document.getElementById('toolHeart');
-
-            // Controles de juegos
-            const pokemonControls = document.getElementById('pokemon-controls');
-            const footballControls = document.getElementById('football-controls');
-            const parkourControls = document.getElementById('parkour-controls');
-            const pokemonAttack = document.getElementById('pokemon-attack');
-            const pokemonSpecial = document.getElementById('pokemon-special');
-            const pokemonHeal = document.getElementById('pokemon-heal');
-            const pokemonCapture = document.getElementById('pokemon-capture');
-            const pokemonHpSpan = document.getElementById('pokemon-hp');
-            const botHpSpan = document.getElementById('bot-hp');
-            const footballShoot = document.getElementById('football-shoot');
-            const footballScoreSpan = document.getElementById('football-score');
-            const footballAttemptsSpan = document.getElementById('football-attempts');
-            const footballResult = document.getElementById('football-result');
-            const parkourJump = document.getElementById('parkour-jump');
-            const parkourScoreSpan = document.getElementById('parkour-score');
-            const parkourBestSpan = document.getElementById('parkour-best');
-            const parkourSprite = document.getElementById('parkour-sprite');
-
-            // --- Estado P2P (igual que antes) ---
+            // --- Estado global ---
             let peer = null;
-            let connections = new Map();
+            let connections = new Map(); // host: mapa de conexiones
             let isHost = false;
             let roomId = null;
-            let myPeerId = null;
-            let hostConnection = null;
-            let history = [];
+            let hostConn = null; // espectador: conexión al host
+            let myId = 'user_' + Math.random().toString(36).substr(2, 8);
+
+            // Juegos
             let currentGame = 'paint';
-
-            // --- Estado de juegos mejorado ---
-            let pokemon = { playerHP: 100, botHP: 100, playerVets: 0 };
-            let football = { score: 0, attempts: 5, difficulty: 1 };
-            let parkour = { score: 0, best: 0, jumping: false, y: 300, vy: 0, platforms: [] };
-            let parkourInterval = null;
-            let parkourFrame = null;
-
-            // --- Moneda Vets ---
+            let history = []; // acciones de dibujo
             let vets = 0;
             let vetsInterval = null;
 
-            // --- Estado de dibujo ---
+            // Pokémon
+            let pokemon = { playerHP: 100, botHP: 100 };
+
+            // Fútbol
+            let football = { score: 0, attempts: 5, difficulty: 1 };
+
+            // Parkour
+            let parkour = { score: 0, best: 0, y: 300, vy: 0, platforms: [], gameActive: false };
+            let parkourInterval = null;
+            let parkourFrame = null;
+
+            // Dibujo
             let drawing = false;
-            let startX, startY, lastX, lastY;
-            let currentTool = 'pencil'; // pencil, rectangle, circle, line, text, eraser, fill, star, heart
+            let lastX = 0, lastY = 0;
 
-            // Configuración canvas
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.strokeStyle = colorPicker.value;
-            ctx.fillStyle = colorPicker.value;
-            ctx.lineWidth = brushSizeInput.value;
-            ctx.font = '20px Arial';
+            // Config canvas
+            ui.ctx.lineCap = 'round';
+            ui.ctx.lineJoin = 'round';
+            ui.ctx.strokeStyle = ui.colorPicker.value;
+            ui.ctx.fillStyle = ui.colorPicker.value;
+            ui.ctx.lineWidth = ui.brushSize.value;
 
-            // --- Sincronización con espectadores al iniciar juego (mejora) ---
-            function broadcastGameState() {
-                if (!isHost) return;
-                broadcastToViewers({ type: 'game-change', game: currentGame });
-                if (currentGame === 'pokemon') {
-                    broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
-                } else if (currentGame === 'football') {
-                    broadcastToViewers({ type: 'football-update', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
-                } else if (currentGame === 'parkour') {
-                    broadcastToViewers({ type: 'parkour-update', score: parkour.score, best: parkour.best });
+            // --- Funciones auxiliares ---
+            function broadcast(data) {
+                if (isHost) {
+                    connections.forEach(conn => { if (conn.open) conn.send(data); });
+                } else if (hostConn && hostConn.open) {
+                    hostConn.send(data);
                 }
             }
 
-            // --- Funciones de almacenamiento local (mejoradas) ---
+            function addChatMessage(user, msg, isDonation = false, isSystem = false) {
+                const div = document.createElement('div');
+                div.className = 'message';
+                const color = isDonation ? '#ff79c6' : (isSystem ? '#ffaa00' : '#bf94ff');
+                div.innerHTML = `<span class="user" style="color:${color};">${isSystem ? '🔧 ' : ''}${escapeHtml(user)}:</span> <span class="text">${escapeHtml(msg)}</span>`;
+                ui.chatMessages.appendChild(div);
+                ui.chatMessages.scrollTop = ui.chatMessages.scrollHeight;
+            }
+
+            function escapeHtml(s) {
+                const div = document.createElement('div');
+                div.textContent = s;
+                return div.innerHTML;
+            }
+
+            function updateVetsUI() {
+                ui.vetsSpan.textContent = vets;
+                ui.donationOverlay.innerHTML = `🪙 <span>${vets}</span> VETS`;
+                if (isHost) broadcast({ type: 'vets', vets });
+            }
+
+            // --- Dibujo ---
+            function applyAction(action) {
+                const ctx = ui.ctx;
+                switch (action.type) {
+                    case 'draw_start':
+                        ctx.beginPath();
+                        ctx.moveTo(action.x, action.y);
+                        ctx.strokeStyle = action.color;
+                        ctx.lineWidth = action.size;
+                        break;
+                    case 'draw':
+                        ctx.strokeStyle = action.color;
+                        ctx.lineWidth = action.size;
+                        ctx.lineTo(action.x, action.y);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(action.x, action.y);
+                        break;
+                    case 'draw_end': ctx.beginPath(); break;
+                    case 'shape':
+                        ctx.save();
+                        ctx.strokeStyle = action.color;
+                        ctx.lineWidth = action.size;
+                        ctx.beginPath();
+                        if (action.shape === 'rectangle')
+                            ctx.rect(action.x, action.y, action.x2 - action.x, action.y2 - action.y);
+                        else if (action.shape === 'circle') {
+                            const r = Math.hypot(action.x2 - action.x, action.y2 - action.y);
+                            ctx.arc(action.x, action.y, r, 0, 2*Math.PI);
+                        } else if (action.shape === 'line') {
+                            ctx.moveTo(action.x, action.y);
+                            ctx.lineTo(action.x2, action.y2);
+                        }
+                        ctx.stroke();
+                        ctx.restore();
+                        break;
+                    case 'text':
+                        ctx.save();
+                        ctx.fillStyle = action.color;
+                        ctx.font = `${action.size * 3}px Arial`;
+                        ctx.fillText(action.text, action.x, action.y);
+                        ctx.restore();
+                        break;
+                    case 'clear': ctx.clearRect(0, 0, 1000, 600); break;
+                }
+            }
+
+            function saveHistory() {
+                if (isHost && roomId) {
+                    localStorage.setItem(`history_${roomId}`, JSON.stringify(history));
+                }
+            }
+
+            // --- Cambiar juego ---
+            function setGame(game) {
+                currentGame = game;
+                const emojis = { paint: '🎨', pokemon: '🐱', football: '⚽', parkour: '🏃' };
+                ui.gameOverlay.innerHTML = `${emojis[game]} Modo ${game}`;
+                ui.toolsContainer.style.display = game === 'paint' ? 'flex' : 'none';
+                ui.pokemonControls.classList.toggle('visible', game === 'pokemon');
+                ui.footballControls.classList.toggle('visible', game === 'football');
+                ui.parkourControls.classList.toggle('visible', game === 'parkour');
+
+                if (game !== 'paint') ui.ctx.clearRect(0, 0, 1000, 600);
+                if (game === 'paint') redrawHistory();
+
+                if (game === 'parkour' && isHost && !parkour.gameActive) startParkour();
+                else if (game !== 'parkour' && parkourInterval) stopParkour();
+
+                if (isHost) broadcast({ type: 'game-change', game });
+            }
+
+            function redrawHistory() {
+                ui.ctx.clearRect(0, 0, 1000, 600);
+                history.forEach(a => applyAction(a));
+            }
+
+            // --- Pokémon ---
+            function updatePokemonUI() {
+                ui.pokemonHp.textContent = pokemon.playerHP;
+                ui.botHp.textContent = pokemon.botHP;
+            }
+
+            function pokemonTurn(playerAction, cost = 0) {
+                if (!isHost) return;
+                if (cost > vets) {
+                    addChatMessage('Sistema', 'No tienes suficientes VETS', false, true);
+                    return;
+                }
+                vets -= cost;
+                updateVetsUI();
+
+                let msg = '';
+                if (playerAction === 'attack') {
+                    const dmg = 20 + Math.floor(Math.random() * 10);
+                    pokemon.botHP = Math.max(0, pokemon.botHP - dmg);
+                    msg = `¡Atacas! Bot pierde ${dmg} HP.`;
+                } else if (playerAction === 'heal') {
+                    const heal = 30;
+                    pokemon.playerHP = Math.min(100, pokemon.playerHP + heal);
+                    msg = `¡Te curas! +${heal} HP.`;
+                } else if (playerAction === 'catch') {
+                    const chance = 0.3;
+                    if (Math.random() < chance) {
+                        addChatMessage('🎉', '¡Capturaste al Pokémon! Victoria!', false, true);
+                        pokemon.botHP = 0;
+                    } else {
+                        addChatMessage('😢', 'Fallaste la captura.', false, true);
+                    }
+                }
+
+                if (pokemon.botHP <= 0) {
+                    addChatMessage('🎉', '¡Ganaste el combate! Reiniciando...', false, true);
+                    pokemon = { playerHP: 100, botHP: 100 };
+                } else {
+                    // Turno del bot
+                    const botDmg = 15 + Math.floor(Math.random() * 10);
+                    pokemon.playerHP = Math.max(0, pokemon.playerHP - botDmg);
+                    msg += ` Bot te ataca, pierdes ${botDmg} HP.`;
+                    if (pokemon.playerHP <= 0) {
+                        addChatMessage('💔', 'Perdiste... Reiniciando.', false, true);
+                        pokemon = { playerHP: 100, botHP: 100 };
+                    }
+                }
+
+                updatePokemonUI();
+                broadcast({ type: 'pokemon-state', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
+                if (msg) addChatMessage('Sistema', msg, false, true);
+                saveProgress();
+            }
+
+            // --- Fútbol ---
+            function shoot() {
+                if (!isHost) return;
+                if (football.attempts <= 0) {
+                    football.attempts = 5;
+                    football.score = 0;
+                    football.difficulty = 1;
+                }
+                football.attempts--;
+                const goal = Math.random() < (0.6 - football.difficulty * 0.1); // más difícil = menos probabilidad
+                if (goal) {
+                    football.score++;
+                    addChatMessage('⚽', '¡GOOOOL!', false, true);
+                    if (football.score % 3 === 0) football.difficulty++;
+                } else {
+                    addChatMessage('🧤', '¡Atajó el portero!', false, true);
+                }
+                updateFootballUI();
+                broadcast({ type: 'football-state', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
+                saveProgress();
+            }
+
+            function updateFootballUI() {
+                ui.footballScore.textContent = football.score;
+                ui.footballAttempts.textContent = football.attempts;
+                ui.footballDiff.textContent = football.difficulty;
+            }
+
+            // --- Parkour ---
+            function startParkour() {
+                if (parkourInterval) return;
+                parkour.gameActive = true;
+                parkour.y = 300;
+                parkour.vy = 0;
+                parkour.platforms = [{ x: 400, y: 500, w: 200 }];
+                parkour.score = 0;
+                parkourInterval = setInterval(() => {
+                    // Generar plataformas
+                    if (Math.random() < 0.3) {
+                        parkour.platforms.push({ x: 1000, y: 400 + Math.random() * 200, w: 150 });
+                    }
+                    // Mover
+                    parkour.platforms.forEach(p => p.x -= 5);
+                    parkour.platforms = parkour.platforms.filter(p => p.x + p.w > 0);
+                    // Gravedad
+                    parkour.vy += 0.5;
+                    parkour.y += parkour.vy;
+                    // Suelo
+                    if (parkour.y > 550) { parkour.y = 550; parkour.vy = 0; }
+                    // Colisión plataformas
+                    parkour.platforms.forEach(p => {
+                        if (150 > p.x && 150 < p.x + p.w && parkour.y >= p.y - 20 && parkour.y <= p.y + 10 && parkour.vy > 0) {
+                            parkour.y = p.y - 20;
+                            parkour.vy = 0;
+                        }
+                    });
+                    parkour.score++;
+                    if (parkour.score > parkour.best) parkour.best = parkour.score;
+                    updateParkourUI();
+                    drawParkour();
+                }, 50);
+            }
+
+            function stopParkour() {
+                if (parkourInterval) {
+                    clearInterval(parkourInterval);
+                    parkourInterval = null;
+                }
+            }
+
+            function drawParkour() {
+                const ctx = ui.ctx;
+                ctx.clearRect(0, 0, 1000, 600);
+                // Suelo
+                ctx.fillStyle = '#555';
+                ctx.fillRect(0, 570, 1000, 30);
+                // Plataformas
+                ctx.fillStyle = '#0a0';
+                parkour.platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, 10));
+                // Jugador
+                ctx.fillStyle = '#00f';
+                ctx.fillRect(140, parkour.y - 20, 20, 20);
+            }
+
+            function updateParkourUI() {
+                ui.parkourScore.textContent = parkour.score;
+                ui.parkourBest.textContent = parkour.best;
+                if (isHost) broadcast({ type: 'parkour-state', score: parkour.score, best: parkour.best });
+            }
+
+            function parkourJump() {
+                if (parkour.y >= 550) parkour.vy = -12;
+            }
+
+            // --- Vets y donación ---
+            function donate() {
+                if (vets < 50) {
+                    addChatMessage('Sistema', 'Necesitas 50 VETS', false, true);
+                    return;
+                }
+                vets -= 50;
+                updateVetsUI();
+                const user = ui.username.value.trim() || 'Anon';
+                addChatMessage(user, `💜 Donó 50 VETS! 💜`, true);
+                ui.donationOverlay.innerHTML = `💜 ${user} donó 50 VETS! 🪙 <span>${vets}</span>`;
+                setTimeout(() => updateVetsUI(), 5000);
+                broadcast({ type: 'donation', user });
+            }
+
+            // --- Progreso local (host) ---
             function saveProgress() {
                 if (!isHost || !roomId) return;
                 try {
-                    localStorage.setItem(`historial_${roomId}`, JSON.stringify(history));
-                    localStorage.setItem(`juego_${roomId}`, currentGame);
+                    localStorage.setItem(`history_${roomId}`, JSON.stringify(history));
+                    localStorage.setItem(`game_${roomId}`, currentGame);
                     localStorage.setItem(`pokemon_${roomId}`, JSON.stringify(pokemon));
                     localStorage.setItem(`football_${roomId}`, JSON.stringify(football));
-                    localStorage.setItem(`parkour_${roomId}`, JSON.stringify({ score: parkour.best }));
+                    localStorage.setItem(`parkour_${roomId}`, JSON.stringify({ best: parkour.best }));
                 } catch (e) {}
             }
 
             function loadProgress() {
                 if (!isHost || !roomId) return;
                 try {
-                    const savedHistory = localStorage.getItem(`historial_${roomId}`);
-                    if (savedHistory) {
-                        history = JSON.parse(savedHistory);
-                        redrawHistory();
-                    }
-                    const savedGame = localStorage.getItem(`juego_${roomId}`);
-                    if (savedGame) {
-                        currentGame = savedGame;
-                        setGame(currentGame);
-                    }
-                    const savedPokemon = localStorage.getItem(`pokemon_${roomId}`);
-                    if (savedPokemon) {
-                        pokemon = JSON.parse(savedPokemon);
-                        updatePokemonUI();
-                    }
-                    const savedFootball = localStorage.getItem(`football_${roomId}`);
-                    if (savedFootball) {
-                        football = JSON.parse(savedFootball);
-                        updateFootballUI();
-                    }
-                    const savedParkour = localStorage.getItem(`parkour_${roomId}`);
-                    if (savedParkour) {
-                        parkour.best = JSON.parse(savedParkour).score;
-                        updateParkourUI();
-                    }
+                    const h = localStorage.getItem(`history_${roomId}`);
+                    if (h) { history = JSON.parse(h); redrawHistory(); }
+                    const g = localStorage.getItem(`game_${roomId}`);
+                    if (g) setGame(g);
+                    const p = localStorage.getItem(`pokemon_${roomId}`);
+                    if (p) { pokemon = JSON.parse(p); updatePokemonUI(); }
+                    const f = localStorage.getItem(`football_${roomId}`);
+                    if (f) { football = JSON.parse(f); updateFootballUI(); }
+                    const pk = localStorage.getItem(`parkour_${roomId}`);
+                    if (pk) { parkour.best = JSON.parse(pk).best; updateParkourUI(); }
                 } catch (e) {}
             }
 
-            function redrawHistory() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                history.forEach(action => applyAction(action));
-            }
-
-            // --- Funciones de dibujo (añadidas nuevas herramientas) ---
-            function drawShape(action) {
-                ctx.save();
-                ctx.strokeStyle = action.color;
-                ctx.fillStyle = action.color;
-                ctx.lineWidth = action.size;
-                ctx.beginPath();
-                if (action.shape === 'rectangle') {
-                    ctx.rect(action.x, action.y, action.x2 - action.x, action.y2 - action.y);
-                    ctx.stroke();
-                } else if (action.shape === 'circle') {
-                    const radius = Math.sqrt((action.x2 - action.x) ** 2 + (action.y2 - action.y) ** 2);
-                    ctx.arc(action.x, action.y, radius, 0, 2 * Math.PI);
-                    ctx.stroke();
-                } else if (action.shape === 'line') {
-                    ctx.moveTo(action.x, action.y);
-                    ctx.lineTo(action.x2, action.y2);
-                    ctx.stroke();
-                } else if (action.shape === 'star') {
-                    // Dibuja una estrella simple
-                    drawStar(ctx, action.x, action.y, 5, action.size * 2, action.size * 4);
-                    ctx.stroke();
-                } else if (action.shape === 'heart') {
-                    // Corazón simple
-                    drawHeart(ctx, action.x, action.y, action.size * 3);
-                    ctx.stroke();
-                }
-                ctx.restore();
-            }
-
-            function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
-                let rot = Math.PI / 2 * 3;
-                let step = Math.PI / spikes;
-                ctx.beginPath();
-                for (let i = 0; i < spikes; i++) {
-                    let x = cx + Math.cos(rot) * outerR;
-                    let y = cy + Math.sin(rot) * outerR;
-                    ctx.lineTo(x, y);
-                    rot += step;
-                    x = cx + Math.cos(rot) * innerR;
-                    y = cy + Math.sin(rot) * innerR;
-                    ctx.lineTo(x, y);
-                    rot += step;
-                }
-                ctx.closePath();
-            }
-
-            function drawHeart(ctx, x, y, size) {
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.bezierCurveTo(x - size/2, y - size/2, x - size, y + size/3, x, y + size);
-                ctx.bezierCurveTo(x + size, y + size/3, x + size/2, y - size/2, x, y);
-                ctx.closePath();
-            }
-
-            function drawText(action) {
-                ctx.save();
-                ctx.fillStyle = action.color;
-                ctx.font = `${action.size * 4}px Arial`;
-                ctx.fillText(action.text, action.x, action.y);
-                ctx.restore();
-            }
-
-            function drawStart(action) {
-                ctx.beginPath();
-                ctx.moveTo(action.x, action.y);
-                ctx.strokeStyle = action.color;
-                ctx.lineWidth = action.size;
-            }
-
-            function drawMove(action) {
-                ctx.strokeStyle = action.color;
-                ctx.lineWidth = action.size;
-                ctx.lineTo(action.x, action.y);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(action.x, action.y);
-            }
-
-            function drawEnd() {
-                ctx.beginPath();
-            }
-
-            function applyAction(action) {
-                switch (action.type) {
-                    case 'draw_start': drawStart(action); break;
-                    case 'draw': drawMove(action); break;
-                    case 'draw_end': drawEnd(); break;
-                    case 'shape': drawShape(action); break;
-                    case 'text': drawText(action); break;
-                    case 'clear': ctx.clearRect(0, 0, canvas.width, canvas.height); break;
-                }
-            }
-
-            // --- Función para relleno (flood fill) - simplificada ---
-            function floodFill(x, y, fillColor) {
-                // No implementamos flood fill completo por complejidad, pero podemos simular con un rectángulo
-                ctx.fillStyle = fillColor;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
-            // --- Cambiar juego (mejorado) ---
-            function setGame(game) {
-                currentGame = game;
-                let emoji = '🎨', text = 'Pintar';
-                if (game === 'pokemon') { emoji = '🐱'; text = 'Pokémon'; }
-                else if (game === 'football') { emoji = '⚽'; text = 'Fútbol'; }
-                else if (game === 'parkour') { emoji = '🏃'; text = 'Parkour'; }
-                gameOverlay.innerHTML = `${emoji} Modo ${text}`;
-
-                // Ocultar todos los controles
-                toolsContainer.style.display = 'none';
-                pokemonControls.classList.remove('visible');
-                footballControls.classList.remove('visible');
-                parkourControls.classList.remove('visible');
-
-                if (game === 'paint') {
-                    toolsContainer.style.display = 'flex';
-                    redrawHistory();
-                } else {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    if (game === 'pokemon') {
-                        pokemonControls.classList.add('visible');
-                        updatePokemonUI();
-                    } else if (game === 'football') {
-                        footballControls.classList.add('visible');
-                        updateFootballUI();
-                    } else if (game === 'parkour') {
-                        parkourControls.classList.add('visible');
-                        startParkour();
-                    }
-                }
-
-                if (game !== 'parkour' && parkourInterval) {
-                    clearInterval(parkourInterval);
-                    cancelAnimationFrame(parkourFrame);
-                    parkourInterval = null;
-                }
-
-                if (isHost) {
-                    broadcastGameState();
-                    saveProgress();
-                }
-            }
-
-            // --- Pokémon mejorado con curar y capturar ---
-            function updatePokemonUI() {
-                pokemonHpSpan.textContent = pokemon.playerHP;
-                botHpSpan.textContent = pokemon.botHP;
-            }
-
-            function pokemonAttack(isSpecial) {
-                if (!isHost) return;
-                let damage = isSpecial ? 30 : 15;
-                if (isSpecial) {
-                    if (vets < 10) {
-                        addChatMessage('Sistema', '❌ No tienes suficientes VETS (necesitas 10)', false, true);
-                        return;
-                    }
-                    vets -= 10;
-                    updateVetsUI();
-                }
-                pokemon.botHP -= damage;
-                if (pokemon.botHP < 0) pokemon.botHP = 0;
-                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
-                addChatMessage('Sistema', `⚔️ ¡Atacas! El bot pierde ${damage} HP.`, false, true);
-
-                if (pokemon.botHP > 0) {
-                    let botDamage = 10;
-                    pokemon.playerHP -= botDamage;
-                    if (pokemon.playerHP < 0) pokemon.playerHP = 0;
-                    broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
-                    addChatMessage('Sistema', `🐲 El bot te ataca, pierdes ${botDamage} HP.`, false, true);
-                } else {
-                    addChatMessage('Sistema', '🎉 ¡Has ganado el combate! +50 VETS', false, true);
-                    vets += 50;
-                    updateVetsUI();
-                    pokemon.botHP = 100;
-                    pokemon.playerHP = 100;
-                }
-                if (pokemon.playerHP <= 0) {
-                    addChatMessage('Sistema', '💔 Has perdido. Reiniciando...', false, true);
-                    pokemon.botHP = 100;
-                    pokemon.playerHP = 100;
-                }
-                updatePokemonUI();
-                saveProgress();
-            }
-
-            function pokemonHeal() {
-                if (!isHost) return;
-                if (vets < 15) {
-                    addChatMessage('Sistema', '❌ Necesitas 15 VETS para curar', false, true);
-                    return;
-                }
-                vets -= 15;
-                pokemon.playerHP = Math.min(100, pokemon.playerHP + 20);
-                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
-                addChatMessage('Sistema', '💚 Te has curado 20 HP.', false, true);
-                updatePokemonUI();
-                updateVetsUI();
-                saveProgress();
-            }
-
-            function pokemonCapture() {
-                if (!isHost) return;
-                if (vets < 50) {
-                    addChatMessage('Sistema', '❌ Necesitas 50 VETS para intentar capturar', false, true);
-                    return;
-                }
-                vets -= 50;
-                let success = Math.random() < 0.3; // 30% de éxito
-                if (success) {
-                    addChatMessage('Sistema', '🎯 ¡Has capturado al Pokémon! +100 VETS', false, true);
-                    vets += 100;
-                    pokemon.botHP = 100; // Reinicia combate
-                } else {
-                    addChatMessage('Sistema', '😵 Fallaste la captura. El bot contraataca.', false, true);
-                    pokemon.playerHP -= 20;
-                    if (pokemon.playerHP < 0) pokemon.playerHP = 0;
-                }
-                broadcastToViewers({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
-                updatePokemonUI();
-                updateVetsUI();
-                saveProgress();
-            }
-
-            // --- Fútbol con dificultad creciente ---
-            function shootPenalty() {
-                if (!isHost) return;
-                if (football.attempts <= 0) {
-                    addChatMessage('Sistema', '🔄 No te quedan intentos. Reiniciando con dificultad +1', false, true);
-                    football.attempts = 5;
-                    football.score = 0;
-                    football.difficulty++;
-                }
-                football.attempts--;
-                // Probabilidad de gol según dificultad
-                let prob = 0.7 - (football.difficulty * 0.1);
-                if (prob < 0.2) prob = 0.2;
-                let scored = Math.random() < prob;
-                if (scored) football.score++;
-                broadcastToViewers({ type: 'football-update', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
-                footballResult.textContent = scored ? '⚽ ¡GOOOOL!' : '🥅 ¡Fallaste!';
-                addChatMessage('Sistema', scored ? '⚽ ¡GOOOOL!' : '🥅 Fallaste', false, true);
-                updateFootballUI();
-                saveProgress();
-            }
-
-            function updateFootballUI() {
-                footballScoreSpan.textContent = football.score;
-                footballAttemptsSpan.textContent = football.attempts;
-            }
-
-            // --- Parkour con controles y sprite ---
-            function startParkour() {
-                if (!isHost) return;
-                parkour.score = 0;
-                parkour.y = 300;
-                parkour.vy = 0;
-                parkour.platforms = [{ x: 400, y: 500, w: 200 }];
-                if (parkourInterval) clearInterval(parkourInterval);
-                parkourInterval = setInterval(() => {
-                    // Generar plataformas
-                    if (Math.random() < 0.3) {
-                        parkour.platforms.push({ x: 1000, y: 400 + Math.random() * 200, w: 150 });
-                    }
-                    // Mover plataformas
-                    parkour.platforms.forEach(p => p.x -= 5);
-                    parkour.platforms = parkour.platforms.filter(p => p.x + p.w > 0);
-                    // Gravedad
-                    parkour.vy += 0.5;
-                    parkour.y += parkour.vy;
-                    // Colisión con suelo
-                    if (parkour.y > 550) {
-                        parkour.y = 550;
-                        parkour.vy = 0;
-                    }
-                    // Colisión con plataformas
-                    parkour.platforms.forEach(p => {
-                        if (100 > p.x && 100 < p.x + p.w && parkour.y >= p.y - 30 && parkour.y <= p.y + 20 && parkour.vy > 0) {
-                            parkour.y = p.y - 30;
-                            parkour.vy = 0;
-                        }
-                    });
-                    parkour.score++;
-                    if (parkour.score > parkour.best) parkour.best = parkour.score;
-                    broadcastToViewers({ type: 'parkour-update', score: parkour.score, best: parkour.best });
-                    updateParkourUI();
-                    drawParkour();
-                }, 50);
-            }
-
-            function drawParkour() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                // Dibujar personaje (sprite emoji)
-                ctx.font = '60px Arial';
-                ctx.fillStyle = 'black';
-                ctx.fillText('🏃', 80, parkour.y);
-                // Dibujar plataformas
-                ctx.fillStyle = 'green';
-                parkour.platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, 10));
-            }
-
-            function updateParkourUI() {
-                parkourScoreSpan.textContent = parkour.score;
-                parkourBestSpan.textContent = parkour.best;
-            }
-
-            // --- Vets ---
-            function updateVetsUI() {
-                vetsSpan.textContent = vets;
-                if (isHost) broadcastToViewers({ type: 'vets-update', vets: vets });
-            }
-
-            // --- Donación (mejorada) ---
-            function donate() {
-                if (vets < 50) {
-                    addChatMessage('Sistema', '❌ Necesitas 50 VETS para donar.', false, true);
-                    return;
-                }
-                vets -= 50;
-                updateVetsUI();
-                const user = usernameInput.value.trim() || 'Anon';
-                const amount = 50;
-                donationOverlay.innerHTML = `💜 ${user} donó ${amount} VETS! 💜 <span>🪙 ${vets}</span>`;
-                setTimeout(() => {
-                    donationOverlay.innerHTML = `🪙 VETS: <span>${vets}</span>`;
-                }, 5000);
-                addChatMessage(user, `💜 Donó ${amount} VETS! 💜`, true);
-                if (isHost) {
-                    broadcastToViewers({ type: 'donation', user: user, amount: amount });
-                } else {
-                    if (hostConnection && hostConnection.open) {
-                        hostConnection.send({ type: 'donation', user: user, amount: amount });
-                    }
-                }
-            }
-
-            // --- Funciones de red (igual) ---
-            function broadcastToViewers(message) {
-                connections.forEach(conn => {
-                    if (conn.open) conn.send(message);
-                });
-            }
-
-            function updateViewerList() {
-                if (!isHost) return;
-                let html = `<li>🟣 Host (tú)</li>`;
-                connections.forEach((conn, peerId) => {
-                    html += `<li>👤 Espectador (${peerId.substr(0,4)}...)</li>`;
-                });
-                viewerList.innerHTML = html || '<li>No hay espectadores</li>';
-            }
-
-            function setViewerListForGuest() {
-                viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú (espectador)</li>';
-            }
-
-            function addChatMessage(user, message, isDonation = false, isSystem = false) {
-                const div = document.createElement('div');
-                div.className = 'message';
-                let color = isDonation ? '#ff79c6' : (isSystem ? '#ffaa00' : '#bf94ff');
-                div.innerHTML = `<span class="user" style="color: ${color};">${isSystem ? '🔧' : ''}${escapeHtml(user)}:</span> <span class="text">${escapeHtml(message)}</span>`;
-                chatMessages.appendChild(div);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-
-            function escapeHtml(str) {
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            }
-
-            // --- Crear sala host (mejorado con nuevas herramientas) ---
-            function createRoom(roomId) {
-                peer = new Peer(roomId);
-                myPeerId = roomId;
+            // --- Crear sala (host) ---
+            function createRoom(id) {
+                peer = new Peer(id);
+                roomId = id;
                 isHost = true;
-                roleDisplay.textContent = ' (Host)';
-                joinScreen.style.display = 'none';
-                drawingApp.style.display = 'flex';
-                roomDisplay.textContent = roomId;
-                roomCodeCorner.innerHTML = `Sala: <span>${roomId}</span>`;
-                toggleGamesBtn.style.display = 'inline-block';
+                ui.roleDisplay.textContent = '(Host)';
+                ui.joinScreen.style.display = 'none';
+                ui.drawingApp.style.display = 'flex';
+                ui.roomCode.textContent = `Sala: ${id}`;
+                ui.toggleGames.style.display = 'inline-block';
+                vetsInterval = setInterval(() => { vets++; updateVetsUI(); }, 3000);
 
                 loadProgress();
 
-                vetsInterval = setInterval(() => {
-                    vets++;
-                    updateVetsUI();
-                }, 3000);
-
-                toggleGamesBtn.addEventListener('click', () => {
-                    gameSelector.classList.toggle('visible');
-                });
-
-                gameBtns.forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const game = btn.dataset.game;
-                        setGame(game);
-                        gameBtns.forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        gameSelector.classList.remove('visible');
-                    });
-                });
-
-                // Eventos de juegos
-                pokemonAttack.addEventListener('click', () => pokemonAttack(false));
-                pokemonSpecial.addEventListener('click', () => pokemonAttack(true));
-                pokemonHeal.addEventListener('click', pokemonHeal);
-                pokemonCapture.addEventListener('click', pokemonCapture);
-                footballShoot.addEventListener('click', shootPenalty);
-                parkourJump.addEventListener('click', () => { if (parkour.y >= 550) parkour.vy = -12; });
-                document.addEventListener('keydown', (e) => {
-                    if (e.code === 'Space' && currentGame === 'parkour' && isHost) {
-                        e.preventDefault();
-                        if (parkour.y >= 550) parkour.vy = -12;
-                    }
-                });
-
-                // Nuevas herramientas
-                toolEraser.addEventListener('click', () => { currentTool = 'eraser'; });
-                toolFill.addEventListener('click', () => { currentTool = 'fill'; });
-                toolStar.addEventListener('click', () => { currentTool = 'star'; });
-                toolHeart.addEventListener('click', () => { currentTool = 'heart'; });
-
-                peer.on('open', (id) => {
+                peer.on('open', () => {
                     addChatMessage('Sistema', 'Sala creada. Esperando espectadores...', false, true);
                 });
 
@@ -1282,261 +840,151 @@
                     conn.on('data', (data) => {
                         if (data.type === 'chat') {
                             addChatMessage(data.user, data.message);
-                            broadcastToViewers({ type: 'chat', user: data.user, message: data.message });
+                            broadcast({ type: 'chat', user: data.user, message: data.message });
                         } else if (data.type === 'donation') {
-                            addChatMessage(data.user, `💜 Donó ${data.amount} VETS! 💜`, true);
-                            donationOverlay.innerHTML = `💜 ${data.user} donó ${data.amount} VETS! 💜 <span>🪙 ${vets}</span>`;
-                            setTimeout(() => {
-                                donationOverlay.innerHTML = `🪙 VETS: <span>${vets}</span>`;
-                            }, 5000);
-                            broadcastToViewers({ type: 'donation', user: data.user, amount: data.amount });
+                            donateFromGuest(data.user);
                         }
                     });
                     conn.on('close', () => {
                         connections.delete(conn.peer);
                         updateViewerList();
-                        broadcastToViewers({ type: 'system', message: 'Un espectador se ha desconectado.' });
                     });
-                    // Enviar estado completo al nuevo espectador
-                    conn.send({ type: 'history', history: history });
-                    conn.send({ type: 'game-change', game: currentGame });
-                    conn.send({ type: 'pokemon-update', playerHP: pokemon.playerHP, botHP: pokemon.botHP });
-                    conn.send({ type: 'football-update', score: football.score, attempts: football.attempts, difficulty: football.difficulty });
-                    conn.send({ type: 'parkour-update', score: parkour.score, best: parkour.best });
-                    conn.send({ type: 'vets-update', vets: vets });
+                    // Enviar estado actual
+                    conn.send({ type: 'init', game: currentGame, history, pokemon, football, parkour: { best: parkour.best }, vets });
                     updateViewerList();
-                    broadcastToViewers({ type: 'system', message: 'Nuevo espectador conectado.' });
                 });
 
                 peer.on('error', (err) => {
-                    if (err.type === 'unavailable-id') {
-                        alert('El ID de sala ya está en uso. Elige otro.');
-                        leaveRoom();
-                    }
+                    if (err.type === 'unavailable-id') alert('ID ya usado');
+                    else console.error(err);
                 });
 
                 setGame(currentGame);
-                document.querySelector(`.game-btn[data-game="${currentGame}"]`)?.classList.add('active');
+                updateViewerList();
             }
 
-            // --- Unirse como espectador (mejorado) ---
-            function joinRoom(roomId) {
+            function updateViewerList() {
+                let html = '<li>🟣 Host (tú)</li>';
+                connections.forEach((_, id) => html += `<li>👤 ${id.substr(0,6)}...</li>`);
+                ui.viewerList.innerHTML = html || '<li>No hay espectadores</li>';
+            }
+
+            // --- Unirse como espectador ---
+            function joinRoom(id) {
                 peer = new Peer();
+                roomId = id;
                 isHost = false;
-                roleDisplay.textContent = ' (Espectador)';
-                toolsContainer.style.display = 'none';
-                joinScreen.style.display = 'none';
-                drawingApp.style.display = 'flex';
-                roomDisplay.textContent = roomId;
-                roomCodeCorner.innerHTML = `Sala: <span>${roomId}</span>`;
-                toggleGamesBtn.style.display = 'none';
-                gameSelector.style.display = 'none';
+                ui.roleDisplay.textContent = '(Espectador)';
+                ui.joinScreen.style.display = 'none';
+                ui.drawingApp.style.display = 'flex';
+                ui.roomCode.textContent = `Sala: ${id}`;
+                ui.toggleGames.style.display = 'none';
+                ui.gameSelector.style.display = 'none';
+                vetsInterval = setInterval(() => { vets++; updateVetsUI(); }, 3000);
 
-                vetsInterval = setInterval(() => {
-                    vets++;
-                    updateVetsUI();
-                }, 3000);
-
-                peer.on('open', (id) => {
-                    myPeerId = id;
-                    const conn = peer.connect(roomId);
-                    hostConnection = conn;
-
-                    conn.on('open', () => {
-                        setViewerListForGuest();
-                        addChatMessage('Sistema', 'Conectado a la sala. Esperando...', false, true);
+                peer.on('open', () => {
+                    hostConn = peer.connect(id);
+                    hostConn.on('open', () => {
+                        ui.viewerList.innerHTML = '<li>🟣 Host conectado</li><li>👤 Tú</li>';
                     });
-
-                    conn.on('data', (data) => {
-                        if (data.type === 'history') {
+                    hostConn.on('data', (data) => {
+                        if (data.type === 'init') {
+                            currentGame = data.game;
+                            setGame(currentGame);
                             history = data.history;
                             redrawHistory();
+                            pokemon = data.pokemon;
+                            football = data.football;
+                            parkour.best = data.parkour.best;
+                            vets = data.vets;
+                            updatePokemonUI();
+                            updateFootballUI();
+                            updateParkourUI();
+                            updateVetsUI();
+                        } else if (data.type === 'game-change') {
+                            setGame(data.game);
                         } else if (data.type === 'draw-action') {
                             if (currentGame === 'paint') applyAction(data.action);
                         } else if (data.type === 'clear') {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ui.ctx.clearRect(0, 0, 1000, 600);
                         } else if (data.type === 'chat') {
                             addChatMessage(data.user, data.message);
                         } else if (data.type === 'donation') {
-                            addChatMessage(data.user, `💜 Donó ${data.amount} VETS! 💜`, true);
-                            donationOverlay.innerHTML = `💜 ${data.user} donó ${data.amount} VETS! 💜 <span>🪙 ${vets}</span>`;
-                            setTimeout(() => {
-                                donationOverlay.innerHTML = `🪙 VETS: <span>${vets}</span>`;
-                            }, 5000);
-                        } else if (data.type === 'system') {
-                            addChatMessage('Sistema', data.message, false, true);
-                        } else if (data.type === 'game-change') {
-                            setGame(data.game);
-                            gameBtns.forEach(btn => {
-                                btn.classList.remove('active');
-                                if (btn.dataset.game === data.game) btn.classList.add('active');
-                            });
-                        } else if (data.type === 'pokemon-update') {
-                            pokemon.playerHP = data.playerHP;
-                            pokemon.botHP = data.botHP;
+                            addChatMessage(data.user, '💜 Donó 50 VETS! 💜', true);
+                            ui.donationOverlay.innerHTML = `💜 ${data.user} donó 50 VETS! 🪙 <span>${vets}</span>`;
+                            setTimeout(() => updateVetsUI(), 5000);
+                        } else if (data.type === 'pokemon-state') {
+                            pokemon = { playerHP: data.playerHP, botHP: data.botHP };
                             updatePokemonUI();
-                        } else if (data.type === 'football-update') {
-                            football.score = data.score;
-                            football.attempts = data.attempts;
-                            football.difficulty = data.difficulty;
+                        } else if (data.type === 'football-state') {
+                            football = { score: data.score, attempts: data.attempts, difficulty: data.difficulty };
                             updateFootballUI();
-                        } else if (data.type === 'parkour-update') {
+                        } else if (data.type === 'parkour-state') {
                             parkour.score = data.score;
                             parkour.best = data.best;
                             updateParkourUI();
-                        } else if (data.type === 'vets-update') {
+                        } else if (data.type === 'vets') {
                             vets = data.vets;
                             updateVetsUI();
                         }
                     });
-
-                    conn.on('close', () => {
-                        alert('El host se ha desconectado.');
+                    hostConn.on('close', () => {
+                        alert('Host desconectado');
                         leaveRoom();
                     });
                 });
 
                 peer.on('error', (err) => {
-                    if (err.type === 'peer-unavailable') {
-                        alert('No se encontró la sala. Verifica el ID.');
-                        leaveRoom();
-                    }
+                    if (err.type === 'peer-unavailable') alert('Sala no encontrada');
                 });
             }
 
-            // --- Salir de la sala ---
             function leaveRoom() {
-                if (peer) {
-                    peer.destroy();
-                    peer = null;
-                }
+                if (peer) peer.destroy();
                 connections.clear();
-                hostConnection = null;
+                hostConn = null;
                 isHost = false;
                 roomId = null;
                 history = [];
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                joinScreen.style.display = 'block';
-                drawingApp.style.display = 'none';
+                ui.joinScreen.style.display = 'block';
+                ui.drawingApp.style.display = 'none';
                 if (vetsInterval) clearInterval(vetsInterval);
                 if (parkourInterval) clearInterval(parkourInterval);
-                gameSelector.classList.remove('visible');
-                gameBtns.forEach(btn => btn.classList.remove('active'));
             }
 
-            // --- Eventos de dibujo (adaptados a nuevas herramientas) ---
-            canvas.addEventListener('mousedown', (e) => {
+            function donateFromGuest(user) {
+                // simular donación de espectador (el host ya recibe y reenvía)
+            }
+
+            // --- Eventos UI ---
+            ui.createBtn.addEventListener('click', () => {
+                const id = ui.roomInput.value.trim();
+                if (id) createRoom(id);
+            });
+            ui.joinBtn.addEventListener('click', () => {
+                const id = ui.roomInput.value.trim();
+                if (id) joinRoom(id);
+            });
+            ui.leaveBtn.addEventListener('click', leaveRoom);
+
+            ui.toggleGames.addEventListener('click', () => ui.gameSelector.classList.toggle('visible'));
+            ui.gameBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (!isHost) return;
+                    const game = btn.dataset.game;
+                    setGame(game);
+                    ui.gameBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    ui.gameSelector.classList.remove('visible');
+                });
+            });
+
+            // Dibujo (solo host)
+            const canvasEvents = (e) => {
                 if (!isHost || currentGame !== 'paint') return;
-                e.preventDefault();
-                const pos = getMousePos(e);
-                startX = pos.x; startY = pos.y; lastX = pos.x; lastY = pos.y;
-
-                if (currentTool === 'pencil' || toolSelect.value === 'pencil') {
-                    drawing = true;
-                    ctx.beginPath();
-                    ctx.moveTo(lastX, lastY);
-                    const action = { type: 'draw_start', x: lastX, y: lastY, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
-                    history.push(action);
-                    broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
-                } else if (currentTool === 'eraser') {
-                    drawing = true;
-                    ctx.strokeStyle = '#FFFFFF';
-                    ctx.lineWidth = parseInt(brushSizeInput.value) * 2;
-                    ctx.beginPath();
-                    ctx.moveTo(lastX, lastY);
-                } else if (currentTool === 'fill') {
-                    floodFill(startX, startY, colorPicker.value);
-                } else if (currentTool === 'text' || toolSelect.value === 'text') {
-                    const text = prompt('Texto:');
-                    if (text) {
-                        const action = { type: 'text', text, x: startX, y: startY, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
-                        drawText(action);
-                        history.push(action);
-                        broadcastToViewers({ type: 'draw-action', action });
-                        saveProgress();
-                    }
-                }
-            });
-
-            canvas.addEventListener('mousemove', (e) => {
-                if (!isHost || !drawing || currentGame !== 'paint') return;
-                e.preventDefault();
-                const pos = getMousePos(e);
-                const x = pos.x, y = pos.y;
-
-                if (currentTool === 'pencil' || toolSelect.value === 'pencil' || currentTool === 'eraser') {
-                    ctx.strokeStyle = currentTool === 'eraser' ? '#FFFFFF' : colorPicker.value;
-                    ctx.lineWidth = currentTool === 'eraser' ? parseInt(brushSizeInput.value) * 2 : parseInt(brushSizeInput.value);
-                    ctx.lineTo(x, y);
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.moveTo(x, y);
-                    const action = { type: 'draw', x, y, color: ctx.strokeStyle, size: ctx.lineWidth };
-                    history.push(action);
-                    broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
-                    lastX = x; lastY = y;
-                }
-            });
-
-            canvas.addEventListener('mouseup', (e) => {
-                if (!isHost || currentGame !== 'paint') return;
-                e.preventDefault();
-                if (drawing) {
-                    drawing = false;
-                    ctx.beginPath();
-                    const action = { type: 'draw_end' };
-                    history.push(action);
-                    broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
-                } else if (currentTool === 'rectangle' || currentTool === 'circle' || currentTool === 'line' || currentTool === 'star' || currentTool === 'heart') {
-                    const pos = getMousePos(e);
-                    const action = { type: 'shape', shape: currentTool, x: startX, y: startY, x2: pos.x, y2: pos.y, color: colorPicker.value, size: parseInt(brushSizeInput.value) };
-                    drawShape(action);
-                    history.push(action);
-                    broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
-                }
-            });
-
-            canvas.addEventListener('mouseout', () => {
-                if (drawing) {
-                    drawing = false;
-                    ctx.beginPath();
-                    const action = { type: 'draw_end' };
-                    history.push(action);
-                    broadcastToViewers({ type: 'draw-action', action });
-                    saveProgress();
-                }
-            });
-
-            // Soporte táctil
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousedown', { clientX: touch.clientX, clientY: touch.clientY });
-                canvas.dispatchEvent(mouseEvent);
-            });
-            canvas.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                const mouseEvent = new MouseEvent('mousemove', { clientX: touch.clientX, clientY: touch.clientY });
-                canvas.dispatchEvent(mouseEvent);
-            });
-            canvas.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                canvas.dispatchEvent(new MouseEvent('mouseup', {}));
-            });
-            canvas.addEventListener('touchcancel', (e) => {
-                e.preventDefault();
-                canvas.dispatchEvent(new MouseEvent('mouseout', {}));
-            });
-
-            function getMousePos(e) {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
+                const rect = ui.canvas.getBoundingClientRect();
+                const scaleX = ui.canvas.width / rect.width;
+                const scaleY = ui.canvas.height / rect.height;
                 let clientX, clientY;
                 if (e.touches) {
                     clientX = e.touches[0].clientX;
@@ -1545,61 +993,106 @@
                     clientX = e.clientX;
                     clientY = e.clientY;
                 }
-                return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
-            }
+                const x = (clientX - rect.left) * scaleX;
+                const y = (clientY - rect.top) * scaleY;
 
-            // --- Limpiar canvas ---
-            clearBtn.addEventListener('click', () => {
+                if (e.type === 'mousedown' || e.type === 'touchstart') {
+                    drawing = true;
+                    lastX = x; lastY = y;
+                    if (ui.toolSelect.value === 'pencil') {
+                        const action = { type: 'draw_start', x, y, color: ui.colorPicker.value, size: parseInt(ui.brushSize.value) };
+                        history.push(action);
+                        broadcast({ type: 'draw-action', action });
+                        applyAction(action);
+                    } else if (ui.toolSelect.value === 'text') {
+                        const text = prompt('Texto:');
+                        if (text) {
+                            const action = { type: 'text', text, x, y, color: ui.colorPicker.value, size: parseInt(ui.brushSize.value) };
+                            history.push(action);
+                            broadcast({ type: 'draw-action', action });
+                            applyAction(action);
+                        }
+                    }
+                } else if ((e.type === 'mousemove' || e.type === 'touchmove') && drawing) {
+                    if (ui.toolSelect.value === 'pencil') {
+                        const action = { type: 'draw', x, y, color: ui.colorPicker.value, size: parseInt(ui.brushSize.value) };
+                        history.push(action);
+                        broadcast({ type: 'draw-action', action });
+                        applyAction(action);
+                        lastX = x; lastY = y;
+                    }
+                } else if (e.type === 'mouseup' || e.type === 'touchend' || e.type === 'mouseout') {
+                    if (drawing && ui.toolSelect.value === 'pencil') {
+                        const action = { type: 'draw_end' };
+                        history.push(action);
+                        broadcast({ type: 'draw-action', action });
+                        applyAction(action);
+                    } else if (drawing && ui.toolSelect.value !== 'pencil' && ui.toolSelect.value !== 'text') {
+                        const action = { type: 'shape', shape: ui.toolSelect.value, x: lastX, y: lastY, x2: x, y2: y, color: ui.colorPicker.value, size: parseInt(ui.brushSize.value) };
+                        history.push(action);
+                        broadcast({ type: 'draw-action', action });
+                        applyAction(action);
+                    }
+                    drawing = false;
+                }
+            };
+
+            ui.canvas.addEventListener('mousedown', canvasEvents);
+            ui.canvas.addEventListener('mousemove', canvasEvents);
+            ui.canvas.addEventListener('mouseup', canvasEvents);
+            ui.canvas.addEventListener('mouseout', canvasEvents);
+            ui.canvas.addEventListener('touchstart', canvasEvents);
+            ui.canvas.addEventListener('touchmove', canvasEvents);
+            ui.canvas.addEventListener('touchend', canvasEvents);
+            ui.canvas.addEventListener('touchcancel', canvasEvents);
+
+            ui.clearBtn.addEventListener('click', () => {
                 if (!isHost || currentGame !== 'paint') return;
                 if (confirm('¿Limpiar todo?')) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     history = [];
-                    broadcastToViewers({ type: 'clear' });
-                    localStorage.removeItem(`historial_${roomId}`);
+                    ui.ctx.clearRect(0, 0, 1000, 600);
+                    broadcast({ type: 'clear' });
+                    saveHistory();
                 }
             });
 
-            // --- Eventos UI ---
-            createBtn.addEventListener('click', () => {
-                const roomId = roomInput.value.trim();
-                if (!roomId) return alert('Ingresa un ID');
-                createRoom(roomId);
-            });
-            joinBtn.addEventListener('click', () => {
-                const roomId = roomInput.value.trim();
-                if (!roomId) return alert('Ingresa un ID');
-                joinRoom(roomId);
-            });
-            leaveBtn.addEventListener('click', leaveRoom);
+            // Pokémon
+            ui.pokemonAttack.addEventListener('click', () => pokemonTurn('attack'));
+            ui.pokemonHeal.addEventListener('click', () => pokemonTurn('heal', 10));
+            ui.pokemonCatch.addEventListener('click', () => pokemonTurn('catch', 20));
 
-            sendBtn.addEventListener('click', sendChatMessage);
-            messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendChatMessage();
-            });
-            function sendChatMessage() {
-                const user = usernameInput.value.trim() || 'Anon';
-                const message = messageInput.value.trim();
-                if (!message) return;
-                if (isHost) {
-                    addChatMessage(user, message);
-                    broadcastToViewers({ type: 'chat', user, message });
-                } else {
-                    if (hostConnection && hostConnection.open) {
-                        hostConnection.send({ type: 'chat', user, message });
-                        addChatMessage(user, message);
-                    }
+            // Fútbol
+            ui.footballShoot.addEventListener('click', shoot);
+
+            // Parkour
+            ui.parkourJump.addEventListener('click', parkourJump);
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && currentGame === 'parkour') {
+                    e.preventDefault();
+                    parkourJump();
                 }
-                messageInput.value = '';
+            });
+
+            // Chat
+            ui.sendBtn.addEventListener('click', sendMessage);
+            ui.messageInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+            function sendMessage() {
+                const user = ui.username.value.trim() || 'Anon';
+                const msg = ui.messageInput.value.trim();
+                if (!msg) return;
+                addChatMessage(user, msg);
+                broadcast({ type: 'chat', user, message: msg });
+                ui.messageInput.value = '';
             }
 
             document.querySelectorAll('.emoji-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    messageInput.value += btn.dataset.emoji;
-                    messageInput.focus();
+                    ui.messageInput.value += btn.dataset.emoji;
+                    ui.messageInput.focus();
                 });
             });
 
-            donationBtn.addEventListener('click', donate);
+            ui.donationBtn.addEventListener('click', donate);
 
             window.addEventListener('beforeunload', () => {
                 if (peer) peer.destroy();
